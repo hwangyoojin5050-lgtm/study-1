@@ -1,0 +1,19 @@
+{
+  "name": "너의 옆자리",
+  "short_name": "옆자리",
+  "description": "공부 기록·포모도로와 인안나 스토리를 한 화면에서.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#B8D7EE",
+  "theme_color": "#E8A6B3",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

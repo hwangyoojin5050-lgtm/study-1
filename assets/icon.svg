@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="앱 아이콘">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#114665"/>
+      <stop offset="55%" style="stop-color:#720f32"/>
+      <stop offset="100%" style="stop-color:#7b445a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="240" fill="url(#g)" stroke="#d1d1d6" stroke-width="8"/>
+  <path fill="#faf6f0" d="M148 352c48-96 168-128 216-192-32 112-120 176-216 192z" opacity="0.92"/>
+  <ellipse cx="256" cy="180" rx="72" ry="56" fill="#faf6f0" opacity="0.35"/>
+</svg>

@@ -1,0 +1,2677 @@
+<!doctype html>
+<html lang="ko" data-theme="romance">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#E8A6B3" />
+  <!-- file:// 에서는 manifest GET 이 net::ERR_FAILED 로 떨어지는 경우가 많아, 로컬 서버일 때만 연결합니다. -->
+  <script>
+    (function () {
+      if (location.protocol !== "http:" && location.protocol !== "https:") return;
+      var l = document.createElement("link");
+      l.rel = "manifest";
+      l.href = "./manifest.webmanifest";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/icon.svg" />
+  <title>너의 옆자리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== 로맨틱 파스텔 (#E8A6B3 · #F7C9D3 · #B5ABCC · #B8D7EE) ===== */
+    :root {
+      --romance-rose: #e8a6b3;
+      --romance-blush: #f7c9d3;
+      --romance-lavender: #b5abcc;
+      --romance-sky: #b8d7ee;
+      --indigo-night: #2d2640;
+      --ocean-noir: rgba(45, 38, 58, 0.18);
+      --berry-wine: #c95678;
+      --dusty-rose: #e8a6b3;
+      --pale-ash: #1a1520;
+      --bg: transparent;
+      --bg-glow: rgba(255, 255, 255, 0.45);
+      --card: rgba(255, 255, 255, 0.78);
+      --card-2: rgba(255, 255, 255, 0.62);
+      --accent: #c95678;
+      --accent-soft: #9b7aa8;
+      --accent-2: rgba(45, 38, 58, 0.35);
+      --text: #1e1a24;
+      --muted: #5a4f68;
+      --ok: #3d7a5c;
+      --surface-line: rgba(45, 38, 58, 0.12);
+      --library-grape: #6b5a78;
+      --library-khaki: #5a4f68;
+      --library-yellow: rgba(247, 201, 211, 0.55);
+      --library-cream: rgba(255, 255, 255, 0.75);
+      --library-ink: #1a1520;
+      --field-fill: rgba(255, 255, 255, 0.95);
+      --field-ink: #1e1a24;
+    }
+    html[data-theme="romance"] .card {
+      border-color: rgba(140, 128, 97, 0.32);
+      box-shadow: 0 10px 28px rgba(49, 44, 50, 0.1);
+    }
+    html[data-theme="romance"] .card h3,
+    html[data-theme="romance"] .record-rail-brand,
+    html[data-theme="romance"] .bento-card h3,
+    html[data-theme="romance"] .record-hero-title,
+    html[data-theme="romance"] .habit-streak-num,
+    html[data-theme="romance"] .habit-month-val {
+      color: var(--library-ink);
+    }
+    html[data-theme="romance"] .big-time {
+      color: var(--library-ink);
+    }
+    html[data-theme="romance"] input,
+    html[data-theme="romance"] textarea {
+      background: var(--field-fill);
+      color: var(--field-ink);
+      border-color: rgba(255, 255, 255, 0.45);
+    }
+    html[data-theme="romance"] input:focus,
+    html[data-theme="romance"] textarea:focus {
+      border-color: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 0 0 2px rgba(232, 166, 179, 0.55);
+    }
+    html[data-theme="romance"] label {
+      color: var(--library-khaki);
+    }
+    html[data-theme="romance"] .habit-block,
+    html[data-theme="romance"] .story-summary-box,
+    html[data-theme="romance"] .pomo-box {
+      background: rgba(255, 252, 247, 0.82);
+      border-color: rgba(140, 128, 97, 0.28);
+    }
+    html[data-theme="romance"] .stat {
+      background: rgba(255, 252, 247, 0.9);
+      border-color: rgba(140, 128, 97, 0.32);
+    }
+    html[data-theme="romance"] .ux-toolbar {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    html[data-theme="romance"] canvas {
+      background: rgba(255, 252, 247, 0.92);
+      border-color: rgba(140, 128, 97, 0.3);
+    }
+    html[data-theme="romance"] .history {
+      color: var(--text);
+    }
+    html[data-theme="romance"] .mini-btn {
+      color: var(--text);
+      border-color: rgba(45, 38, 58, 0.18);
+      background: rgba(255, 255, 255, 0.55);
+    }
+    html[data-theme="romance"] .tabs {
+      background: rgba(255, 255, 255, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    html[data-theme="romance"] .tab-btn {
+      color: var(--text);
+      border-color: rgba(45, 38, 58, 0.14);
+      background: rgba(255, 255, 255, 0.5);
+    }
+    html[data-theme="romance"] .tab-btn.active {
+      color: var(--field-ink);
+      border-color: rgba(255, 255, 255, 0.55);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(247, 201, 211, 0.55) 48%, rgba(181, 171, 204, 0.6) 100%);
+      box-shadow: 0 6px 24px rgba(61, 48, 72, 0.15);
+    }
+    html[data-theme="romance"] .btn {
+      color: var(--field-ink);
+      background: linear-gradient(175deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.78) 100%);
+      border-color: rgba(255, 255, 255, 0.45);
+    }
+    html[data-theme="romance"] .btn.primary {
+      background: linear-gradient(135deg, #e8a6b3 0%, #c95678 52%, #9b7aa8 100%);
+      color: #ffffff;
+      border-color: rgba(45, 38, 58, 0.12);
+    }
+    html[data-theme="romance"] .btn.secondary {
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--text);
+      border-color: rgba(45, 38, 58, 0.14);
+    }
+    html[data-theme="romance"] .btn.success {
+      background: linear-gradient(135deg, #7ab89a 0%, #5a9278 100%);
+      color: #ffffff;
+      border-color: rgba(45, 38, 58, 0.12);
+    }
+    html[data-theme="romance"] .habit-ring {
+      background: conic-gradient(
+        #59426e calc(var(--goal-p) * 1%),
+        rgba(140, 128, 97, 0.22) 0
+      );
+    }
+    html[data-theme="romance"] .habit-ring-hole {
+      color: var(--text);
+      background: linear-gradient(168deg, #fffcf7 0%, #f3e2a9 100%);
+    }
+    html[data-theme="romance"] .record-rail {
+      background: linear-gradient(168deg, rgba(243, 226, 169, 0.55) 0%, rgba(238, 232, 224, 0.95) 100%);
+    }
+    html[data-theme="romance"] .record-rail-tab {
+      color: var(--text);
+    }
+    html[data-theme="romance"] .record-rail-tab.active {
+      color: rgba(255, 255, 255, 0.96);
+      background: linear-gradient(165deg, #6d5288 0%, #59426e 100%);
+      border-color: rgba(49, 44, 50, 0.12);
+    }
+    html[data-theme="romance"] .record-rail-avatar {
+      background: linear-gradient(135deg, #8c8061 0%, #59426e 100%);
+      color: rgba(255, 255, 255, 0.96);
+      border-color: rgba(140, 128, 97, 0.45);
+    }
+    html[data-theme="romance"] .story-reset-row .btn.danger {
+      background: linear-gradient(135deg, #6b3d55 0%, #59426e 100%);
+      color: rgba(255, 255, 255, 0.96);
+      border-color: rgba(49, 44, 50, 0.12);
+    }
+    html[data-theme="romance"] .story-chapter {
+      background: rgba(255, 252, 247, 0.88);
+      border-color: rgba(140, 128, 97, 0.26);
+      border-left-color: rgba(89, 66, 110, 0.55);
+    }
+    html[data-theme="romance"] .story-chapter--done {
+      border-left-color: rgba(93, 128, 111, 0.95);
+    }
+    html[data-theme="romance"] .story-today-journal {
+      border-color: rgba(89, 66, 110, 0.42);
+      background: rgba(243, 226, 169, 0.42);
+    }
+    html[data-theme="romance"] .vn-backdrop {
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(243, 226, 169, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 45% at 85% 100%, rgba(89, 66, 110, 0.12) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(245, 240, 232, 0.55) 0%, rgba(238, 232, 224, 0.92) 100%);
+    }
+    html[data-theme="romance"] .vn-stat-box {
+      border-color: rgba(140, 128, 97, 0.45);
+      background: rgba(255, 252, 247, 0.88);
+    }
+    html[data-theme="romance"] .vn-date-line {
+      color: var(--muted);
+      border-color: rgba(140, 128, 97, 0.35);
+      background: rgba(243, 226, 169, 0.35);
+    }
+    html[data-theme="romance"] .vn-dialogue-inner {
+      border-color: rgba(140, 128, 97, 0.45);
+      background:
+        radial-gradient(circle at 14% 18%, rgba(243, 226, 169, 0.35) 0%, transparent 42%),
+        radial-gradient(circle at 88% 12%, rgba(89, 66, 110, 0.1) 0%, transparent 38%),
+        linear-gradient(180deg, rgba(255, 252, 247, 0.92) 0%, rgba(238, 232, 224, 0.96) 100%);
+    }
+    html[data-theme="romance"] .vn-dialogue-text {
+      color: var(--field-ink);
+    }
+    html[data-theme="romance"] .vn-nameplate {
+      background: linear-gradient(135deg, #6d5288 0%, #59426e 100%);
+      color: rgba(255, 255, 255, 0.96);
+      border-color: rgba(140, 128, 97, 0.4);
+    }
+    html[data-theme="romance"] .vn-meta-block {
+      border-top-color: rgba(140, 128, 97, 0.28);
+      background: linear-gradient(180deg, rgba(243, 226, 169, 0.2) 0%, transparent 100%);
+    }
+    html[data-theme="romance"] .character-bio {
+      color: var(--muted);
+      background: rgba(255, 252, 247, 0.75);
+      border-color: rgba(140, 128, 97, 0.28);
+    }
+    html[data-theme="romance"] .vn-choice-panel.talk-box {
+      border-color: rgba(140, 128, 97, 0.45);
+      background: rgba(255, 252, 247, 0.95);
+    }
+    html[data-theme="romance"] .vn-choice-head {
+      background: linear-gradient(165deg, #6d5288 0%, #59426e 100%);
+      color: rgba(255, 255, 255, 0.96);
+      border-bottom-color: rgba(140, 128, 97, 0.3);
+    }
+    html[data-theme="romance"] .vn-npc-line {
+      color: var(--field-ink);
+      background: rgba(243, 226, 169, 0.25);
+      border-bottom-color: rgba(140, 128, 97, 0.22);
+    }
+    html[data-theme="romance"] .vn-choice-item {
+      color: var(--field-ink);
+      background: linear-gradient(180deg, #fffcf7 0%, #f3e2a9 100%);
+      border-bottom-color: rgba(140, 128, 97, 0.22);
+    }
+    html[data-theme="romance"] .vn-choice-item:hover {
+      filter: brightness(0.98);
+    }
+    html[data-theme="romance"] .vn-choice-check {
+      border-color: var(--field-ink);
+      background: rgba(255, 252, 247, 0.95);
+    }
+    html[data-theme="romance"] .ending-panel {
+      border-color: rgba(89, 66, 110, 0.45);
+      background: linear-gradient(160deg, rgba(243, 226, 169, 0.35) 0%, rgba(255, 252, 247, 0.75) 100%);
+    }
+    html[data-theme="romance"] .ending-panel h4 {
+      color: #483556;
+    }
+    html[data-theme="romance"] .heart-meter {
+      background: linear-gradient(92deg, #8c8061 0%, #59426e 50%, #a89772 100%);
+    }
+    html[data-theme="romance"] .story-portrait-gallery h4.story-portrait-heading {
+      color: var(--library-ink);
+    }
+    html[data-theme="romance"] .story-portrait-card {
+      border-color: rgba(140, 128, 97, 0.38);
+    }
+    html[data-theme="romance"] .inline-edit {
+      background: rgba(255, 252, 247, 0.88);
+      border-color: rgba(140, 128, 97, 0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans KR", "Segoe UI", sans-serif;
+      background-color: var(--romance-sky);
+      background-image:
+        radial-gradient(ellipse 110% 85% at 0% 0%, rgba(184, 215, 238, 0.95) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 75% at 100% 8%, rgba(247, 201, 211, 0.85) 0%, transparent 52%),
+        radial-gradient(ellipse 70% 60% at 50% 100%, rgba(181, 171, 204, 0.88) 0%, transparent 58%),
+        radial-gradient(ellipse 55% 50% at 18% 55%, rgba(232, 166, 179, 0.65) 0%, transparent 48%),
+        linear-gradient(168deg, #b8d7ee 0%, #f7c9d3 38%, #e8a6b3 68%, #b5abcc 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .insight-banner-wrap {
+      margin: 0 0 12px;
+    }
+    .insight-banner-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .insight-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--surface-line);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .insight-banner-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .insight-banner-icon {
+      flex-shrink: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      margin-top: 1px;
+    }
+    .insight-banner-copy {
+      flex: 1;
+      min-width: 0;
+    }
+    .insight-banner-title {
+      display: block;
+      font-size: 14px;
+      font-weight: 800;
+      margin: 0 0 2px;
+      letter-spacing: -0.01em;
+    }
+    .insight-banner-desc {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.95;
+    }
+    .insight-banner--ok {
+      background: rgba(90, 143, 126, 0.22);
+      border-color: rgba(90, 143, 126, 0.45);
+    }
+    .insight-banner--warn {
+      background: rgba(114, 15, 50, 0.22);
+      border-color: rgba(114, 15, 50, 0.45);
+    }
+    html[data-theme="romance"] .insight-banner--ok {
+      background: rgba(93, 128, 111, 0.2);
+      color: var(--library-ink);
+    }
+    html[data-theme="romance"] .insight-banner--warn {
+      background: rgba(114, 15, 50, 0.12);
+      color: var(--library-ink);
+    }
+    .user-reaction-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .user-reaction-row input {
+      flex: 1;
+      min-width: 160px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(45, 38, 58, 0.08);
+      z-index: 5;
+      padding: 10px 0;
+    }
+    .tab-btn {
+      border-radius: 12px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      border: 1px solid rgba(45, 38, 58, 0.12);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(247, 201, 211, 0.55) 45%, rgba(181, 171, 204, 0.65) 100%);
+      color: var(--field-ink);
+      border-color: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 6px 22px rgba(92, 74, 104, 0.18);
+    }
+    .tabs > label.tab-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
+    /* 메인 탭: 라디오 :checked 기준으로 패널 표시(JS 없이도 전환) */
+    .main-tab-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+      opacity: 0;
+      pointer-events: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    #studyMainTabRecord:checked ~ #record.view {
+      display: block !important;
+    }
+    #studyMainTabRecord:checked ~ #panelView.view {
+      display: none !important;
+    }
+    #studyMainTabView:checked ~ #record.view {
+      display: none !important;
+    }
+    #studyMainTabView:checked ~ #panelView.view {
+      display: block !important;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .card {
+      background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 100%);
+      border: 1px solid var(--surface-line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 12px 36px rgba(61, 48, 72, 0.12);
+    }
+    /* ===== §2 Record tab — shell, bento, habits (색·폰트 토큰 유지) ===== */
+    .record-shell {
+      display: grid;
+      grid-template-columns: 196px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .record-rail {
+      position: sticky;
+      top: 64px;
+      padding: 18px 14px;
+      border-radius: 22px;
+    }
+    .record-rail-brand {
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+      margin-bottom: 16px;
+    }
+    .record-rail-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--surface-line);
+    }
+    .record-rail-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--pale-ash);
+      background: linear-gradient(135deg, var(--ocean-noir), var(--berry-wine));
+      border: 2px solid rgba(209, 209, 214, 0.25);
+      flex-shrink: 0;
+    }
+    .record-rail-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .record-rail-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .record-rail-tab {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .record-rail-tab:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: var(--text);
+    }
+    .record-rail-tab.active {
+      background: var(--ocean-noir);
+      color: var(--pale-ash);
+      border-color: rgba(209, 209, 214, 0.15);
+    }
+    .record-rail-note {
+      margin: 14px 0 0;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .record-main {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .record-hero {
+      border-radius: 22px;
+      padding: 18px 20px;
+    }
+    .record-hero-kicker {
+      margin: 0 0 6px;
+      font-size: 12px;
+    }
+    .record-hero-title {
+      margin: 0;
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(22px, 3.2vw, 30px);
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+    }
+    .record-cluster {
+      margin-bottom: 4px;
+      padding: 14px 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--surface-line);
+      background:
+        linear-gradient(165deg, rgba(114, 15, 50, 0.08) 0%, transparent 42%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0.06) 100%);
+    }
+    html[data-theme="romance"] .record-cluster {
+      background:
+        linear-gradient(165deg, rgba(114, 15, 50, 0.06) 0%, transparent 40%),
+        linear-gradient(180deg, rgba(255, 252, 247, 0.98) 0%, rgba(250, 246, 238, 0.72) 100%);
+      border-color: rgba(140, 128, 97, 0.28);
+    }
+    .record-cluster-head {
+      margin: 0 0 12px;
+      padding-bottom: 2px;
+    }
+    .record-cluster-eyebrow {
+      margin: 0 0 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .record-cluster-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      font-family: "Noto Serif KR", Georgia, serif;
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+    }
+    html[data-theme="romance"] .record-cluster-title {
+      color: var(--library-ink);
+    }
+    .record-cluster-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .record-cluster--focus .record-cluster-body {
+      gap: 14px;
+    }
+    .story-contact-pick {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--surface-line);
+    }
+    .story-contact-pick-lede {
+      margin: 0 0 8px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .story-contact-pick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .story-contact-pick-row .btn {
+      flex: 1 1 160px;
+    }
+    .habit-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .habit-dashboard-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 16px;
+    }
+    .habit-block {
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.16);
+      border: 1px solid var(--surface-line);
+    }
+    .habit-block-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .habit-goal-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .habit-ring-wrap {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0;
+    }
+    .habit-ring {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      --goal-p: 0;
+      background: conic-gradient(
+        var(--berry-wine) calc(var(--goal-p) * 1%),
+        rgba(209, 209, 214, 0.12) 0
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .habit-ring-hole {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--pale-ash);
+    }
+    .habit-goal-text {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .habit-streak-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--pale-ash);
+      line-height: 1.1;
+    }
+    .habit-month-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--pale-ash);
+    }
+    .onboarding-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(10, 14, 20, 0.76);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .onboarding-overlay[hidden] {
+      display: none !important;
+    }
+    body.onboarding-open {
+      overflow: hidden;
+    }
+    .onboarding-card {
+      max-width: 420px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--surface-line);
+      border-radius: 16px;
+      padding: 22px 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .onboarding-title {
+      margin: 0 0 10px;
+      font-size: 1.35rem;
+    }
+    .onboarding-body {
+      margin: 0 0 16px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    html[data-theme="romance"] .onboarding-overlay {
+      background: rgba(49, 44, 50, 0.45);
+    }
+    html[data-theme="romance"] .onboarding-card {
+      box-shadow: 0 16px 40px rgba(49, 44, 50, 0.12);
+    }
+    .habit-backup-row {
+      margin-top: 0;
+      flex-wrap: wrap;
+    }
+    .habit-file-label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .record-bento-row {
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+      min-width: 0;
+    }
+    .record-bento-left {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .record-bento-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+    .record-bento-bottom {
+      min-width: 0;
+    }
+    .bento-card {
+      border-radius: 22px;
+      padding: 18px;
+    }
+    .bento-charts-side {
+      width: min(340px, 100%);
+      flex-shrink: 0;
+      border-radius: 22px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .bento-chart-block {
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 auto;
+    }
+    .bento-chart-block h3 {
+      margin: 0 0 8px;
+    }
+    .bento-chart-block canvas {
+      flex: 0 0 auto;
+      width: 100%;
+      height: 132px;
+      min-height: 0;
+    }
+    .bento-side-footer {
+      margin-top: 2px;
+      padding-top: 14px;
+      border-top: 1px solid var(--surface-line);
+      flex: 0 0 auto;
+    }
+    .bento-side-footer h3 {
+      margin: 0 0 10px;
+    }
+    .card h3 {
+      margin: 0 0 12px;
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+    }
+    label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid rgba(17, 70, 101, 0.65);
+      background: rgba(15, 24, 34, 0.92);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px;
+      outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: rgba(123, 68, 90, 0.75);
+      box-shadow: 0 0 0 2px rgba(114, 15, 50, 0.2);
+    }
+    textarea { resize: vertical; min-height: 72px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .btn {
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--indigo-night);
+      background: linear-gradient(175deg, var(--pale-ash) 0%, #b9bcc8 100%);
+      border: 1px solid rgba(22, 32, 43, 0.15);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--berry-wine), var(--ocean-noir));
+      color: var(--pale-ash);
+      border-color: rgba(209, 209, 214, 0.15);
+    }
+    .btn.secondary {
+      background: var(--ocean-noir);
+      color: var(--pale-ash);
+      border: 1px solid rgba(209, 209, 214, 0.18);
+    }
+    .btn.success {
+      background: linear-gradient(135deg, var(--ok), #3d6d5c);
+      color: var(--pale-ash);
+      border-color: rgba(209, 209, 214, 0.12);
+    }
+    .big-time {
+      font-size: clamp(30px, 6vw, 56px);
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin: 8px 0;
+      color: var(--pale-ash);
+    }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat {
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid var(--surface-line);
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    /* —— 캐릭터 탭 · 비주얼노벨 레이아웃 (색·폰트 토큰 유지) —— */
+    /* ===== §3 VN / character view, story, portrait gallery ===== */
+    .vn-card {
+      padding: 0;
+      overflow: hidden;
+    }
+    .vn-stage {
+      position: relative;
+      min-height: min(640px, 84vh);
+      max-height: 960px;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+    }
+    .vn-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(17, 70, 101, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 45% at 80% 100%, rgba(114, 15, 50, 0.2) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(15, 24, 34, 0.5) 0%, rgba(22, 32, 43, 0.85) 100%);
+      filter: blur(0.5px);
+    }
+    .vn-backdrop.vn-backdrop--date {
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 20%, rgba(243, 226, 169, 0.18) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 20% 90%, rgba(114, 15, 50, 0.22) 0%, transparent 45%),
+        radial-gradient(ellipse 55% 45% at 85% 75%, rgba(17, 70, 101, 0.28) 0%, transparent 48%),
+        linear-gradient(180deg, rgba(22, 32, 43, 0.45) 0%, rgba(15, 24, 34, 0.92) 100%);
+    }
+    html[data-theme="romance"] .vn-backdrop.vn-backdrop--date {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 15%, rgba(243, 226, 169, 0.55) 0%, transparent 52%),
+        radial-gradient(ellipse 50% 40% at 15% 85%, rgba(89, 66, 110, 0.12) 0%, transparent 45%),
+        linear-gradient(180deg, rgba(255, 252, 247, 0.55) 0%, rgba(238, 232, 224, 0.95) 100%);
+    }
+    .vn-floating-hearts {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.14;
+      background-image:
+        radial-gradient(circle at 12% 88%, rgba(114, 15, 50, 0.45) 0, transparent 3%),
+        radial-gradient(circle at 22% 76%, rgba(123, 68, 90, 0.4) 0, transparent 2.5%),
+        radial-gradient(circle at 78% 82%, rgba(114, 15, 50, 0.35) 0, transparent 2.8%),
+        radial-gradient(circle at 88% 70%, rgba(123, 68, 90, 0.35) 0, transparent 2.2%);
+    }
+    .vn-top-hud {
+      position: relative;
+      z-index: 3;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px 0;
+    }
+    .vn-hud-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+    .vn-face-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid var(--pale-ash);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      background: #121c26;
+    }
+    .vn-stat-box {
+      padding: 8px 12px 10px;
+      border-radius: 12px;
+      border: 2px solid var(--pale-ash);
+      background: rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(8px);
+      min-width: 0;
+      max-width: min(240px, 52vw);
+    }
+    .vn-stat-row {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .vn-stat-row + .vn-stat-row { margin-top: 4px; }
+    .vn-stat-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .vn-stat-tag {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .vn-stat-row.vn-hearts {
+      font-size: 15px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vn-stage-pill {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .vn-hud-right {
+      text-align: right;
+      flex-shrink: 0;
+      max-width: 46%;
+    }
+    .vn-date-line {
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.28);
+    }
+    .vn-sprite-wrap {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      min-height: 240px;
+      padding: 8px 8px 188px;
+    }
+    .character-img {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(209, 209, 214, 0.18);
+      object-fit: cover;
+      min-height: 220px;
+      background: #121c26;
+    }
+    .character-img.vn-sprite {
+      width: auto;
+      max-width: min(720px, 98vw);
+      min-height: 0;
+      height: auto;
+      max-height: min(72vh, 760px);
+      object-fit: contain;
+      object-position: center bottom;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .vn-choice-panel.talk-box {
+      position: absolute;
+      right: 12px;
+      bottom: 228px;
+      width: min(280px, calc(100% - 24px));
+      z-index: 5;
+      margin-top: 0;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 2px solid var(--pale-ash);
+      background: rgba(15, 24, 34, 0.92);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+    .vn-choice-head {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-align: center;
+      background: var(--ocean-noir);
+      color: var(--pale-ash);
+      border-bottom: 1px solid var(--surface-line);
+    }
+    .vn-npc-line {
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      border-bottom: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.15);
+    }
+    .vn-choice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 0;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .vn-choice-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border: none;
+      border-bottom: 1px solid var(--surface-line);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: var(--indigo-night);
+      background: linear-gradient(180deg, var(--pale-ash) 0%, #c4c7d0 100%);
+      transition: background 0.15s ease, filter 0.15s ease;
+    }
+    .vn-choice-item:last-of-type { border-bottom: none; }
+    .vn-choice-item:hover {
+      filter: brightness(1.04);
+    }
+    .vn-choice-check {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      border: 2px solid var(--indigo-night);
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.85);
+      position: relative;
+    }
+    .vn-choice-item:hover .vn-choice-check {
+      border-color: var(--berry-wine);
+      background: rgba(255, 255, 255, 1);
+    }
+    .vn-choice-label { flex: 1; min-width: 0; }
+    .vn-reply-result {
+      padding: 8px 12px 10px;
+      font-size: 12px;
+      margin-top: 0 !important;
+      border-top: 1px dashed var(--surface-line);
+    }
+    .vn-dialogue-shell {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 4;
+      padding-top: 14px;
+    }
+    .vn-nameplate {
+      position: absolute;
+      left: 22px;
+      top: 0;
+      transform: translateY(-40%);
+      z-index: 2;
+      padding: 6px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: var(--pale-ash);
+      background: linear-gradient(135deg, #8b2244, var(--berry-wine));
+      border: 2px solid var(--pale-ash);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+    .vn-dialogue-inner {
+      position: relative;
+      border-radius: 20px;
+      border: 3px solid var(--pale-ash);
+      padding: 28px 16px 16px;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(123, 68, 90, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 88% 12%, rgba(114, 15, 50, 0.1) 0%, transparent 38%),
+        linear-gradient(180deg, rgba(22, 32, 43, 0.78) 0%, rgba(15, 24, 34, 0.92) 100%);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+      max-height: min(42vh, 320px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .vn-dialogue-text {
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-size: 18px;
+      line-height: 1.5;
+      margin: 0;
+      color: var(--text);
+      overflow-wrap: anywhere;
+      word-break: keep-all;
+    }
+    @keyframes vnDialogueFlash {
+      0% {
+        text-shadow: 0 0 0 rgba(255, 214, 230, 0);
+        filter: brightness(1);
+      }
+      35% {
+        text-shadow: 0 0 14px rgba(255, 200, 220, 0.55);
+        filter: brightness(1.12);
+      }
+      100% {
+        text-shadow: 0 0 0 rgba(255, 214, 230, 0);
+        filter: brightness(1);
+      }
+    }
+    .vn-dialogue-text.vn-dialogue--flash {
+      animation: vnDialogueFlash 1s ease-out 1;
+    }
+    .vn-inner-panel {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(209, 209, 214, 0.22);
+    }
+    .vn-inner-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .vn-inner-toggle input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--berry-wine);
+    }
+    .vn-inner-monologue {
+      margin: 12px 0 0;
+      padding: 10px 12px 12px;
+      border-radius: 12px;
+      border-left: 3px solid rgba(123, 68, 90, 0.9);
+      background: rgba(0, 0, 0, 0.38);
+      font-family: "Noto Sans KR", Segoe UI, sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(230, 226, 238, 0.95);
+      font-style: italic;
+      max-height: min(6.5em, 28vh);
+      overflow-y: auto;
+      overflow-wrap: anywhere;
+      word-break: keep-all;
+      -webkit-overflow-scrolling: touch;
+    }
+    .vn-inner-tagline {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 6px 0 0;
+      line-height: 1.45;
+    }
+    html[data-theme="romance"] .vn-inner-monologue {
+      background: rgba(255, 252, 247, 0.97);
+      border-left: 3px solid rgba(89, 66, 110, 0.88);
+      box-shadow: inset 0 0 0 1px rgba(49, 44, 50, 0.08);
+      color: #252022;
+    }
+    html[data-theme="romance"] .vn-inner-toggle {
+      color: var(--library-khaki);
+    }
+    .vn-meta-block {
+      padding: 14px;
+      border-top: 1px solid var(--surface-line);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, transparent 100%);
+    }
+    .vn-meta-block h3 {
+      margin: 0 0 8px;
+    }
+    .vn-lede {
+      margin: 0 0 10px;
+    }
+    canvas {
+      width: 100%;
+      height: 240px;
+      background: rgba(15, 24, 34, 0.55);
+      border-radius: 12px;
+      border: 1px solid var(--surface-line);
+    }
+    .history {
+      max-height: 280px;
+      overflow: auto;
+      font-size: 14px;
+      line-height: 1.5;
+      padding-right: 6px;
+    }
+    .history-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: flex-end;
+      margin-bottom: 10px;
+      padding: 10px 10px 8px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.16);
+      border: 1px solid var(--surface-line);
+    }
+    .history-filter-bar .hf-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .history-filter-bar .hf-field label {
+      font-size: 11px;
+      margin: 0;
+    }
+    .history-filter-bar input[type="date"],
+    .history-filter-bar input[type="text"],
+    .history-filter-bar select {
+      font-size: 13px;
+      max-width: 100%;
+    }
+    .history-filter-bar .hf-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    html[data-theme="romance"] .history-filter-bar {
+      background: rgba(255, 252, 247, 0.75);
+    }
+    .record-snackbar {
+      position: fixed;
+      bottom: 88px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--surface-line);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+      max-width: min(440px, calc(100vw - 24px));
+    }
+    .record-snackbar[hidden] {
+      display: none !important;
+    }
+    .history-item { border-bottom: 1px dashed var(--surface-line); padding: 8px 0; }
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .mini-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--indigo-night);
+      background: linear-gradient(135deg, var(--pale-ash), #a8abb8);
+      flex-shrink: 0;
+      border: 1px solid rgba(22, 32, 43, 0.12);
+    }
+    .mini-btn.save { background: linear-gradient(135deg, #6a9e8f, var(--ocean-noir)); color: var(--pale-ash); }
+    .mini-btn.cancel { background: linear-gradient(135deg, #c5c8d2, #9ea3b0); }
+    .mini-btn.delete { background: linear-gradient(135deg, #a34a62, var(--berry-wine)); color: var(--pale-ash); }
+    .inline-edit {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid var(--surface-line);
+      display: grid;
+      grid-template-columns: 1fr 100px auto auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .inline-edit input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .minutes-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pomo-box {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.16);
+      border: 1px solid var(--surface-line);
+    }
+    .pomo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .pomo-time {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+    .toggle-row {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .talk-box {
+      margin-top: 10px;
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(17, 70, 101, 0.35);
+    }
+    .choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .route-meter {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .ending-panel {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(114, 15, 50, 0.55);
+      background: linear-gradient(160deg, rgba(114, 15, 50, 0.12) 0%, rgba(0, 0, 0, 0.2) 100%);
+    }
+    .ending-panel h4 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: #e8c4d4;
+    }
+    .ending-panel p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .heart-meter {
+      margin-top: 8px;
+      font-size: 22px;
+      letter-spacing: 2px;
+      line-height: 1.2;
+      background: linear-gradient(92deg, var(--dusty-rose) 0%, var(--berry-wine) 55%, #c98aa8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    .vn-stat-row.vn-hearts.heart-meter {
+      margin-top: 0;
+    }
+    .character-bio {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--surface-line);
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .view-sub-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 24;
+      isolation: isolate;
+    }
+    .view-sub-tabs .tab-btn {
+      padding: 8px 14px;
+      font-size: 14px;
+    }
+    .story-log {
+      max-height: 420px;
+      overflow: auto;
+      margin-top: 10px;
+    }
+    .story-entry {
+      border-bottom: 1px dashed var(--surface-line);
+      padding: 14px 0;
+    }
+    .story-entry:last-child { border-bottom: none; }
+    .story-entry h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: var(--library-ink);
+    }
+    .story-entry .story-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .story-entry .story-body {
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+    .story-portrait-gallery {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px dashed var(--surface-line);
+    }
+    .story-portrait-gallery h4.story-portrait-heading {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: #c4b8c8;
+    }
+    .story-portrait-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .story-portrait-card {
+      width: 120px;
+      flex-shrink: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(123, 68, 90, 0.35);
+      background: rgba(0,0,0,0.25);
+    }
+    .story-portrait-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+      vertical-align: top;
+    }
+    .story-portrait-card figcaption {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 6px 8px 8px;
+      line-height: 1.35;
+    }
+    .story-summary-box {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.18);
+    }
+    .story-summary-box h4 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: #c4b8c8;
+    }
+    .story-subheading {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: #c4b8c8;
+    }
+    html[data-theme="romance"] .story-summary-box h4,
+    html[data-theme="romance"] .story-subheading {
+      color: var(--text);
+    }
+    .story-summary-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+    .story-summary-list li {
+      margin-bottom: 6px;
+    }
+    .story-summary-list li:last-child {
+      margin-bottom: 0;
+    }
+    .story-reset-row {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .story-reset-row .btn.danger {
+      background: linear-gradient(135deg, #5c2838, var(--berry-wine));
+      color: var(--pale-ash);
+      border-color: rgba(209, 209, 214, 0.15);
+    }
+    .ux-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin: -4px 0 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--surface-line);
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: relative;
+      z-index: 50;
+    }
+    .ux-toolbar-label {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .ux-select {
+      min-width: 200px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid var(--surface-line);
+      background: rgba(15, 24, 34, 0.55);
+      color: var(--text);
+      position: relative;
+      z-index: 2;
+      pointer-events: auto;
+    }
+    html[data-theme="romance"] .ux-select {
+      background: #fffcf7;
+      color: var(--library-ink);
+      border-color: rgba(140, 128, 97, 0.4);
+    }
+    .today-journal-card {
+      padding: 14px 16px;
+    }
+    .today-journal-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .today-journal-row input {
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 12px 12px;
+      font-size: 15px;
+    }
+    .today-journal-row .btn {
+      flex: 0 0 auto;
+      align-self: center;
+    }
+    .pomo-notify-row {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .route-meter-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 4px;
+      line-height: 1.5;
+    }
+    .route-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      background: rgba(0, 0, 0, 0.14);
+      border: 1px solid transparent;
+    }
+    html[data-theme="romance"] .route-chip {
+      background: rgba(140, 128, 97, 0.14);
+      color: var(--muted);
+    }
+    .route-chip--lead {
+      color: var(--text);
+      border-color: rgba(114, 15, 50, 0.5);
+      background: rgba(114, 15, 50, 0.18);
+      box-shadow: 0 0 0 1px rgba(17, 70, 101, 0.2);
+    }
+    html[data-theme="romance"] .route-chip--lead {
+      color: var(--library-ink);
+      border-color: rgba(89, 66, 110, 0.55);
+      background: rgba(243, 226, 169, 0.55);
+      box-shadow: 0 0 0 1px rgba(89, 66, 110, 0.18);
+    }
+    .route-meter-foot {
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .story-chapters {
+      margin: 14px 0 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .story-chapter {
+      padding: 10px 12px 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.12);
+      border-left: 4px solid rgba(17, 70, 101, 0.55);
+    }
+    .story-chapter--done {
+      border-left-color: rgba(90, 143, 126, 0.85);
+    }
+    .story-chapter--pending {
+      opacity: 0.88;
+    }
+    .story-chapter-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .story-chapter-title {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: var(--pale-ash);
+      margin-bottom: 6px;
+    }
+    html[data-theme="romance"] .story-chapter-title {
+      color: var(--text);
+    }
+    .story-chapter-line {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .story-chapter-block {
+      margin-top: 10px;
+    }
+    .story-chapter-block:first-of-type {
+      margin-top: 0;
+    }
+    .story-chapter-fulltext {
+      margin: 6px 0 0;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: keep-all;
+    }
+    .story-chapter-actions {
+      margin-top: 12px;
+    }
+    .daily-goal-checklist {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.1);
+    }
+    html[data-theme="romance"] .daily-goal-checklist {
+      background: rgba(255, 252, 247, 0.88);
+      border-color: rgba(140, 128, 97, 0.28);
+    }
+    .daily-goal-checklist h4 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .daily-goal-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 8px 0;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .daily-goal-row input {
+      margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--berry-wine);
+      flex-shrink: 0;
+    }
+    .daily-goal-row label {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .daily-goal-cheer {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 2px solid rgba(90, 143, 126, 0.55);
+      background: rgba(90, 143, 126, 0.14);
+      font-size: 15px;
+      line-height: 1.55;
+      font-family: "Noto Serif KR", Georgia, serif;
+      color: var(--pale-ash);
+    }
+    html[data-theme="romance"] .daily-goal-cheer {
+      color: var(--library-ink);
+      border-color: rgba(93, 128, 111, 0.45);
+      background: rgba(93, 128, 111, 0.12);
+    }
+    .daily-goal-cheer .daily-goal-cheer-who {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-family: "Noto Sans KR", Segoe UI, sans-serif;
+    }
+    .today-inanna-strip {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(123, 68, 90, 0.45);
+      background: rgba(114, 15, 50, 0.12);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    html[data-theme="romance"] .today-inanna-strip {
+      background: rgba(243, 226, 169, 0.45);
+      border-color: rgba(89, 66, 110, 0.35);
+    }
+    .today-inanna-strip .today-inanna-k {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .insight-banner--info {
+      background: rgba(17, 70, 101, 0.22);
+      border-color: rgba(17, 70, 101, 0.45);
+    }
+    html[data-theme="romance"] .insight-banner--info {
+      background: rgba(17, 70, 101, 0.12);
+      color: var(--library-ink);
+    }
+    .weekly-insights-card {
+      margin-top: 0;
+    }
+    .weekly-report-block {
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.12);
+      border: 1px solid var(--surface-line);
+      max-height: 280px;
+      overflow-y: auto;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    }
+    html[data-theme="romance"] .weekly-report-block {
+      background: rgba(255, 252, 247, 0.9);
+    }
+    .rhythm-heatmap-wrap {
+      margin-top: 12px;
+    }
+    .rhythm-heatmap-wrap canvas {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    html[data-theme="romance"] .rhythm-heatmap-wrap canvas {
+      background: rgba(255, 252, 247, 0.95);
+    }
+    .backup-export-options {
+      margin: 10px 0 6px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--surface-line);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .backup-export-options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 6px 0;
+      cursor: pointer;
+    }
+    .backup-export-options input {
+      margin-top: 2px;
+    }
+    .milestone-badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      gap: 12px;
+      margin: 12px 0 16px;
+    }
+    .milestone-badge {
+      text-align: center;
+    }
+    .milestone-badge-circle {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 6px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid rgba(209, 209, 214, 0.35);
+      background:
+        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.12) 0%, transparent 45%),
+        linear-gradient(145deg, rgba(17, 70, 101, 0.55) 0%, rgba(114, 15, 50, 0.55) 100%);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    }
+    .milestone-badge--locked .milestone-badge-circle {
+      opacity: 0.38;
+      filter: grayscale(0.35);
+    }
+    .milestone-badge--unlocked .milestone-badge-circle {
+      border-color: rgba(90, 143, 126, 0.65);
+    }
+    .milestone-badge-icon {
+      width: 36px;
+      height: 36px;
+      color: var(--pale-ash);
+    }
+    html[data-theme="romance"] .milestone-badge-icon {
+      color: var(--library-ink);
+    }
+    .milestone-badge-title {
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--pale-ash);
+    }
+    html[data-theme="romance"] .milestone-badge-title {
+      color: var(--library-ink);
+    }
+    .milestone-badge-desc {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.35;
+      margin-top: 2px;
+    }
+    .memory-diary-box {
+      margin: 16px 0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--surface-line);
+      background: rgba(0, 0, 0, 0.1);
+    }
+    html[data-theme="romance"] .memory-diary-box {
+      background: rgba(255, 252, 247, 0.88);
+    }
+    .memory-diary-list {
+      margin-top: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .memory-diary-row {
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--surface-line);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .memory-diary-row:last-child {
+      border-bottom: none;
+    }
+    .memory-diary-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .story-today-journal {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px dashed rgba(17, 70, 101, 0.45);
+      background: rgba(17, 70, 101, 0.1);
+    }
+    .story-today-journal strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .story-today-journal p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .pomo-phase-badge {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 40;
+      max-width: min(280px, 86vw);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--pale-ash);
+      background: rgba(15, 24, 34, 0.92);
+      border: 1px solid var(--surface-line);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    }
+    html[data-theme="romance"] .pomo-phase-badge {
+      color: var(--library-ink);
+      background: rgba(255, 252, 247, 0.96);
+      border-color: rgba(140, 128, 97, 0.35);
+      box-shadow: 0 8px 22px rgba(49, 44, 50, 0.12);
+    }
+    .record-mobile-dock {
+      display: none;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: rgba(15, 24, 34, 0.94);
+      border-top: 1px solid var(--surface-line);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
+    }
+    html[data-theme="romance"] .record-mobile-dock {
+      background: rgba(238, 232, 224, 0.97);
+      border-top-color: rgba(140, 128, 97, 0.35);
+      box-shadow: 0 -8px 24px rgba(49, 44, 50, 0.1);
+    }
+    .record-mobile-dock-col {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+    .record-mobile-dock-k {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .record-mobile-dock-v {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--pale-ash);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    html[data-theme="romance"] .record-mobile-dock-v {
+      color: var(--text);
+    }
+    /* ===== §4 Responsive — rail, charts, mobile dock ===== */
+    @media (max-width: 720px) {
+      html:has(#record.view.active) {
+        scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      }
+      .app:has(#record.view.active) {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      }
+      .app:has(#record.view.active) .record-mobile-dock {
+        display: flex;
+      }
+      .bento-timer .btn-row,
+      .bento-pomo .btn-row {
+        gap: 10px;
+      }
+      .bento-timer .btn-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .bento-timer .btn-row .btn {
+        min-height: 50px;
+        padding: 14px 14px;
+        font-size: 16px;
+        border-radius: 14px;
+        flex: none;
+      }
+      .bento-timer .btn-row .btn.success {
+        grid-column: 1 / -1;
+      }
+      .bento-pomo .btn-row .btn {
+        min-height: 50px;
+        padding: 14px 14px;
+        font-size: 16px;
+        border-radius: 14px;
+        flex: 1 1 100%;
+      }
+      .vn-choice-panel.talk-box {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        bottom: auto;
+        top: 64px;
+        max-height: min(32vh, 220px);
+      }
+      .vn-choice-list {
+        max-height: min(26vh, 168px);
+      }
+      .vn-dialogue-shell {
+        left: 8px;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom, 0px));
+        padding-top: 10px;
+      }
+      .vn-dialogue-inner {
+        max-height: min(34vh, 240px);
+        padding: 22px 12px 12px;
+      }
+      .vn-inner-monologue {
+        max-height: min(4.8em, 20vh);
+        font-size: 12.5px;
+      }
+      .vn-sprite-wrap {
+        padding: 6px 6px 198px;
+      }
+    }
+    @media (max-width: 1020px) {
+      .record-bento-row {
+        flex-direction: column;
+      }
+      .bento-charts-side {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .bento-charts-side .bento-chart-block {
+        flex: 1 1 200px;
+        min-width: 0;
+      }
+      .bento-charts-side .bento-side-footer {
+        flex: 1 1 100%;
+        width: 100%;
+      }
+    }
+    @media (max-width: 860px) {
+      .record-shell {
+        grid-template-columns: 1fr;
+      }
+      .record-rail {
+        position: static;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+      .record-rail-brand {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+      }
+      .record-rail-user {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .record-rail-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .record-rail-tab {
+        width: auto;
+      }
+      .record-rail-note {
+        grid-column: 1 / -1;
+        margin: 0;
+      }
+      .record-bento-top {
+        grid-template-columns: 1fr;
+      }
+      .bento-charts-side {
+        flex-direction: column;
+      }
+      .grid { grid-template-columns: 1fr; }
+      .tab-btn, .btn {
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+      .muted, label { font-size: 14px; }
+      .big-time { font-size: clamp(32px, 11vw, 48px); }
+      .inline-edit {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 520px) {
+      .app { padding: 12px; }
+      .card:not(.vn-card) { padding: 12px; }
+      .vn-dialogue-text { font-size: 16px; }
+      .pomo-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <input type="radio" name="studyMainTab" id="studyMainTabRecord" class="main-tab-input" checked />
+    <input type="radio" name="studyMainTab" id="studyMainTabView" class="main-tab-input" />
+    <div id="onboardingOverlay" class="onboarding-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-hidden="true">
+      <div class="onboarding-card">
+        <h2 id="onboardingTitle" class="onboarding-title" tabindex="-1">너의 옆자리</h2>
+        <p id="onboardingBody" class="onboarding-body muted"></p>
+        <div class="btn-row onboarding-actions">
+          <button type="button" class="btn secondary" id="onboardingSkipBtn">나중에</button>
+          <button type="button" class="btn primary" id="onboardingNextBtn">다음</button>
+        </div>
+        <p class="muted" id="onboardingStepInd" style="font-size:11px;margin-top:10px;">1 / 4</p>
+      </div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="메인 화면">
+      <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">기록</label>
+      <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">보기</label>
+    </div>
+    <p class="muted keyboard-hint" style="margin:-6px 0 10px;font-size:11px;line-height:1.45;" id="keyboardShortcutsHint">
+      키보드: Alt+1 기록 탭 · Alt+2 보기 탭 · Home 기록 / End 보기 · Alt+P 포모 시작/정지 · Alt+Shift+S 공부 기록 저장 · Alt+T 타이머 시작/일시정지 (입력란에 포커스가 있을 때는 단축키 비활성) · 온보딩 중 Esc 나중에 닫기
+    </p>
+    <div id="insightBannerWrap" class="insight-banner-wrap" hidden>
+      <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="알림"></div>
+    </div>
+    <div id="todayInannaStrip" class="today-inanna-strip" hidden>
+      <span class="today-inanna-k">오늘의 인안나</span>
+      <span id="todayInannaLine"></span>
+    </div>
+    <div class="ux-toolbar" role="toolbar" aria-label="저장">
+      <span class="ux-toolbar-label muted" id="saveDiskToolbarLabel">진행 상황</span>
+      <button type="button" class="btn secondary" id="saveProgressDiskBtn">로컬 디스크에 저장</button>
+      <span class="muted" style="font-size:12px;line-height:1.45;max-width:520px;">브라우저가 지원하면 저장 위치를 고를 수 있어요. 취소하면 내려받기로 대신 저장됩니다.</span>
+    </div>
+    <p class="muted" id="privacyLocalNote" style="margin:-4px 0 12px;font-size:11px;line-height:1.5;max-width:720px;">
+      개인정보: 이 앱은 서버로 공부 내용을 보내지 않고, 기기 안(localStorage)에만 저장합니다. 외부 분석·광고 SDK는 붙어 있지 않습니다.
+    </p>
+
+    <section id="record" class="view active" role="tabpanel" aria-labelledby="tabBtnRecord" aria-hidden="false">
+      <div class="record-shell">
+        <aside class="card record-rail" aria-label="기록 내비게이션">
+          <div class="record-rail-brand">너의 옆자리</div>
+          <div class="record-rail-user">
+            <div class="record-rail-avatar" id="recordRailAvatar">메</div>
+            <div class="record-rail-name" id="recordRailName">메이트</div>
+          </div>
+          <nav class="record-rail-nav">
+            <button type="button" class="record-rail-tab active" data-record-rail="dashboard">대시보드</button>
+            <button type="button" class="record-rail-tab" data-go-tab="view">보기</button>
+          </nav>
+          <p class="record-rail-note muted">인안나와 함께하는 공부</p>
+        </aside>
+
+        <div class="record-main">
+          <header class="card record-hero">
+            <p class="record-hero-kicker muted" id="recordHeroDate"></p>
+            <h2 class="record-hero-title" id="recordGreeting">안녕하세요!</h2>
+          </header>
+
+          <div class="record-cluster record-cluster--pulse">
+            <header class="record-cluster-head">
+              <p class="record-cluster-eyebrow">오늘 · 이번 주</p>
+              <h3 class="record-cluster-title">리듬 한눈에</h3>
+            </header>
+            <div class="record-cluster-body">
+              <div class="card today-journal-card">
+                <label for="todayJournalInput">오늘 한 줄 (일기)</label>
+                <div class="today-journal-row">
+                  <input id="todayJournalInput" type="text" maxlength="140" placeholder="오늘 공부·기분을 한 줄로 남겨 보세요." autocomplete="off" />
+                  <button type="button" class="btn secondary" id="saveTodayJournalBtn">저장</button>
+                </div>
+                <p class="muted" id="todayJournalHint" style="margin:8px 0 0;font-size:12px;"></p>
+              </div>
+
+              <div class="card bento-card habit-dashboard habit-dashboard--pulse">
+                <div class="habit-dashboard-row">
+                  <div class="habit-block habit-goal-block">
+                    <div class="habit-block-title">오늘 목표 달성</div>
+                    <div class="habit-goal-row">
+                      <div class="habit-ring-wrap">
+                        <div class="habit-ring" id="todayGoalRing" style="--goal-p: 0;">
+                          <div class="habit-ring-hole" id="todayGoalRingPct">0%</div>
+                        </div>
+                      </div>
+                      <p class="habit-goal-text muted" id="todayGoalRingText">목표 시간을 저장하면 달성률이 표시됩니다.</p>
+                    </div>
+                  </div>
+                  <div class="habit-block">
+                    <div class="habit-block-title">연속 출석</div>
+                    <div class="habit-streak-num" id="studyStreakValue">0</div>
+                    <p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;">매일 1분 이상 기록 시 일수가 이어집니다.</p>
+                    <p class="muted" id="studyStreakHint" style="margin:4px 0 0;font-size:12px;"></p>
+                  </div>
+                  <div class="habit-block">
+                    <div class="habit-block-title">이번 주 누적</div>
+                    <div class="habit-month-val" id="weeklyTotalShort">0시간 0분</div>
+                    <p class="muted" id="weeklyGoalLine" style="margin:6px 0 0;font-size:12px;line-height:1.45;">주간 목표를 아래에서 설정하면 진행률이 표시됩니다.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card bento-card habit-dashboard habit-dashboard--archive">
+            <div class="habit-dashboard-row">
+              <div class="habit-block">
+                <div class="habit-block-title">이번 달 총 공부</div>
+                <div class="habit-month-val" id="monthTotalTime">0시간 0분</div>
+                <p class="muted" style="margin:6px 0 0;font-size:12px;">이번 달력 월의 기록만 합산합니다.</p>
+              </div>
+            </div>
+            <div class="backup-export-options" aria-label="JSON 보내기 옵션">
+              <strong style="font-size:12px;">JSON 보내기에 포함</strong>
+              <label><input type="checkbox" id="backupIncludeStoryChk" checked /> 스토리·호감·루트·엔딩 로그 등 내러티브</label>
+              <label><input type="checkbox" id="backupIncludeNotesChk" checked /> 퀘스트·일기·체크리스트·회상 일기 등 개인 메모</label>
+            </div>
+            <div class="btn-row habit-backup-row">
+              <button type="button" class="btn secondary" id="exportBackupJsonBtn">JSON보내기</button>
+              <button type="button" class="btn secondary" id="exportBackupCsvBtn">CSV보내기</button>
+              <label class="btn secondary habit-file-label">
+                JSON 가져오기
+                <input type="file" id="importBackupJsonInput" accept=".json,application/json" style="display:none;" />
+              </label>
+              <label class="btn habit-file-label">
+                CSV 가져오기
+                <input type="file" id="importBackupCsvInput" accept=".csv,text/csv" style="display:none;" />
+              </label>
+              <label class="btn secondary habit-file-label">
+                JSON 기록만 합치기
+                <input type="file" id="importMergeJsonInput" accept=".json,application/json" style="display:none;" />
+              </label>
+            </div>
+            <p class="muted" id="backupDataHint" style="margin:10px 0 0;font-size:11px;line-height:1.5;">
+              JSON에는 앱 이름·스키마 버전이 포함됩니다. 예전 백업으로 가져오면 호감도 숫자가 현재 공식과 다르게 보일 수 있습니다. 클라우드 동기 시에는 암호화된 페이로드와 버전 충돌 검사를 권장합니다.
+            </p>
+            <p class="muted" id="localStorageRiskHint" style="margin:8px 0 0;font-size:11px;line-height:1.5;">
+              브라우저 저장 공간은 용량 한도가 있고, 캐시·데이터 삭제 시 이 기기의 기록이 함께 지워질 수 있어요. 주기적으로 JSON 보내기로 백업해 두는 것을 권장합니다.
+            </p>
+          </div>
+
+          <div class="record-bento-row">
+            <div class="record-bento-left">
+              <div class="record-cluster record-cluster--focus">
+                <header class="record-cluster-head">
+                  <p class="record-cluster-eyebrow">목표 · 타이머 · 포모</p>
+                  <h3 class="record-cluster-title">집중은 여기서</h3>
+                </header>
+                <div class="record-cluster-body">
+                  <div class="record-bento-top">
+                    <div class="card bento-card bento-goal">
+                  <h3>공부 목표 / 퀘스트</h3>
+                  <label for="goalHours">하루 공부 목표 시간 (시간 단위)</label>
+                  <input id="goalHours" type="number" min="0.5" step="0.5" placeholder="예: 3" />
+
+                  <label for="weeklyGoalHours" style="margin-top:10px;">이번 주 목표 시간 (시간 단위, 월~일 합산 기준)</label>
+                  <input id="weeklyGoalHours" type="number" min="0" step="0.5" placeholder="예: 15 (비우면 주간 링 없음)" />
+
+                  <label for="questText" style="margin-top:10px;">오늘의 퀘스트 (목표)</label>
+                  <textarea id="questText" placeholder="한 줄에 하나씩 적으면 아래에 체크리스트가 생겨요.&#10;예: 화성학 정리&#10;밴드 합주 1시간&#10;영어 단어"></textarea>
+                  <p class="muted" style="font-size:12px;margin-top:8px;line-height:1.45;">여러 줄로 적은 항목은 <strong>오늘 날짜</strong> 기준 체크리스트로 표시됩니다. 목표 저장 후 체크해 주세요.</p>
+                  <div id="dailyGoalChecklistWrap" class="daily-goal-checklist" aria-label="오늘 퀘스트 체크리스트"></div>
+                  <div id="dailyGoalCompleteCheer" class="daily-goal-cheer" hidden role="status" aria-live="polite"></div>
+
+                  <div class="btn-row">
+                    <button class="btn secondary" id="saveGoalQuestBtn">목표 저장</button>
+                  </div>
+                  <p class="muted" id="goalQuestStatus">저장된 목표 없음</p>
+                </div>
+
+                <div class="card bento-card bento-timer">
+                  <h3>공부 타이머</h3>
+                  <div class="big-time" id="timerDisplay">00:00:00</div>
+                  <label for="defaultSessionTagInput" class="muted" style="display:block;margin-bottom:6px;font-size:12px;">기본 태그 (저장 시 기록에 붙음, 비워 두면 생략)</label>
+                  <input id="defaultSessionTagInput" type="text" maxlength="24" placeholder="예: 수학, 영어, 밴드" style="width:100%;max-width:320px;margin-bottom:10px;" autocomplete="off" />
+                  <div class="btn-row">
+                    <button class="btn primary" id="startBtn" aria-label="공부 타이머 시작">시작</button>
+                    <button class="btn secondary" id="pauseBtn" aria-label="공부 타이머 일시정지">일시정지</button>
+                    <button class="btn" id="resetBtn" aria-label="공부 타이머 시간 리셋">리셋</button>
+                    <button class="btn success" id="saveSessionBtn" aria-label="지금까지의 타이머 시간을 공부 기록으로 저장">공부 기록 저장</button>
+                  </div>
+                  <p class="muted">세션 저장 시 누적 공부 시간과 호감도가 반영됩니다.</p>
+                </div>
+              </div>
+
+              <div class="card bento-card bento-pomo">
+                <h3 style="margin-bottom:8px;">집중모드 (포모도로)</h3>
+                <div class="pomo-box">
+                  <div class="pomo-grid">
+                    <div>
+                      <label for="focusMinutes">집중 (분)</label>
+                      <input id="focusMinutes" type="number" min="5" step="1" value="25" />
+                    </div>
+                    <div>
+                      <label for="breakMinutes">휴식 (분)</label>
+                      <input id="breakMinutes" type="number" min="1" step="1" value="5" />
+                    </div>
+                  </div>
+                  <div class="pomo-time" id="pomoDisplay">집중 25:00</div>
+                  <div class="muted" id="todaySessionCount">오늘 포모도로 세션 0회</div>
+                  <p class="muted" id="pomoWeekMonthStats" style="font-size:12px;margin:4px 0 0;line-height:1.45;"></p>
+                  <label for="pomoSessionNoteInput" class="muted" style="display:block;margin-top:10px;font-size:12px;">집중 세션 메모 (포모 한 사이클 끝날 때 함께 저장)</label>
+                  <input id="pomoSessionNoteInput" type="text" maxlength="200" placeholder="이번 집중에서 끝낸 내용을 한 줄로…" style="width:100%;margin-top:4px;" autocomplete="off" />
+                  <label class="toggle-row" style="margin-top:10px;">
+                    <input id="autoViewSwitch" type="checkbox" />
+                    집중 종료 시 자동으로 보기 탭 전환
+                  </label>
+                  <div class="pomo-notify-row">
+                    <button type="button" class="btn secondary" id="pomoBrowserNotifyBtn">브라우저 알림</button>
+                    <span class="muted" id="pomoNotifyStatus" style="font-size:12px;line-height:1.4;"></span>
+                  </div>
+                  <div class="btn-row">
+                    <button class="btn primary" id="startPomoBtn" aria-label="포모도로 집중 시작">포모도로 시작</button>
+                    <button class="btn secondary" id="stopPomoBtn" aria-label="포모도로 정지">포모도로 정지</button>
+                    <button class="btn" id="resetPomoBtn" aria-label="포모도로 타이머 리셋">포모도로 리셋</button>
+                    <button class="btn" id="soundToggleBtn" aria-label="포모 알림음 켜기 또는 끄기">알림음: 켜짐</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="record-bento-bottom">
+                <div class="card bento-card bento-history">
+                  <h3>최근 기록</h3>
+                  <div class="history-filter-bar" id="historyFilterBar" aria-label="기록 필터">
+                    <div class="hf-field">
+                      <label for="historyFilterDateFrom">시작일</label>
+                      <input type="date" id="historyFilterDateFrom" />
+                    </div>
+                    <div class="hf-field">
+                      <label for="historyFilterDateTo">종료일</label>
+                      <input type="date" id="historyFilterDateTo" />
+                    </div>
+                    <div class="hf-field" style="flex:1;min-width:120px;">
+                      <label for="historyFilterTagContains">태그 포함</label>
+                      <input type="text" id="historyFilterTagContains" maxlength="24" placeholder="부분 일치" autocomplete="off" />
+                    </div>
+                    <div class="hf-field">
+                      <label for="historyFilterSort">정렬</label>
+                      <select id="historyFilterSort">
+                        <option value="date-desc">최신순</option>
+                        <option value="date-asc">오래된순</option>
+                      </select>
+                    </div>
+                    <div class="hf-field hf-toggle">
+                      <label>
+                        <input type="checkbox" id="historyFilterWeekOnly" />
+                        이번 주만
+                      </label>
+                    </div>
+                  </div>
+                  <div class="history" id="historyList"></div>
+                </div>
+              </div>
+
+              <div class="card bento-card weekly-insights-card">
+                <h3>주간 리포트 · 리듬</h3>
+                <p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.45;">이번 주(월~일) 한 장 요약과, 최근 28일간 <strong>시간대가 저장된</strong> 기록만 모은 히트맵입니다.</p>
+                <div id="weeklyReportBlock" class="weekly-report-block" aria-label="주간 리포트 텍스트"></div>
+                <p class="muted" id="lastWeekSummaryLine" style="font-size:12px;line-height:1.45;margin:8px 0 0;"></p>
+                <div class="btn-row" style="margin-top:10px;">
+                  <button type="button" class="btn secondary" id="copyWeeklyReportBtn">주간 리포트 복사</button>
+                </div>
+                <div class="rhythm-heatmap-wrap">
+                  <h4 class="story-subheading" style="margin:12px 0 6px;">집중 구간 히트맵</h4>
+                  <canvas id="rhythmHeatmap" width="480" height="210" role="img" aria-label="요일과 시간대별 집중 히트맵"></canvas>
+                  <p class="muted" id="rhythmHeatmapHint" style="font-size:11px;margin:6px 0 0;line-height:1.45;"></p>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <aside class="card bento-card bento-charts-side" aria-label="통계 그래프">
+              <div class="bento-chart-block">
+                <h3>주간 그래프</h3>
+                <canvas id="weeklyChart" width="320" height="130" role="img" aria-label="최근 7일 공부 시간 막대 그래프"></canvas>
+              </div>
+              <div class="bento-chart-block">
+                <h3>월간 그래프 (최근 6개월)</h3>
+                <canvas id="monthlyChart" width="320" height="130" role="img" aria-label="최근 6개월 월별 공부 시간 막대 그래프"></canvas>
+              </div>
+              <div class="bento-side-footer">
+                <h3>진행 상태</h3>
+                <div class="stats">
+                  <div class="stat">
+                    <div class="muted">오늘 누적</div>
+                    <div id="todayTotal">0분</div>
+                  </div>
+                  <div class="stat">
+                    <div class="muted">전체 누적</div>
+                    <div id="allTotal">0시간 0분</div>
+                  </div>
+                  <div class="stat">
+                    <div class="muted">호감도</div>
+                    <div id="affectionDisplay">0</div>
+                  </div>
+                  <div class="stat">
+                    <div class="muted">인안나와의 관계</div>
+                    <div id="romanceStage">친해지는 중</div>
+                  </div>
+                  <div class="stat">
+                    <div class="muted">다음 단계까지</div>
+                    <div id="nextStageInfo">-</div>
+                  </div>
+                </div>
+                <p class="muted" id="tagStatsLine" style="margin:10px 0 0;font-size:12px;line-height:1.45;"></p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="pomoNotifyBadge" class="pomo-phase-badge" hidden aria-live="polite"></div>
+
+    <footer class="record-mobile-dock" id="recordMobileDock" aria-label="기록 요약">
+      <div class="record-mobile-dock-col">
+        <span class="record-mobile-dock-k">오늘</span>
+        <span class="record-mobile-dock-v" id="dockTodayShort">0분</span>
+      </div>
+      <div class="record-mobile-dock-col">
+        <span class="record-mobile-dock-k">타이머</span>
+        <span class="record-mobile-dock-v" id="dockTimerShort">00:00:00</span>
+      </div>
+      <div class="record-mobile-dock-col">
+        <span class="record-mobile-dock-k">포모</span>
+        <span class="record-mobile-dock-v" id="dockPomoShort">—</span>
+      </div>
+    </footer>
+
+    <section id="panelView" class="view" role="tabpanel" aria-labelledby="tabBtnView" aria-hidden="true">
+      <div class="view-sub-tabs" role="tablist" aria-label="보기 하위">
+        <button type="button" class="tab-btn active" role="tab" id="tabBtnViewChar" data-view-sub="character" aria-controls="viewPanelCharacter" aria-selected="true" aria-pressed="true" tabindex="0">캐릭터</button>
+        <button type="button" class="tab-btn" role="tab" id="tabBtnViewStory" data-view-sub="story" aria-controls="viewPanelStory" aria-selected="false" aria-pressed="false" tabindex="-1">스토리보드</button>
+      </div>
+
+      <div id="viewPanelCharacter" role="region" aria-labelledby="tabBtnViewChar" aria-hidden="false">
+      <div class="card vn-card">
+        <div class="vn-stage" aria-label="캐릭터 장면">
+          <div class="vn-backdrop" aria-hidden="true"></div>
+          <div class="vn-floating-hearts" aria-hidden="true"></div>
+
+          <header class="vn-top-hud">
+            <div class="vn-hud-left">
+              <img
+                id="characterImageThumb"
+                class="vn-face-thumb"
+                alt=""
+                width="56"
+                height="56"
+                src="./assets/character-scene.png"
+              />
+              <div class="vn-stat-box">
+                <div class="vn-stat-row vn-stat-labels">
+                  <span class="vn-stat-tag">호감도</span>
+                  <span id="vnHudAffection">0</span>
+                </div>
+                <div class="vn-stat-row vn-hearts heart-meter" id="heartMeter">♡♡♡♡♡♡♡♡♡♡</div>
+                <div class="vn-stat-row vn-stage-pill" id="vnRomanceStage">친해지는 중</div>
+                <p class="muted vn-relationship-meta" id="relationshipMetaLine" style="font-size:11px;margin:4px 0 0;line-height:1.35;max-width:220px;" aria-live="polite"></p>
+                <p class="muted vn-daily-whisper" id="dailyWhisperLine" style="font-size:11px;margin:6px 0 0;line-height:1.4;max-width:220px;font-style:italic;opacity:0.92;" aria-live="polite"></p>
+              </div>
+            </div>
+            <div class="vn-hud-right">
+              <div class="vn-date-line" id="vnDateLine"></div>
+            </div>
+          </header>
+
+          <div class="vn-sprite-wrap">
+            <img
+              id="characterImage"
+              class="character-img vn-sprite"
+              alt="인안나 · 호감도 0~30"
+              src="./assets/character-scene.png"
+            />
+          </div>
+
+          <aside class="talk-box vn-choice-panel" id="talkBox" style="display:none;" aria-label="대화 선택">
+            <div class="vn-choice-head">선택</div>
+            <div class="vn-npc-line" id="npcTalkLine"></div>
+            <div class="vn-choice-list" id="replyChoices"></div>
+            <div class="vn-reply-result muted" id="replyResult"></div>
+          </aside>
+
+          <div class="vn-dialogue-shell">
+            <span class="vn-nameplate">인안나</span>
+            <div class="vn-dialogue-inner">
+              <p id="dialogueBox" class="vn-dialogue-text">오랜만이야. 나 실용음악과 다니면서 밴드도 하고 있거든—너랑 다시 공부 열심히 해보자.</p>
+              <div class="vn-inner-panel" id="innerMonologuePanel">
+                <label class="vn-inner-toggle" for="innerMonologueToggle">
+                  <input type="checkbox" id="innerMonologueToggle" />
+                  인안나의 속마음 보기
+                </label>
+                <p class="vn-inner-tagline" id="innerMonologueHint">무대 밖에선 말이 더딘 내향형의 독백이에요. 끄면 대사만 남습니다.</p>
+                <div
+                  id="innerMonologueBox"
+                  class="vn-inner-monologue"
+                  role="region"
+                  aria-label="인안나의 속마음"
+                  hidden
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vn-meta-block">
+          <h3>인안나와의 이야기</h3>
+          <p class="muted vn-lede">고등학교 동창이었던 인안나와 다시 이어진 인연. 인안나는 <strong>소심한 내향형</strong>이면서 <strong>음악을 사랑</strong>하고, 당신은 <strong>다정하고 활발하며 사교적</strong>인 성격으로 그려집니다. 공부를 쌓을수록 호감도와 대사가 변합니다.</p>
+          <div class="character-bio">
+            <strong>인안나</strong> · 여성 · 키 160cm · 숏컷 · 실용음악과 재학 · 작은 밴드의 보컬 · 메탈 애호 · 성격: 소심한 내향형, 음악에 몰입할 때 가장 편안함<br />
+            <strong>당신(유저)</strong> · 다정함 · 활발함 · 사교적임 — 인안나의 속마음에서 이 빛나는 성격과 자신을 비교하곤 합니다.
+          </div>
+          <label for="userNameViewEdit" style="margin-top:8px;">유저 이름 수정</label>
+          <input id="userNameViewEdit" type="text" maxlength="20" placeholder="이름을 입력하면 즉시 반영됩니다." />
+          <label class="toggle-row" style="margin-top:10px;">
+            <input type="checkbox" id="autoTogetherLineChk" checked />
+            기록 저장 시 스토리에「함께한 시간」한 줄 자동 남기기
+          </label>
+          <label class="toggle-row" style="margin-top:8px;">
+            <input type="checkbox" id="stageCueSoundChk" checked />
+            호감 단계 넘을 때 짧은 효과음 (전체 소리 설정이 켜져 있을 때만)
+          </label>
+          <label for="togetherLinesMaxDayInput" style="margin-top:10px;display:block;font-size:12px;">하루 「함께한 시간」최대 줄 수 (0이면 자동 한 줄 끔)</label>
+          <input id="togetherLinesMaxDayInput" type="number" min="0" max="24" step="1" value="8" style="max-width:100px;margin-top:4px;" autocomplete="off" aria-describedby="togetherLinesMaxHint" />
+          <p class="muted" id="togetherLinesMaxHint" style="font-size:11px;margin:4px 0 0;line-height:1.45;">같은 날 이 횟수를 넘기면 스토리 로그에는 더 이상 자동 한 줄이 붙지 않아요.</p>
+          <div class="user-reaction-box" style="margin-top:12px;">
+            <label for="userStoryReactionInput">인안나에게 한 줄 (선택 없이 저장)</label>
+            <div class="user-reaction-row">
+              <input id="userStoryReactionInput" type="text" maxlength="120" placeholder="지금 듣는 말에 대한 나의 한 마디…" autocomplete="off" />
+              <button type="button" class="btn secondary" id="saveUserStoryReactionBtn">스토리 로그에 남기기</button>
+            </div>
+            <p class="muted" style="margin:6px 0 0;font-size:11px;">호감도 구간과 관계없이 남기며, 스토리 탭 로그에서 확인할 수 있습니다. 네가 다정하고 활발한 사람이라는 설정도 한 줄에 살짝 녹여도 좋아요.</p>
+          </div>
+          <div class="story-contact-pick" id="storyContactPickWrap" hidden>
+            <p class="muted story-contact-pick-lede">인안나가 네 성격을 떠올리며 묻는 짧은 분기예요. 연락은 어떤 쪽이 편해? 한 번 고르면 로그에만 남고, 부담 없는 장면 묘사에 쓸게.</p>
+            <div class="btn-row story-contact-pick-row">
+              <button type="button" class="btn secondary" data-contact-pick="face">학교에서 얼굴 보고 말하기</button>
+              <button type="button" class="btn secondary" data-contact-pick="text">메시지로 짧게 연락</button>
+              <button type="button" class="btn secondary" data-contact-pick="walk">같이 걷다가 얘기하기</button>
+            </div>
+          </div>
+          <div class="route-meter" id="routeMeter"></div>
+          <div class="ending-panel" id="endingPanel" style="display:none;">
+            <h4 id="endingTitle"></h4>
+            <p id="endingBody"></p>
+          </div>
+          <p id="affectionSummary" style="margin-top:10px;"></p>
+        </div>
+      </div>
+      </div>
+
+      <div id="viewPanelStory" style="display:none;" role="region" aria-labelledby="tabBtnViewStory" aria-hidden="true">
+        <div class="card">
+          <h3>스토리 다시보기</h3>
+          <p class="muted">관계가 진전될 때의 짧은 이야기, 선택지 대화, 엔딩까지 시간 순으로 저장됩니다. 아래에는 지금까지 도달한 호감·엔딩 단계의 캐릭터 이미지만 나타납니다.</p>
+          <p class="muted" id="dateCutsceneHint" style="font-size:12px;line-height:1.45;margin-top:6px;">오늘 일정 분 이상 기록하거나 포모를 여러 번 마치면, 그날 한 번 스토리 로그에 짧은 데이트 장면이 남을 수 있어요.</p>
+          <div id="storyPortraitGallery" class="story-portrait-gallery" style="display:none;" aria-live="polite"></div>
+          <div id="storySummaryPanel" class="story-summary-box" aria-live="polite"></div>
+          <div id="milestoneBadgeSection" class="memory-diary-box" style="margin-top:12px;">
+            <h4 class="story-subheading">마일스톤 배지</h4>
+            <p class="muted" style="font-size:12px;line-height:1.45;">이 기기에서만 해금되는 작은 배지예요. 경쟁·랭킹 없이 스스로에게 주는 표시입니다.</p>
+            <div id="milestoneBadgeGrid" class="milestone-badge-grid" aria-label="마일스톤 배지"></div>
+          </div>
+          <div id="memoryDiarySection" class="memory-diary-box" style="margin-top:12px;">
+            <h4 class="story-subheading">그때의 나 (회상 일기)</h4>
+            <p class="muted" style="font-size:12px;line-height:1.45;">선택지 되돌리기는 없어요. 그날의 나만 짧게 남기는 공간이에요.</p>
+            <div class="today-journal-row" style="margin-top:8px;">
+              <input id="memoryDiaryInput" type="text" maxlength="200" placeholder="한 줄만 적어 두기 (날짜는 자동)" autocomplete="off" />
+              <button type="button" class="btn secondary" id="memorySaveBtn">남기기</button>
+            </div>
+            <div id="memoryDiaryList" class="memory-diary-list" aria-live="polite"></div>
+          </div>
+          <div class="story-log" id="storyLogList"></div>
+          <div class="story-reset-row">
+            <button type="button" class="btn danger" id="resetStoryAffectionBtn">스토리 및 호감도 초기화</button>
+            <span class="muted" style="font-size:12px;">공부 기록·목표·설정·일지는 유지됩니다. 스토리 로그·루트·엔딩·대화 보너스를 비우고, 호감도는 0으로 맞춘 뒤 이후 새로 쌓인 공부만 호감도에 반영합니다. 호감도는 기준선 이후 누적 시간에만 곡선이 적용되므로, 초기화 직후 증가 속도는 예전 총공부 구간과 달라질 수 있습니다. 같은 날 여러 단계가 한꺼번에 열리면 스토리 로그는 한 덩어리로 묶입니다.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="recordUndoSnackbar" class="record-snackbar" hidden role="status" aria-live="polite">
+      <span id="recordUndoSnackbarMsg">기록을 삭제했습니다.</span>
+      <button type="button" class="btn secondary" id="recordUndoSnackbarBtn">되돌리기</button>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
