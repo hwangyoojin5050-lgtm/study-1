@@ -297,9 +297,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
     }
 
     /* ===== JS §2 Story tables (dialogues, interactions) ===== */
-    const NPC_PERSONALITY = "소심한 내향형 · 음악을 사랑함";
-    const USER_PERSONALITY = "다정함 · 활발함 · 사교적임";
-
     const dialogues = [
       {
         minAffection: 0,
@@ -2446,16 +2443,12 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       applyVnBackdropClassForToday(today);
       const innerToggle = $("innerMonologueToggle");
       const innerBox = $("innerMonologueBox");
-      const innerHint = $("innerMonologueHint");
       if (innerToggle && innerBox) {
         const show = state.showInnerMonologue !== false;
         innerToggle.checked = show;
         innerBox.hidden = !show;
         innerBox.textContent = getInnerMonologueText();
         innerBox.setAttribute("aria-hidden", show ? "false" : "true");
-      }
-      if (innerHint) {
-        innerHint.textContent = "인안나 「" + NPC_PERSONALITY + "」의 속마음 · 당신은 「" + USER_PERSONALITY + "」으로 그려져요.";
       }
       safeSetText("heartMeter", buildHeartText());
       const routeEl = $("routeMeter");
