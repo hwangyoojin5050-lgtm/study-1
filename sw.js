@@ -3,6 +3,7 @@ const CACHE = "study-romance-shell-v12";
 const CORE = [
   "./index.html",
   "./js/app.js",
+  "./js/badge-icons.js",
   "./js/state.js",
   "./manifest.webmanifest",
   "./assets/character-scene.png",

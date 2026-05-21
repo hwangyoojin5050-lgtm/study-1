@@ -2,20 +2,14 @@ import {
   STORAGE_KEY,
   APP_DISPLAY_NAME,
   PERSIST_SCHEMA_VERSION,
-  BACKUP_SCHEMA_VERSION,
   sanitizeRecordRow,
   sanitizeMemoryMoment,
   migratePersistedPayload
 } from "./state.js";
+import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.js";
 
-    /* ===== JS §1 Persistence key, state shape, backup hooks ===== */
-    /**
-     * 저장소: localStorage 단일 기기. 클라우드 동기·다중 기기 머지를 붙일 때는
-     * gatherPersistedState() 스키마와 extractBackupPayload / applyBackupPayload 경로를 유지하고
-     * 원격에서 받은 객체를 머지한 뒤 hydrate → 검증 → recalc 순으로 연결하면 됩니다.
-     * 동기 시 권장: 전송 전 클라이언트 암호화(예: passphrase로 AES-GCM) 또는 E2E 채널,
-     * 서버에는 암호문만 저장·버전 벡터로 충돌 감지 후 수동 머지 UI를 붙이면 안전합니다.
-     */
+    /* ===== JS §1 Persistence key, state shape ===== */
+    /** 저장소: localStorage 단일 기기. gatherPersistedState() / hydrateStateFromPlainObject() 스키마를 유지합니다. */
     const state = {
       userName: "",
       goalHours: 0,
@@ -64,8 +58,6 @@ import {
       dailyChecklistItems: [],
       dailyChecklistChecked: [],
       memoryMoments: [],
-      backupExportIncludeStory: true,
-      backupExportIncludeNotes: true,
       bannerDismissedWeekly: "",
       romanceLastSeenDate: "",
       romanceConvoDate: "",
@@ -1117,10 +1109,9 @@ import {
     function renderMilestoneBadgesStory() {
       const grid = $("milestoneBadgeGrid");
       if (!grid) return;
-      const icons = ["🚀", "⭐", "🪐", "🐟", "🏢", "👟", "🏁", "⑦", "💯"];
-      grid.innerHTML = MILESTONE_BADGE_DEFS.map((def, i) => {
+      grid.innerHTML = MILESTONE_BADGE_DEFS.map((def) => {
         const on = def.ok();
-        const ic = icons[i % icons.length];
+        const ic = milestoneBadgeIconHtml(def.id);
         return "<div class='milestone-badge " + (on ? "milestone-badge--unlocked" : "milestone-badge--locked") + "'>" +
           "<div class='milestone-badge-circle' aria-hidden='true'><span class='milestone-badge-icon'>" + ic + "</span></div>" +
           "<div class='milestone-badge-title'>" + escapeHtml(def.title) + "</div>" +
@@ -1140,104 +1131,6 @@ import {
         "<div class='memory-diary-row'><div class='memory-diary-meta'>" + escapeHtml(m.date) + "</div>" +
         "<div>" + escapeHtml(m.line) + "</div></div>"
       ).join("");
-    }
-
-    function buildBackupPayloadForExport() {
-      const full = gatherPersistedState();
-      const incStory = state.backupExportIncludeStory !== false;
-      const incNotes = state.backupExportIncludeNotes !== false;
-      const out = { ...full };
-      if (!incStory) {
-        out.storyLog = [];
-        out.loggedStageMins = [];
-        out.endingId = null;
-        out.routeMarriage = 0;
-        out.routeYandere = 0;
-        out.routeAbroad = 0;
-        out.replyAffectionBonus = 0;
-        out.storyContactChannel = "";
-        out.storyFreshReset = false;
-        out.storySummaryFullView = false;
-        out.romanceLastSeenDate = "";
-        out.romanceConvoDate = "";
-        out.romanceConvoStarts = 0;
-        out.romanceLastDateEventDay = "";
-        out.romanceDateBackdropDay = "";
-        out.romanceDateBackdropClass = "";
-        out.romancePreConfessionDone = false;
-        out.romanceSoftMoodShownFor = "";
-        out.romanceStreakDropNoted = "";
-        out.romancePrevStreakSnapshot = -1;
-        out.togetherStudyLineDay = "";
-        out.togetherStudyLineCount = 0;
-        out.romanceDailyWhisperDay = "";
-      }
-      if (!incNotes) {
-        out.quest = "";
-        out.todayJournalDate = "";
-        out.todayJournalLine = "";
-        out.dailyChecklistDate = "";
-        out.dailyChecklistItems = [];
-        out.dailyChecklistChecked = [];
-        out.memoryMoments = [];
-      }
-      return out;
-    }
-
-    function validateBackupPayload(payload) {
-      const errors = [];
-      if (!payload || typeof payload !== "object") {
-        errors.push("payload가 객체가 아닙니다.");
-        return { ok: false, errors: errors };
-      }
-      if (!Array.isArray(payload.records)) {
-        errors.push("records 배열이 필요합니다.");
-      } else {
-        payload.records.forEach((r, i) => {
-          const row = sanitizeRecordRow(r);
-          if (!row) errors.push("records[" + i + "] 행이 유효하지 않습니다(date·seconds).");
-        });
-      }
-      const numKeys = [
-        "goalHours", "affection", "totalSeconds", "focusMinutes", "breakMinutes",
-        "replyAffectionBonus", "routeMarriage", "routeYandere", "routeAbroad",
-        "maxAffectionEver", "affectionBaselineSeconds", "weeklyGoalHours"
-      ];
-      numKeys.forEach((k) => {
-        if (payload[k] === undefined || payload[k] === null) return;
-        const n = Number(payload[k]);
-        if (!Number.isFinite(n)) errors.push(k + "는 숫자여야 합니다.");
-      });
-      if (payload.endingId != null && payload.endingId !== 1 && payload.endingId !== 2 && payload.endingId !== 3) {
-        errors.push("endingId는 1·2·3 또는 비워 두어야 합니다.");
-      }
-      if (payload.storyLog != null && !Array.isArray(payload.storyLog)) {
-        errors.push("storyLog는 배열이어야 합니다.");
-      }
-      return { ok: errors.length === 0, errors: errors };
-    }
-
-    function mergeRecordsOnlyFromPayload(payload) {
-      const v = validateBackupPayload(payload);
-      if (!v.ok) throw new Error(v.errors.join("\n"));
-      const incoming = (payload.records || []).map(sanitizeRecordRow).filter(Boolean);
-      const seen = new Set();
-      state.records.forEach((r) => {
-        seen.add((r.date || "") + "|" + Number(r.seconds || 0) + "|" + (r.quest || "") + "|" + (r.source || "") + "|" + (r.tag || "") + "|" + (r.note || "") + "|" + (r.intent || "") + "|" + (typeof r.startHour === "number" ? r.startHour : ""));
-      });
-      let added = 0;
-      incoming.forEach((r) => {
-        const fp = (r.date || "") + "|" + Number(r.seconds || 0) + "|" + (r.quest || "") + "|" + (r.source || "") + "|" + (r.tag || "") + "|" + (r.note || "") + "|" + (r.intent || "") + "|" + (typeof r.startHour === "number" ? r.startHour : "");
-        if (seen.has(fp)) return;
-        seen.add(fp);
-        state.records.push(r);
-        added += 1;
-      });
-      state.records.sort((a, b) => {
-        if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-        return Number(a.seconds || 0) - Number(b.seconds || 0);
-      });
-      return added;
     }
 
     function formatVnHudDate() {
@@ -1467,7 +1360,8 @@ import {
         storyLog: state.storyLog,
         loggedStageMins: state.loggedStageMins,
         viewSubPanel: state.viewSubPanel,
-        uiMainTab: state.uiMainTab === "view" ? "view" : "record",
+        uiMainTab:
+          state.uiMainTab === "view" ? "view" : state.uiMainTab === "stats" ? "stats" : "record",
         maxAffectionEver: state.maxAffectionEver,
         affectionBaselineSeconds: state.affectionBaselineSeconds,
         a11yPreset: state.a11yPreset,
@@ -1486,8 +1380,6 @@ import {
         dailyChecklistItems: Array.isArray(state.dailyChecklistItems) ? state.dailyChecklistItems : [],
         dailyChecklistChecked: Array.isArray(state.dailyChecklistChecked) ? state.dailyChecklistChecked : [],
         memoryMoments: Array.isArray(state.memoryMoments) ? state.memoryMoments : [],
-        backupExportIncludeStory: state.backupExportIncludeStory !== false,
-        backupExportIncludeNotes: state.backupExportIncludeNotes !== false,
         bannerDismissedWeekly: state.bannerDismissedWeekly || "",
         romanceLastSeenDate: state.romanceLastSeenDate || "",
         romanceConvoDate: state.romanceConvoDate || "",
@@ -1537,7 +1429,8 @@ import {
         ? data.loggedStageMins.filter((n) => typeof n === "number" && n >= 0 && n <= 999)
         : [];
       state.viewSubPanel = data.viewSubPanel === "story" ? "story" : "character";
-      state.uiMainTab = String(data.uiMainTab || "").toLowerCase() === "view" ? "view" : "record";
+      const tabRaw = String(data.uiMainTab || "").toLowerCase();
+      state.uiMainTab = tabRaw === "view" ? "view" : tabRaw === "stats" ? "stats" : "record";
       state.maxAffectionEver = Math.max(
         Number(data.maxAffectionEver || 0),
         Number(data.affection || 0)
@@ -1571,8 +1464,6 @@ import {
       state.pomoSecondsLeft = state.focusMinutes * 60;
       if (!Array.isArray(state.memoryMoments)) state.memoryMoments = [];
       state.memoryMoments = state.memoryMoments.map(sanitizeMemoryMoment).filter(Boolean).slice(-50);
-      state.backupExportIncludeStory = data.backupExportIncludeStory !== false;
-      state.backupExportIncludeNotes = data.backupExportIncludeNotes !== false;
       state.bannerDismissedWeekly = typeof data.bannerDismissedWeekly === "string" ? data.bannerDismissedWeekly : "";
       state.romanceLastSeenDate = typeof data.romanceLastSeenDate === "string" ? data.romanceLastSeenDate : "";
       state.romanceConvoDate = typeof data.romanceConvoDate === "string" ? data.romanceConvoDate : "";
@@ -1620,42 +1511,6 @@ import {
       sessionRuntime.timerWallStartMs = null;
       sessionRuntime.pomoWallStartMs = null;
       clearUndoDelete();
-    }
-
-    function extractBackupPayload(root) {
-      if (!root || typeof root !== "object") throw new Error("형식이 올바르지 않습니다.");
-      if (root.payload && typeof root.payload === "object" && Array.isArray(root.payload.records)) {
-        return root.payload;
-      }
-      if (Array.isArray(root.records)) {
-        return root;
-      }
-      throw new Error("백업 payload(records)를 찾을 수 없습니다.");
-    }
-
-    function applyBackupPayload(payload) {
-      const v = validateBackupPayload(payload);
-      if (!v.ok) {
-        throw new Error("백업 검증 실패:\n" + v.errors.join("\n"));
-      }
-      hydrateStateFromPlainObject(payload);
-      resetRuntimeTimersAfterHydrate();
-      const sumRec = state.records.reduce((sum, r) => sum + Number(r.seconds || 0), 0);
-      const warns = [];
-      if (Math.abs(sumRec - Number(state.totalSeconds || 0)) > 0) {
-        warns.push("records 합계 초(" + sumRec + ")와 totalSeconds(" + state.totalSeconds + ")가 달라 records 기준으로 맞췄습니다.");
-        state.totalSeconds = sumRec;
-      }
-      const bl = Number(state.affectionBaselineSeconds || 0);
-      if (bl > state.totalSeconds) {
-        warns.push("affectionBaselineSeconds(" + bl + ")가 누적 공부보다 커서 " + state.totalSeconds + "로 맞췄습니다.");
-        state.affectionBaselineSeconds = state.totalSeconds;
-      }
-      if (warns.length) window.alert(warns.join("\n\n"));
-      recalcAffectionTotal();
-      tryUnlockEnding();
-      saveState();
-      render();
     }
 
     function playNotificationSound() {
@@ -1884,7 +1739,14 @@ import {
         const today = dateKey(new Date());
         if (allDailyGoalsMet(today)) {
           cheer.hidden = false;
-          cheer.innerHTML = "<span class='daily-goal-cheer-who'>인안나</span>" + escapeHtml(pickDailyCompleteCheerLine());
+          cheer.innerHTML =
+            "<div class='daily-goal-cheer-inner'>" +
+            "<span class='daily-goal-cheer-badge' aria-label='도전 과제 달성'>" + DAILY_QUEST_COMPLETE_SVG + "</span>" +
+            "<div class='daily-goal-cheer-copy'>" +
+            "<span class='daily-goal-cheer-who'>도전 과제 달성</span>" +
+            "<span class='daily-goal-cheer-from'>인안나</span>" +
+            "<p class='daily-goal-cheer-line'>" + escapeHtml(pickDailyCompleteCheerLine()) + "</p>" +
+            "</div></div>";
         } else {
           cheer.hidden = true;
           cheer.innerHTML = "";
@@ -2260,192 +2122,6 @@ import {
       });
     }
 
-    function csvEscapeCell(val) {
-      const s = String(val ?? "");
-      if (/[",\n\r]/.test(s)) {
-        return '"' + s.replace(/"/g, '""') + '"';
-      }
-      return s;
-    }
-
-    function parseCsvText(text) {
-      let t = text;
-      if (t.charCodeAt(0) === 0xfeff) t = t.slice(1);
-      const rows = [];
-      let row = [];
-      let field = "";
-      let i = 0;
-      let inQ = false;
-      while (i < t.length) {
-        const c = t[i];
-        if (inQ) {
-          if (c === '"') {
-            if (t[i + 1] === '"') {
-              field += '"';
-              i += 2;
-              continue;
-            }
-            inQ = false;
-            i++;
-            continue;
-          }
-          field += c;
-          i++;
-          continue;
-        }
-        if (c === '"') {
-          inQ = true;
-          i++;
-          continue;
-        }
-        if (c === ",") {
-          row.push(field);
-          field = "";
-          i++;
-          continue;
-        }
-        if (c === "\r" || c === "\n") {
-          if (c === "\r" && t[i + 1] === "\n") i++;
-          row.push(field);
-          rows.push(row);
-          row = [];
-          field = "";
-          i++;
-          continue;
-        }
-        field += c;
-        i++;
-      }
-      row.push(field);
-      if (row.length > 1 || (row.length === 1 && row[0] !== "")) {
-        rows.push(row);
-      }
-      return rows;
-    }
-
-    function buildRecordsCsv() {
-      const lines = ["date,seconds,quest,source,tag,note,startHour,intent"];
-      state.records.forEach((r) => {
-        lines.push(
-          [
-            csvEscapeCell(r.date),
-            String(Math.max(0, Math.round(Number(r.seconds || 0)))),
-            csvEscapeCell(r.quest || ""),
-            csvEscapeCell(r.source || ""),
-            csvEscapeCell(r.tag || ""),
-            csvEscapeCell(r.note || ""),
-            typeof r.startHour === "number" && r.startHour >= 0 && r.startHour <= 23 ? String(r.startHour) : "",
-            csvEscapeCell(r.intent || "")
-          ].join(",")
-        );
-      });
-      return "\uFEFF" + lines.join("\r\n");
-    }
-
-    function triggerTextDownload(filename, mime, body) {
-      const blob = new Blob([body], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
-    }
-
-    async function saveProgressToDisk() {
-      const stamp = dateKey(new Date());
-      const wrap = {
-        app: APP_DISPLAY_NAME,
-        schemaVersion: BACKUP_SCHEMA_VERSION,
-        format: "studyRomanceBackup_v2",
-        exportedAt: new Date().toISOString(),
-        payload: buildBackupPayloadForExport()
-      };
-      const text = JSON.stringify(wrap, null, 2);
-      const filename = "study-progress-" + stamp + ".json";
-      if (typeof window.showSaveFilePicker === "function") {
-        try {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [{ description: "JSON", accept: { "application/json": [".json"] } }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(text);
-          await writable.close();
-          return;
-        } catch (err) {
-          if (err && err.name === "AbortError") return;
-        }
-      }
-      triggerTextDownload(filename, "application/json", text);
-    }
-
-    function importRecordsFromCsvText(text) {
-      const rows = parseCsvText(text);
-      if (!rows.length) throw new Error("빈 파일입니다.");
-      const header = rows[0].map((cell) => String(cell).trim().toLowerCase());
-      const idx = (name) => header.indexOf(name);
-      const iDate = idx("date");
-      const iSec = idx("seconds");
-      const iMin = idx("minutes");
-      const iQuest = idx("quest");
-      const iSource = idx("source");
-      const iTag = idx("tag");
-      const iNote = idx("note");
-      const iStartHour = idx("starthour");
-      const iIntent = idx("intent");
-      if (iDate < 0) throw new Error("헤더에 date 열이 필요합니다.");
-      if (iSec < 0 && iMin < 0) throw new Error("헤더에 seconds 또는 minutes 열이 필요합니다.");
-      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
-      const out = [];
-      for (let r = 1; r < rows.length; r++) {
-        const cells = rows[r];
-        if (!cells || !cells.length || cells.every((c) => !String(c || "").trim())) continue;
-        const ds = String(cells[iDate] || "").trim();
-        if (!dateRe.test(ds)) continue;
-        const parsedD = new Date(ds + "T00:00:00");
-        if (Number.isNaN(parsedD.getTime()) || dateKey(parsedD) !== ds) continue;
-        let sec = 0;
-        if (iSec >= 0) {
-          sec = Math.round(Number(cells[iSec]));
-        } else {
-          sec = Math.round(Number(cells[iMin]) * 60);
-        }
-        if (!Number.isFinite(sec) || sec <= 0) continue;
-        out.push({
-          date: ds,
-          seconds: sec,
-          quest: iQuest >= 0 ? String(cells[iQuest] || "").trim() : "",
-          source: iSource >= 0 ? String(cells[iSource] || "").trim() || "csv-import" : "csv-import",
-          tag: iTag >= 0 ? String(cells[iTag] || "").trim().slice(0, 24) : "",
-          note: iNote >= 0 ? String(cells[iNote] || "").trim().slice(0, 200) : ""
-        });
-        if (iStartHour >= 0) {
-          const rawH = String(cells[iStartHour] == null ? "" : cells[iStartHour]).trim();
-          if (rawH !== "") {
-            const n = Math.round(Number(rawH));
-            if (Number.isFinite(n) && n >= 0 && n <= 23) out[out.length - 1].startHour = n;
-          }
-        }
-        if (iIntent >= 0) {
-          const li = String(cells[iIntent] || "").trim().slice(0, 120);
-          if (li) out[out.length - 1].intent = li;
-        }
-      }
-      if (!out.length) {
-        throw new Error("가져올 유효한 기록 행이 없습니다. date·seconds(또는 minutes)을 확인해 주세요.");
-      }
-      state.records = out.map((raw) => sanitizeRecordRow(raw)).filter(Boolean);
-      state.editingRecordIndex = -1;
-      state.totalSeconds = state.records.reduce((sum, x) => sum + Number(x.seconds || 0), 0);
-      recalcAffectionTotal();
-      tryUnlockEnding();
-      saveState();
-      render();
-    }
-
     function readHistoryFiltersFromDom() {
       const out = { from: "", to: "", tag: "", weekOnly: false, sort: "date-desc" };
       const f = $("historyFilterDateFrom");
@@ -2545,8 +2221,16 @@ import {
       }
     }
 
+    function normalizeMainTabId(tabId) {
+      if (tabId === "view") return "view";
+      if (tabId === "stats") return "stats";
+      return "record";
+    }
+
     function focusFirstInMainPanel(tabId) {
-      const root = tabId === "record" ? $("record") : tabId === "view" ? getPanelViewSection() : null;
+      const tab = normalizeMainTabId(tabId);
+      const root =
+        tab === "record" ? $("record") : tab === "stats" ? $("panelStats") : getPanelViewSection();
       if (!root) return;
       const el = root.querySelector(TAB_FOCUSABLE);
       if (el instanceof HTMLElement) {
@@ -2842,10 +2526,6 @@ import {
           ? "태그별 누적: " + rows.map((k) => k + " " + fmtHourMin(m[k])).join(" · ")
           : UI_EMPTY_TAGS;
       }
-      const bis = $("backupIncludeStoryChk");
-      if (bis && document.activeElement !== bis) bis.checked = state.backupExportIncludeStory !== false;
-      const bin = $("backupIncludeNotesChk");
-      if (bin && document.activeElement !== bin) bin.checked = state.backupExportIncludeNotes !== false;
       const autoTog = $("autoTogetherLineChk");
       if (autoTog && document.activeElement !== autoTog) autoTog.checked = state.autoTogetherLineOnSave !== false;
       const stageCueChk = $("stageCueSoundChk");
@@ -2880,6 +2560,8 @@ import {
       if (recordGreeting) recordGreeting.textContent = "안녕하세요, " + displayName + "님";
       const recordHeroDate = $("recordHeroDate");
       if (recordHeroDate) recordHeroDate.textContent = formatVnHudDate();
+      const statsHeroDate = $("statsHeroDate");
+      if (statsHeroDate) statsHeroDate.textContent = formatVnHudDate();
       const recordRailName = $("recordRailName");
       if (recordRailName) recordRailName.textContent = displayName;
       const recordRailAvatar = $("recordRailAvatar");
@@ -3113,11 +2795,14 @@ import {
     }
 
     function applyMainTabToDom() {
-      const tabId = state.uiMainTab === "view" ? "view" : "record";
+      const tabId = normalizeMainTabId(state.uiMainTab);
+      state.uiMainTab = tabId;
       const recR = document.getElementById("studyMainTabRecord");
+      const stR = document.getElementById("studyMainTabStats");
       const viR = document.getElementById("studyMainTabView");
-      if (recR && viR) {
-        recR.checked = tabId !== "view";
+      if (recR && stR && viR) {
+        recR.checked = tabId === "record";
+        stR.checked = tabId === "stats";
         viR.checked = tabId === "view";
       }
       document.querySelectorAll(".tabs > .tab-btn").forEach((b) => {
@@ -3128,15 +2813,30 @@ import {
       });
       document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
       const rec = document.getElementById("record");
+      const st = document.getElementById("panelStats");
       const vi = getPanelViewSection();
-      const panel = tabId === "record" ? rec : vi;
+      const panel = tabId === "record" ? rec : tabId === "stats" ? st : vi;
       if (panel) panel.classList.add("active");
       if (rec) rec.setAttribute("aria-hidden", tabId === "record" ? "false" : "true");
+      if (st) st.setAttribute("aria-hidden", tabId === "stats" ? "false" : "true");
       if (vi) vi.setAttribute("aria-hidden", tabId === "view" ? "false" : "true");
+      syncRecordRailActiveTab(tabId);
+    }
+
+    function syncRecordRailActiveTab(tabId) {
+      document.querySelectorAll(".record-rail-tab").forEach((b) => {
+        const rail = b.getAttribute("data-record-rail");
+        const go = b.getAttribute("data-go-tab");
+        let active = false;
+        if (tabId === "record") active = rail === "dashboard";
+        else if (tabId === "stats") active = go === "stats";
+        else if (tabId === "view") active = go === "view";
+        b.classList.toggle("active", active);
+      });
     }
 
     function activateTab(tabId) {
-      state.uiMainTab = tabId === "view" ? "view" : "record";
+      state.uiMainTab = normalizeMainTabId(tabId);
       applyMainTabToDom();
     }
 
@@ -3203,10 +2903,10 @@ import {
 
     function paintOnboardingStep() {
       const bodies = [
-        "「너의 옆자리」는 기록 탭에서 포모·타이머로 집중 시간을 쌓고, 보기 탭에서 인안나와의 대사·호감도·스토리 로그를 이어 가요.",
-        "집중은 기록 탭의 목표·타이머·포모 카드에서 바로 시작할 수 있어요. Alt+1 / Alt+2로 탭을, Home / End로도 기록↔보기를 옮길 수 있어요.",
+        "「너의 옆자리」는 기록 탭에서 포모·타이머로 집중 시간을 쌓고, 통계 탭에서 기록·그래프를 보고, 보기 탭에서 인안나와의 대사·스토리를 이어 가요.",
+        "집중은 기록 탭의 목표·타이머·포모 카드에서 바로 시작할 수 있어요. Alt+1 기록 · Alt+2 통계 · Alt+3 보기, Home / End로도 탭을 옮길 수 있어요.",
         "공부 시간이 쌓이면 호감도가 오르고, 가끔 짧은 대화 이벤트가 열려요. 스토리 탭에서 지금까지의 흐름을 다시 볼 수 있어요.",
-        "데이터는 이 브라우저 안(localStorage)에만 저장돼요. 아래 JSON 백업을 가끔 내려 받아 두면 기기를 바꿔도 안심이에요."
+        "데이터는 이 브라우저 안(localStorage)에만 저장돼요. 브라우저 데이터를 지우면 기록이 사라질 수 있어요."
       ];
       const b = $("onboardingBody");
       const ind = $("onboardingStepInd");
@@ -3282,8 +2982,12 @@ import {
           }
           if (e.code === "Digit2" || e.code === "Numpad2") {
             e.preventDefault();
-            const btn = $("tabBtnView");
-            if (btn) btn.click();
+            $("tabBtnStats")?.click();
+            return;
+          }
+          if (e.code === "Digit3" || e.code === "Numpad3") {
+            e.preventDefault();
+            $("tabBtnView")?.click();
             return;
           }
           if (e.code === "KeyP") {
@@ -3306,7 +3010,7 @@ import {
       });
     }
 
-    /* ===== JS §5 Tabs, actions, keyboard, CSV/JSON ===== */
+    /* ===== JS §5 Tabs, actions, keyboard ===== */
     function setupViewSubTabsDelegation() {
       if (document.documentElement.dataset.studyViewSubBound === "1") return;
       document.documentElement.dataset.studyViewSubBound = "1";
@@ -3353,25 +3057,18 @@ import {
       if (document.documentElement.dataset.studyMainTabSync === "1") return;
       document.documentElement.dataset.studyMainTabSync = "1";
       const recR = document.getElementById("studyMainTabRecord");
+      const stR = document.getElementById("studyMainTabStats");
       const viR = document.getElementById("studyMainTabView");
-      if (!recR || !viR) return;
+      if (!recR || !stR || !viR) return;
       const onRadioChange = () => {
-        state.uiMainTab = viR.checked ? "view" : "record";
+        state.uiMainTab = viR.checked ? "view" : stR.checked ? "stats" : "record";
         applyMainTabToDom();
-        if (state.uiMainTab === "record") {
-          document.querySelectorAll(".record-rail-tab").forEach((b) => {
-            b.classList.toggle("active", b.getAttribute("data-record-rail") === "dashboard");
-          });
-        } else {
-          document.querySelectorAll(".record-rail-tab").forEach((b) => {
-            b.classList.toggle("active", b.getAttribute("data-go-tab") === "view");
-          });
-        }
         saveState();
         render();
         focusFirstInMainPanel(state.uiMainTab);
       };
       recR.addEventListener("change", onRadioChange);
+      stR.addEventListener("change", onRadioChange);
       viR.addEventListener("change", onRadioChange);
     }
 
@@ -3527,8 +3224,10 @@ import {
           const tab = btn.getAttribute("data-go-tab");
           if (!tab) return;
           activateTab(tab);
-          document.querySelectorAll(".record-rail-tab").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
+          const statsHero = $("panelStats")?.querySelector(".stats-hero");
+          if (tab === "stats" && statsHero) {
+            statsHero.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
           render();
           focusFirstInMainPanel(tab);
         });
@@ -3536,8 +3235,6 @@ import {
       document.querySelectorAll(".record-rail-tab[data-record-rail='dashboard']").forEach((btn) => {
         btn.addEventListener("click", () => {
           activateTab("record");
-          document.querySelectorAll(".record-rail-tab").forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
           const hero = document.querySelector(".record-hero");
           if (hero) hero.scrollIntoView({ behavior: "smooth", block: "start" });
           render();
@@ -3676,104 +3373,6 @@ import {
         saveState();
       });
 
-      $("saveProgressDiskBtn")?.addEventListener("click", () => {
-        saveProgressToDisk();
-      });
-
-      const exportJsonBtn = $("exportBackupJsonBtn");
-      if (exportJsonBtn) {
-        exportJsonBtn.addEventListener("click", () => {
-          const stamp = dateKey(new Date());
-          const wrap = {
-            app: APP_DISPLAY_NAME,
-            schemaVersion: BACKUP_SCHEMA_VERSION,
-            format: "studyRomanceBackup_v2",
-            exportedAt: new Date().toISOString(),
-            payload: buildBackupPayloadForExport()
-          };
-          triggerTextDownload("study-backup-" + stamp + ".json", "application/json", JSON.stringify(wrap, null, 2));
-        });
-      }
-      const exportCsvBtn = $("exportBackupCsvBtn");
-      if (exportCsvBtn) {
-        exportCsvBtn.addEventListener("click", () => {
-          const stamp = dateKey(new Date());
-          triggerTextDownload("study-records-" + stamp + ".csv", "text/csv;charset=utf-8", buildRecordsCsv());
-        });
-      }
-      const importJsonInput = $("importBackupJsonInput");
-      if (importJsonInput) {
-        importJsonInput.addEventListener("change", (ev) => {
-          const input = ev.target;
-          const file = input.files && input.files[0];
-          input.value = "";
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            try {
-              const text = String(reader.result || "");
-              const parsed = JSON.parse(text);
-              const payload = extractBackupPayload(parsed);
-              const v = validateBackupPayload(payload);
-              if (!v.ok) {
-                window.alert("백업 검증에 실패했습니다.\n" + v.errors.join("\n"));
-                return;
-              }
-              if (!window.confirm("이 기기의 저장 데이터를 백업 파일로 교체할까요? (되돌리려면 먼저 JSON으로 보내 두세요.)")) return;
-              applyBackupPayload(payload);
-            } catch (err) {
-              window.alert("JSON을 읽지 못했습니다. " + (err && err.message ? err.message : ""));
-            }
-          };
-          reader.readAsText(file, "UTF-8");
-        });
-      }
-      const importCsvInput = $("importBackupCsvInput");
-      if (importCsvInput) {
-        importCsvInput.addEventListener("change", (ev) => {
-          const input = ev.target;
-          const file = input.files && input.files[0];
-          input.value = "";
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            try {
-              if (!window.confirm("공부 기록만 CSV 내용으로 교체합니다. 이름·스토리 등은 유지됩니다. 계속할까요?")) return;
-              importRecordsFromCsvText(String(reader.result || ""));
-            } catch (err) {
-              window.alert("CSV를 읽지 못했습니다. " + (err && err.message ? err.message : ""));
-            }
-          };
-          reader.readAsText(file, "UTF-8");
-        });
-      }
-
-      const importMergeJsonInput = $("importMergeJsonInput");
-      if (importMergeJsonInput) {
-        importMergeJsonInput.addEventListener("change", (ev) => {
-          const input = ev.target;
-          const file = input.files && input.files[0];
-          input.value = "";
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            try {
-              const parsed = JSON.parse(String(reader.result || ""));
-              const payload = extractBackupPayload(parsed);
-              if (!window.confirm("가져온 JSON의 공부 기록만 현재 기록 뒤에 합칩니다. 이름·스토리·호감도 등은 이 기기 값이 유지됩니다. 계속할까요?")) return;
-              const added = mergeRecordsOnlyFromPayload(payload);
-              recalcFromRecords();
-              saveState();
-              render();
-              window.alert("합친 새 기록 " + added + "건. (완전 동일한 행은 생략)");
-            } catch (err) {
-              window.alert("병합에 실패했습니다. " + (err && err.message ? err.message : ""));
-            }
-          };
-          reader.readAsText(file, "UTF-8");
-        });
-      }
-
       const copyWeeklyReportBtn = $("copyWeeklyReportBtn");
       if (copyWeeklyReportBtn) {
         copyWeeklyReportBtn.addEventListener("click", async () => {
@@ -3811,21 +3410,6 @@ import {
           if (inp) inp.value = "";
           saveState();
           render();
-        });
-      }
-
-      const backupStoryChk = $("backupIncludeStoryChk");
-      if (backupStoryChk) {
-        backupStoryChk.addEventListener("change", () => {
-          state.backupExportIncludeStory = backupStoryChk.checked;
-          saveState();
-        });
-      }
-      const backupNotesChk = $("backupIncludeNotesChk");
-      if (backupNotesChk) {
-        backupNotesChk.addEventListener("change", () => {
-          state.backupExportIncludeNotes = backupNotesChk.checked;
-          saveState();
         });
       }
 

@@ -43,8 +43,6 @@ const EXPECTED_KEYS = [
   "dailyChecklistItems",
   "dailyChecklistChecked",
   "memoryMoments",
-  "backupExportIncludeStory",
-  "backupExportIncludeNotes",
   "bannerDismissedWeekly",
   "romanceLastSeenDate",
   "romanceConvoDate",

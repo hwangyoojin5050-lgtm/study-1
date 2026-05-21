@@ -1,5 +1,5 @@
 /**
- * index.html 로직과 맞출 것: 호감도 곡선, CSV 파서, 초기화 시나리오 스모크.
+ * index.html 로직과 맞출 것: 호감도 곡선, 레코드 정규화, 초기화 시나리오 스모크.
  * 실행: node tests/regression.mjs
  */
 
@@ -33,70 +33,6 @@ const baseline = totalBig - oneHour;
 const newStyle = affectionFromStudyOnly(totalBig, baseline, 0);
 assert(newStyle === aff1h, "기준선 직후 1시간은 calc(1시간)과 같아야 함 (곡선 앞구간 재적용)");
 
-// --- parseCsvText (index.html와 동일 알고리즘) ---
-function parseCsvText(text) {
-  let t = text;
-  if (t.charCodeAt(0) === 0xfeff) t = t.slice(1);
-  const rows = [];
-  let row = [];
-  let field = "";
-  let i = 0;
-  let inQ = false;
-  while (i < t.length) {
-    const c = t[i];
-    if (inQ) {
-      if (c === '"') {
-        if (t[i + 1] === '"') {
-          field += '"';
-          i += 2;
-          continue;
-        }
-        inQ = false;
-        i++;
-        continue;
-      }
-      field += c;
-      i++;
-      continue;
-    }
-    if (c === '"') {
-      inQ = true;
-      i++;
-      continue;
-    }
-    if (c === ",") {
-      row.push(field);
-      field = "";
-      i++;
-      continue;
-    }
-    if (c === "\r" || c === "\n") {
-      if (c === "\r" && t[i + 1] === "\n") i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-      i++;
-      continue;
-    }
-    field += c;
-    i++;
-  }
-  row.push(field);
-  if (row.length > 1 || (row.length === 1 && row[0] !== "")) {
-    rows.push(row);
-  }
-  return rows;
-}
-
-const bom = "\uFEFFdate,seconds\n2026-01-02,60";
-const r0 = parseCsvText(bom);
-assert(r0[0][0] === "date" && r0[1][1] === "60", "BOM + 단순 행");
-
-const quoted = 'a,"b""c",d\n';
-const r1 = parseCsvText(quoted);
-assert(r1.length === 1 && r1[0][1] === 'b"c' && r1[0][2] === "d", "따옴표 이스케이프");
-
 function sanitizeRecordRow(r) {
   if (!r || typeof r !== "object") return null;
   const date = String(r.date || "").trim();
@@ -125,9 +61,6 @@ function sanitizeRecordRow(r) {
 const longIntent = "가".repeat(200);
 const sr = sanitizeRecordRow({ date: "2026-05-12", seconds: 60, intent: longIntent, startHour: "14", tag: "t".repeat(40) });
 assert(sr && sr.intent.length === 120 && sr.startHour === 14 && sr.tag.length === 24, "sanitize intent·startHour·tag");
-
-const csvExtra = parseCsvText("date,seconds,startHour,intent\n2026-01-15,120,9,짧은메모");
-assert(csvExtra.length === 2 && csvExtra[1][2] === "9" && csvExtra[1][3] === "짧은메모", "CSV intent·startHour 열");
 
 function dateKey(d) {
   const y = d.getFullYear();

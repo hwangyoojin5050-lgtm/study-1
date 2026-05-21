@@ -1,13 +1,10 @@
 /**
  * 저장소 키·표시 이름·스키마 버전·레코드/회상 정규화.
- * 로컬 저장 객체와 백업 래퍼의 schemaVersion은 역할이 다릅니다.
  */
 export const STORAGE_KEY = "studyRomanceAppData_v1";
 export const APP_DISPLAY_NAME = "너의 옆자리";
 /** localStorage / gatherPersistedState 페이로드 버전 */
 export const PERSIST_SCHEMA_VERSION = 2;
-/** JSON 파일 백업 래퍼(schemaVersion) — 기존 백업과 호환 */
-export const BACKUP_SCHEMA_VERSION = 2;
 
 export function sanitizeRecordRow(r) {
   if (!r || typeof r !== "object") return null;
