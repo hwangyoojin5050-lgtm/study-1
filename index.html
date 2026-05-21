@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
-  <meta name="theme-color" content="#E8A6B3" />
+  <meta name="theme-color" content="#E85A9A" />
   <!-- file:// 에서는 manifest GET 이 net::ERR_FAILED 로 떨어지는 경우가 많아, 로컬 서버일 때만 연결합니다. -->
   <script>
     (function () {
@@ -20,49 +20,72 @@
   <title>너의 옆자리</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* ===== 로맨틱 파스텔 (#E8A6B3 · #F7C9D3 · #B5ABCC · #B8D7EE) ===== */
+    /* ===== 무드보드: Romantic aesthetic + Y2K pop 포인트 ===== */
     :root {
-      --romance-rose: #e8a6b3;
-      --romance-blush: #f7c9d3;
-      --romance-lavender: #b5abcc;
-      --romance-sky: #b8d7ee;
-      --indigo-night: #2d2640;
-      --ocean-noir: rgba(45, 38, 58, 0.18);
-      --berry-wine: #c95678;
-      --dusty-rose: #e8a6b3;
-      --pale-ash: #1a1520;
+      --mood-dusty-rose: #c9897a;
+      --mood-peach: #e8b4a4;
+      --mood-blush: #fce8e4;
+      --mood-cream: #faf5f1;
+      --mood-sage: #8fa892;
+      --mood-lavender: #c4b4d8;
+      --mood-sky: #c8d8f0;
+      --mood-mauve: #9b7a8f;
+      --mood-crimson: #a8435c;
+      --mood-y2k-pink: #e85a9a;
+      --mood-y2k-magenta: #d946a0;
+      --mood-y2k-peach: #ffb8a8;
+      --romance-rose: var(--mood-dusty-rose);
+      --romance-blush: var(--mood-blush);
+      --romance-lavender: var(--mood-lavender);
+      --romance-sky: var(--mood-sky);
+      --indigo-night: #4a3548;
+      --ocean-noir: rgba(168, 67, 92, 0.22);
+      --berry-wine: var(--mood-crimson);
+      --dusty-rose: var(--mood-dusty-rose);
+      --pale-ash: #3d2a35;
       --bg: transparent;
-      --bg-glow: rgba(255, 255, 255, 0.45);
-      --card: rgba(255, 255, 255, 0.78);
-      --card-2: rgba(255, 255, 255, 0.62);
-      --accent: #c95678;
-      --accent-soft: #9b7aa8;
-      --accent-2: rgba(45, 38, 58, 0.35);
-      --text: #1e1a24;
-      --muted: #5a4f68;
-      --ok: #3d7a5c;
-      --surface-line: rgba(45, 38, 58, 0.12);
-      --library-grape: #6b5a78;
-      --library-khaki: #5a4f68;
-      --library-yellow: rgba(247, 201, 211, 0.55);
-      --library-cream: rgba(255, 255, 255, 0.75);
-      --library-ink: #1a1520;
-      --field-fill: rgba(255, 255, 255, 0.95);
-      --field-ink: #1e1a24;
+      --bg-glow: rgba(255, 252, 250, 0.55);
+      --card: rgba(255, 252, 250, 0.82);
+      --card-2: rgba(252, 240, 236, 0.72);
+      --accent: var(--mood-crimson);
+      --accent-soft: var(--mood-mauve);
+      --accent-y2k: var(--mood-y2k-pink);
+      --accent-2: rgba(74, 53, 72, 0.28);
+      --text: #3d2a35;
+      --muted: #7a6570;
+      --ok: var(--mood-sage);
+      --surface-line: rgba(201, 137, 122, 0.28);
+      --library-grape: #7d5c72;
+      --library-khaki: #7a6570;
+      --library-yellow: rgba(255, 184, 168, 0.45);
+      --library-cream: rgba(255, 252, 250, 0.88);
+      --library-ink: #3d2a35;
+      --field-fill: rgba(255, 255, 255, 0.92);
+      --field-ink: #3d2a35;
+      --shadow-soft: 0 14px 40px rgba(168, 67, 92, 0.1);
+      --shadow-card: 0 10px 32px rgba(125, 92, 114, 0.12);
+      --gradient-iridescent: linear-gradient(135deg, var(--mood-y2k-peach) 0%, var(--mood-y2k-pink) 38%, var(--mood-lavender) 72%, var(--mood-sky) 100%);
+      --gradient-romantic: linear-gradient(148deg, var(--mood-blush) 0%, var(--mood-peach) 42%, var(--mood-dusty-rose) 100%);
+      --gradient-primary: linear-gradient(135deg, var(--mood-peach) 0%, var(--mood-y2k-pink) 45%, var(--mood-crimson) 100%);
     }
     html[data-theme="romance"] .card {
-      border-color: rgba(140, 128, 97, 0.32);
-      box-shadow: 0 10px 28px rgba(49, 44, 50, 0.1);
+      border-color: var(--surface-line);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
     html[data-theme="romance"] .card h3,
     html[data-theme="romance"] .record-rail-brand,
     html[data-theme="romance"] .bento-card h3,
+    html[data-theme="romance"] .stats-hero-title,
     html[data-theme="romance"] .record-hero-title,
     html[data-theme="romance"] .habit-streak-num,
     html[data-theme="romance"] .habit-month-val {
+      font-family: "Cormorant Garamond", "Noto Serif KR", Georgia, serif;
       color: var(--library-ink);
+      letter-spacing: 0.01em;
     }
     html[data-theme="romance"] .big-time {
       color: var(--library-ink);
@@ -75,8 +98,8 @@
     }
     html[data-theme="romance"] input:focus,
     html[data-theme="romance"] textarea:focus {
-      border-color: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 0 0 2px rgba(232, 166, 179, 0.55);
+      border-color: var(--mood-y2k-pink);
+      box-shadow: 0 0 0 3px rgba(232, 90, 154, 0.28);
     }
     html[data-theme="romance"] label {
       color: var(--library-khaki);
@@ -84,8 +107,8 @@
     html[data-theme="romance"] .habit-block,
     html[data-theme="romance"] .story-summary-box,
     html[data-theme="romance"] .stat {
-      background: rgba(255, 252, 247, 0.9);
-      border-color: rgba(140, 128, 97, 0.32);
+      background: var(--library-cream);
+      border-color: var(--surface-line);
     }
     html[data-theme="romance"] .ux-toolbar {
       background: rgba(255, 255, 255, 0.22);
@@ -115,103 +138,107 @@
       background: rgba(255, 255, 255, 0.5);
     }
     html[data-theme="romance"] .tab-btn.active {
-      color: var(--field-ink);
-      border-color: rgba(255, 255, 255, 0.55);
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(247, 201, 211, 0.55) 48%, rgba(181, 171, 204, 0.6) 100%);
-      box-shadow: 0 6px 24px rgba(61, 48, 72, 0.15);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.65);
+      background: var(--gradient-primary);
+      box-shadow: 0 8px 28px rgba(232, 90, 154, 0.28);
     }
     html[data-theme="romance"] .btn {
       color: var(--field-ink);
-      background: linear-gradient(175deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.78) 100%);
-      border-color: rgba(255, 255, 255, 0.45);
+      background: linear-gradient(175deg, rgba(255, 255, 255, 0.94) 0%, rgba(252, 240, 236, 0.88) 100%);
+      border-color: var(--surface-line);
     }
     html[data-theme="romance"] .btn.primary {
-      background: linear-gradient(135deg, #e8a6b3 0%, #c95678 52%, #9b7aa8 100%);
+      background: var(--gradient-primary);
       color: #ffffff;
-      border-color: rgba(45, 38, 58, 0.12);
+      border-color: rgba(168, 67, 92, 0.2);
+      box-shadow: 0 6px 20px rgba(232, 90, 154, 0.25);
     }
     html[data-theme="romance"] .btn.secondary {
-      background: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.78);
       color: var(--text);
-      border-color: rgba(45, 38, 58, 0.14);
+      border-color: var(--surface-line);
     }
     html[data-theme="romance"] .btn.success {
-      background: linear-gradient(135deg, #7ab89a 0%, #5a9278 100%);
+      background: linear-gradient(135deg, #a8c4ad 0%, var(--mood-sage) 100%);
       color: #ffffff;
-      border-color: rgba(45, 38, 58, 0.12);
+      border-color: rgba(143, 168, 146, 0.35);
     }
     html[data-theme="romance"] .habit-ring {
       background: conic-gradient(
-        #59426e calc(var(--goal-p) * 1%),
-        rgba(140, 128, 97, 0.22) 0
+        var(--mood-y2k-pink) calc(var(--goal-p) * 1%),
+        rgba(201, 137, 122, 0.2) 0
       );
     }
     html[data-theme="romance"] .habit-ring-hole {
       color: var(--text);
-      background: linear-gradient(168deg, #fffcf7 0%, #f3e2a9 100%);
+      background: var(--gradient-romantic);
     }
     html[data-theme="romance"] .record-rail {
-      background: linear-gradient(168deg, rgba(243, 226, 169, 0.55) 0%, rgba(238, 232, 224, 0.95) 100%);
+      background: var(--gradient-romantic);
+      border: 1px solid var(--surface-line);
     }
     html[data-theme="romance"] .record-rail-tab {
       color: var(--text);
     }
     html[data-theme="romance"] .record-rail-tab.active {
-      color: rgba(255, 255, 255, 0.96);
-      background: linear-gradient(165deg, #6d5288 0%, #59426e 100%);
-      border-color: rgba(49, 44, 50, 0.12);
+      color: #fff;
+      background: var(--gradient-primary);
+      border-color: rgba(168, 67, 92, 0.15);
+      box-shadow: 0 4px 16px rgba(232, 90, 154, 0.2);
     }
     html[data-theme="romance"] .record-rail-avatar {
-      background: linear-gradient(135deg, #8c8061 0%, #59426e 100%);
-      color: rgba(255, 255, 255, 0.96);
-      border-color: rgba(140, 128, 97, 0.45);
+      background: var(--gradient-iridescent);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.55);
     }
     html[data-theme="romance"] .story-reset-row .btn.danger {
-      background: linear-gradient(135deg, #6b3d55 0%, #59426e 100%);
-      color: rgba(255, 255, 255, 0.96);
-      border-color: rgba(49, 44, 50, 0.12);
+      background: linear-gradient(135deg, var(--mood-mauve) 0%, var(--mood-crimson) 100%);
+      color: #fff;
+      border-color: rgba(168, 67, 92, 0.2);
     }
     html[data-theme="romance"] .story-chapter {
-      background: rgba(255, 252, 247, 0.88);
-      border-color: rgba(140, 128, 97, 0.26);
-      border-left-color: rgba(89, 66, 110, 0.55);
+      background: var(--library-cream);
+      border-color: var(--surface-line);
+      border-left-color: var(--mood-y2k-pink);
     }
     html[data-theme="romance"] .story-chapter--done {
-      border-left-color: rgba(93, 128, 111, 0.95);
+      border-left-color: var(--mood-sage);
     }
     html[data-theme="romance"] .story-today-journal {
-      border-color: rgba(89, 66, 110, 0.42);
-      background: rgba(243, 226, 169, 0.42);
+      border-color: rgba(232, 90, 154, 0.35);
+      background: rgba(252, 232, 228, 0.65);
     }
     html[data-theme="romance"] .vn-backdrop {
       background:
-        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(243, 226, 169, 0.35) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 45% at 85% 100%, rgba(89, 66, 110, 0.12) 0%, transparent 50%),
-        linear-gradient(180deg, rgba(245, 240, 232, 0.55) 0%, rgba(238, 232, 224, 0.92) 100%);
+        radial-gradient(ellipse 90% 70% at 50% 0%, rgba(255, 184, 168, 0.4) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 45% at 85% 100%, rgba(196, 180, 216, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 10% 80%, rgba(232, 90, 154, 0.12) 0%, transparent 45%),
+        linear-gradient(180deg, rgba(252, 232, 228, 0.55) 0%, rgba(250, 245, 241, 0.94) 100%);
     }
     html[data-theme="romance"] .vn-stat-box {
-      border-color: rgba(140, 128, 97, 0.45);
-      background: rgba(255, 252, 247, 0.88);
+      border-color: var(--surface-line);
+      background: var(--library-cream);
     }
     html[data-theme="romance"] .vn-date-line {
       color: var(--muted);
-      border-color: rgba(140, 128, 97, 0.35);
-      background: rgba(243, 226, 169, 0.35);
+      border-color: var(--surface-line);
+      background: rgba(252, 232, 228, 0.5);
     }
     html[data-theme="romance"] .vn-dialogue-inner {
-      border-color: rgba(140, 128, 97, 0.45);
+      border-color: var(--surface-line);
       background:
-        radial-gradient(circle at 14% 18%, rgba(243, 226, 169, 0.35) 0%, transparent 42%),
-        radial-gradient(circle at 88% 12%, rgba(89, 66, 110, 0.1) 0%, transparent 38%),
-        linear-gradient(180deg, rgba(255, 252, 247, 0.92) 0%, rgba(238, 232, 224, 0.96) 100%);
+        radial-gradient(circle at 14% 18%, rgba(255, 184, 168, 0.35) 0%, transparent 42%),
+        radial-gradient(circle at 88% 12%, rgba(196, 180, 216, 0.25) 0%, transparent 38%),
+        linear-gradient(180deg, rgba(255, 252, 250, 0.92) 0%, rgba(252, 240, 236, 0.96) 100%);
     }
     html[data-theme="romance"] .vn-dialogue-text {
       color: var(--field-ink);
     }
     html[data-theme="romance"] .vn-nameplate {
-      background: linear-gradient(135deg, #6d5288 0%, #59426e 100%);
-      color: rgba(255, 255, 255, 0.96);
-      border-color: rgba(140, 128, 97, 0.4);
+      background: var(--gradient-primary);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.45);
     }
     html[data-theme="romance"] .vn-meta-block {
       border-top-color: rgba(140, 128, 97, 0.28);
@@ -227,19 +254,19 @@
       background: rgba(255, 252, 247, 0.95);
     }
     html[data-theme="romance"] .vn-choice-head {
-      background: linear-gradient(165deg, #6d5288 0%, #59426e 100%);
-      color: rgba(255, 255, 255, 0.96);
-      border-bottom-color: rgba(140, 128, 97, 0.3);
+      background: var(--gradient-primary);
+      color: #fff;
+      border-bottom-color: var(--surface-line);
     }
     html[data-theme="romance"] .vn-npc-line {
       color: var(--field-ink);
-      background: rgba(243, 226, 169, 0.25);
-      border-bottom-color: rgba(140, 128, 97, 0.22);
+      background: rgba(252, 232, 228, 0.4);
+      border-bottom-color: var(--surface-line);
     }
     html[data-theme="romance"] .vn-choice-item {
       color: var(--field-ink);
-      background: linear-gradient(180deg, #fffcf7 0%, #f3e2a9 100%);
-      border-bottom-color: rgba(140, 128, 97, 0.22);
+      background: var(--gradient-romantic);
+      border-bottom-color: var(--surface-line);
     }
     html[data-theme="romance"] .vn-choice-item:hover {
       filter: brightness(0.98);
@@ -249,42 +276,61 @@
       background: rgba(255, 252, 247, 0.95);
     }
     html[data-theme="romance"] .ending-panel {
-      border-color: rgba(89, 66, 110, 0.45);
-      background: linear-gradient(160deg, rgba(243, 226, 169, 0.35) 0%, rgba(255, 252, 247, 0.75) 100%);
+      border-color: rgba(232, 90, 154, 0.35);
+      background: linear-gradient(160deg, rgba(252, 232, 228, 0.55) 0%, rgba(255, 252, 250, 0.85) 100%);
     }
     html[data-theme="romance"] .ending-panel h4 {
-      color: #483556;
+      font-family: "Cormorant Garamond", "Noto Serif KR", Georgia, serif;
+      color: var(--library-ink);
     }
     html[data-theme="romance"] .heart-meter {
-      background: linear-gradient(92deg, #8c8061 0%, #59426e 50%, #a89772 100%);
+      background: var(--gradient-iridescent);
     }
     html[data-theme="romance"] .story-portrait-gallery h4.story-portrait-heading {
       color: var(--library-ink);
     }
     html[data-theme="romance"] .story-portrait-card {
-      border-color: rgba(140, 128, 97, 0.38);
+      border-color: var(--surface-line);
+      box-shadow: var(--shadow-soft);
     }
     html[data-theme="romance"] .inline-edit {
-      background: rgba(255, 252, 247, 0.88);
-      border-color: rgba(140, 128, 97, 0.28);
+      background: var(--library-cream);
+      border-color: var(--surface-line);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Noto Sans KR", "Segoe UI", sans-serif;
-      background-color: var(--romance-sky);
+      background-color: var(--mood-blush);
       background-image:
-        radial-gradient(ellipse 110% 85% at 0% 0%, rgba(184, 215, 238, 0.95) 0%, transparent 55%),
-        radial-gradient(ellipse 90% 75% at 100% 8%, rgba(247, 201, 211, 0.85) 0%, transparent 52%),
-        radial-gradient(ellipse 70% 60% at 50% 100%, rgba(181, 171, 204, 0.88) 0%, transparent 58%),
-        radial-gradient(ellipse 55% 50% at 18% 55%, rgba(232, 166, 179, 0.65) 0%, transparent 48%),
-        linear-gradient(168deg, #b8d7ee 0%, #f7c9d3 38%, #e8a6b3 68%, #b5abcc 100%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 100%);
+        radial-gradient(ellipse 100% 80% at 0% 0%, rgba(200, 216, 240, 0.75) 0%, transparent 52%),
+        radial-gradient(ellipse 85% 70% at 100% 5%, rgba(255, 184, 168, 0.7) 0%, transparent 50%),
+        radial-gradient(ellipse 65% 55% at 88% 92%, rgba(232, 90, 154, 0.22) 0%, transparent 48%),
+        radial-gradient(ellipse 70% 60% at 12% 88%, rgba(196, 180, 216, 0.55) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 45% at 50% 42%, rgba(252, 232, 228, 0.9) 0%, transparent 62%),
+        linear-gradient(168deg, #c8d8f0 0%, #fce8e4 32%, #e8b4a4 58%, #c4b4d8 82%, #c9897a 100%),
+        linear-gradient(180deg, rgba(255, 252, 250, 0.5) 0%, rgba(255, 252, 250, 0.12) 100%);
       background-attachment: fixed;
       color: var(--text);
       min-height: 100vh;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.32;
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.95) 1px, transparent 1.6px),
+        radial-gradient(circle, rgba(232, 90, 154, 0.35) 1px, transparent 2px);
+      background-size: 56px 56px, 84px 84px;
+      background-position: 0 0, 28px 40px;
     }
     .app {
+      position: relative;
+      z-index: 1;
       max-width: 1120px;
       margin: 0 auto;
       padding: 16px;
@@ -348,11 +394,13 @@
       border-color: rgba(114, 15, 50, 0.45);
     }
     html[data-theme="romance"] .insight-banner--ok {
-      background: rgba(93, 128, 111, 0.2);
+      background: rgba(143, 168, 146, 0.22);
+      border-color: rgba(143, 168, 146, 0.45);
       color: var(--library-ink);
     }
     html[data-theme="romance"] .insight-banner--warn {
-      background: rgba(114, 15, 50, 0.12);
+      background: rgba(232, 90, 154, 0.14);
+      border-color: rgba(168, 67, 92, 0.35);
       color: var(--library-ink);
     }
     .user-reaction-row {
@@ -389,10 +437,10 @@
       border: 1px solid rgba(45, 38, 58, 0.12);
     }
     .tab-btn.active {
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0%, rgba(247, 201, 211, 0.55) 45%, rgba(181, 171, 204, 0.65) 100%);
-      color: var(--field-ink);
+      background: var(--gradient-primary);
+      color: #fff;
       border-color: rgba(255, 255, 255, 0.55);
-      box-shadow: 0 6px 22px rgba(92, 74, 104, 0.18);
+      box-shadow: 0 8px 26px rgba(232, 90, 154, 0.22);
     }
     .tabs > label.tab-btn {
       display: inline-flex;
@@ -451,7 +499,9 @@
       border: 1px solid var(--surface-line);
       border-radius: 16px;
       padding: 14px;
-      box-shadow: 0 12px 36px rgba(61, 48, 72, 0.12);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     /* ===== §2 Record tab — shell, bento, habits (색·폰트 토큰 유지) ===== */
     .record-shell {
@@ -552,10 +602,10 @@
     }
     .record-hero-title {
       margin: 0;
-      font-family: "Noto Serif KR", Georgia, serif;
+      font-family: "Cormorant Garamond", "Noto Serif KR", Georgia, serif;
       font-weight: 700;
-      font-size: clamp(22px, 3.2vw, 30px);
-      letter-spacing: -0.02em;
+      font-size: clamp(24px, 3.2vw, 32px);
+      letter-spacing: 0.01em;
       color: var(--pale-ash);
     }
     .record-cluster {
@@ -569,9 +619,10 @@
     }
     html[data-theme="romance"] .record-cluster {
       background:
-        linear-gradient(165deg, rgba(114, 15, 50, 0.06) 0%, transparent 40%),
-        linear-gradient(180deg, rgba(255, 252, 247, 0.98) 0%, rgba(250, 246, 238, 0.72) 100%);
-      border-color: rgba(140, 128, 97, 0.28);
+        linear-gradient(165deg, rgba(232, 90, 154, 0.08) 0%, transparent 38%),
+        linear-gradient(180deg, rgba(255, 252, 250, 0.96) 0%, rgba(252, 240, 236, 0.78) 100%);
+      border-color: var(--surface-line);
+      box-shadow: var(--shadow-soft);
     }
     .record-cluster-head {
       margin: 0 0 12px;
@@ -821,10 +872,10 @@
     }
     .stats-hero-title {
       margin: 4px 0 0;
-      font-family: "Noto Serif KR", Georgia, serif;
+      font-family: "Cormorant Garamond", "Noto Serif KR", Georgia, serif;
       font-weight: 700;
-      font-size: clamp(22px, 4vw, 28px);
-      letter-spacing: -0.02em;
+      font-size: clamp(24px, 4vw, 32px);
+      letter-spacing: 0.01em;
       color: var(--pale-ash);
     }
     .stats-layout {
@@ -848,9 +899,9 @@
     }
     .card h3 {
       margin: 0 0 12px;
-      font-family: "Noto Serif KR", Georgia, serif;
+      font-family: "Cormorant Garamond", "Noto Serif KR", Georgia, serif;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.01em;
       color: var(--pale-ash);
     }
     label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
@@ -879,9 +930,10 @@
       border: 1px solid rgba(22, 32, 43, 0.15);
     }
     .btn.primary {
-      background: linear-gradient(135deg, var(--berry-wine), var(--ocean-noir));
-      color: var(--pale-ash);
-      border-color: rgba(209, 209, 214, 0.15);
+      background: var(--gradient-primary);
+      color: #fff;
+      border-color: rgba(168, 67, 92, 0.2);
+      box-shadow: 0 6px 20px rgba(232, 90, 154, 0.22);
     }
     .btn.secondary {
       background: var(--ocean-noir);
@@ -1796,8 +1848,9 @@
     }
     html[data-theme="romance"] .daily-goal-cheer {
       color: var(--library-ink);
-      border-color: rgba(201, 86, 120, 0.35);
-      background: linear-gradient(135deg, rgba(247, 201, 211, 0.35) 0%, rgba(181, 171, 204, 0.22) 55%, rgba(255, 252, 247, 0.9) 100%);
+      border-color: rgba(232, 90, 154, 0.4);
+      background: linear-gradient(135deg, rgba(252, 232, 228, 0.65) 0%, rgba(196, 180, 216, 0.28) 50%, rgba(255, 252, 250, 0.92) 100%);
+      box-shadow: var(--shadow-soft);
     }
     .daily-goal-cheer-inner {
       display: flex;
@@ -1817,8 +1870,9 @@
       box-shadow: 0 4px 12px rgba(61, 48, 72, 0.12);
     }
     html[data-theme="romance"] .daily-goal-cheer-badge {
-      background: rgba(255, 255, 255, 0.92);
-      color: #59426e;
+      background: var(--gradient-iridescent);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(232, 90, 154, 0.25);
     }
     .daily-goal-cheer-badge svg {
       width: 28px;
@@ -1866,8 +1920,8 @@
       color: var(--text);
     }
     html[data-theme="romance"] .today-inanna-strip {
-      background: rgba(243, 226, 169, 0.45);
-      border-color: rgba(89, 66, 110, 0.35);
+      background: rgba(252, 232, 228, 0.55);
+      border-color: rgba(232, 90, 154, 0.3);
     }
     .today-inanna-strip .today-inanna-k {
       font-size: 11px;
@@ -1882,7 +1936,8 @@
       border-color: rgba(17, 70, 101, 0.45);
     }
     html[data-theme="romance"] .insight-banner--info {
-      background: rgba(17, 70, 101, 0.12);
+      background: rgba(200, 216, 240, 0.35);
+      border-color: rgba(196, 180, 216, 0.55);
       color: var(--library-ink);
     }
     .weekly-insights-card {
@@ -1989,13 +2044,14 @@
       color: rgba(90, 79, 104, 0.45);
     }
     html[data-theme="romance"] .milestone-badge--unlocked .milestone-badge-icon {
-      color: #59426e;
+      color: var(--mood-crimson);
     }
     html[data-theme="romance"] .milestone-badge--unlocked .milestone-badge-circle {
       background:
-        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.65) 0%, transparent 50%),
-        linear-gradient(145deg, rgba(247, 201, 211, 0.55) 0%, rgba(181, 171, 204, 0.5) 48%, rgba(232, 166, 179, 0.45) 100%);
-      border-color: rgba(201, 86, 120, 0.45);
+        radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.75) 0%, transparent 50%),
+        var(--gradient-iridescent);
+      border-color: rgba(232, 90, 154, 0.5);
+      box-shadow: 0 8px 20px rgba(232, 90, 154, 0.2);
     }
     .milestone-badge-title {
       font-size: 11px;
@@ -2078,9 +2134,9 @@
       box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
     }
     html[data-theme="romance"] .record-mobile-dock {
-      background: rgba(238, 232, 224, 0.97);
-      border-top-color: rgba(140, 128, 97, 0.35);
-      box-shadow: 0 -8px 24px rgba(49, 44, 50, 0.1);
+      background: rgba(252, 240, 236, 0.97);
+      border-top-color: var(--surface-line);
+      box-shadow: 0 -10px 28px rgba(168, 67, 92, 0.12);
     }
     .record-mobile-dock-col {
       flex: 1;

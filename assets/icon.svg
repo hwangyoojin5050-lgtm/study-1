@@ -1,12 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="앱 아이콘">
   <defs>
     <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#114665"/>
-      <stop offset="55%" style="stop-color:#720f32"/>
-      <stop offset="100%" style="stop-color:#7b445a"/>
+      <stop offset="0%" style="stop-color:#FFB8A8"/>
+      <stop offset="38%" style="stop-color:#E85A9A"/>
+      <stop offset="72%" style="stop-color:#C4B4D8"/>
+      <stop offset="100%" style="stop-color:#C8D8F0"/>
     </linearGradient>
+    <radialGradient id="spark" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </radialGradient>
   </defs>
-  <circle cx="256" cy="256" r="240" fill="url(#g)" stroke="#d1d1d6" stroke-width="8"/>
-  <path fill="#faf6f0" d="M148 352c48-96 168-128 216-192-32 112-120 176-216 192z" opacity="0.92"/>
-  <ellipse cx="256" cy="180" rx="72" ry="56" fill="#faf6f0" opacity="0.35"/>
+  <circle cx="256" cy="256" r="240" fill="url(#g)" stroke="rgba(255,255,255,0.55)" stroke-width="8"/>
+  <circle cx="180" cy="140" r="28" fill="url(#spark)"/>
+  <circle cx="340" cy="120" r="18" fill="url(#spark)"/>
+  <path fill="#FAF5F1" d="M148 352c48-96 168-128 216-192-32 112-120 176-216 192z" opacity="0.92"/>
+  <ellipse cx="256" cy="180" rx="72" ry="56" fill="#FAF5F1" opacity="0.35"/>
 </svg>
