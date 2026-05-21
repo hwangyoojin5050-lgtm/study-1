@@ -83,10 +83,6 @@
     }
     html[data-theme="romance"] .habit-block,
     html[data-theme="romance"] .story-summary-box,
-    html[data-theme="romance"] .pomo-box {
-      background: rgba(255, 252, 247, 0.82);
-      border-color: rgba(140, 128, 97, 0.28);
-    }
     html[data-theme="romance"] .stat {
       background: rgba(255, 252, 247, 0.9);
       border-color: rgba(140, 128, 97, 0.32);
@@ -1402,23 +1398,6 @@
       color: var(--muted);
       font-size: 12px;
     }
-    .pomo-box {
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.16);
-      border: 1px solid var(--surface-line);
-    }
-    .pomo-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .pomo-time {
-      font-size: 24px;
-      font-weight: 800;
-      margin-top: 8px;
-    }
     .toggle-row {
       margin-top: 8px;
       display: flex;
@@ -1671,13 +1650,6 @@
     .today-journal-row .btn {
       flex: 0 0 auto;
       align-self: center;
-    }
-    .pomo-notify-row {
-      margin-top: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
     }
     .route-meter-line {
       display: flex;
@@ -2089,29 +2061,6 @@
       line-height: 1.5;
       color: var(--text);
     }
-    .pomo-phase-badge {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 40;
-      max-width: min(280px, 86vw);
-      padding: 8px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.35;
-      color: var(--pale-ash);
-      background: rgba(15, 24, 34, 0.92);
-      border: 1px solid var(--surface-line);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      pointer-events: none;
-    }
-    html[data-theme="romance"] .pomo-phase-badge {
-      color: var(--library-ink);
-      background: rgba(255, 252, 247, 0.96);
-      border-color: rgba(140, 128, 97, 0.35);
-      box-shadow: 0 8px 22px rgba(49, 44, 50, 0.12);
-    }
     .record-mobile-dock {
       display: none;
       position: fixed;
@@ -2169,8 +2118,7 @@
       .app:has(#record.view.active) .record-mobile-dock {
         display: flex;
       }
-      .bento-timer .btn-row,
-      .bento-pomo .btn-row {
+      .bento-timer .btn-row {
         gap: 10px;
       }
       .bento-timer .btn-row {
@@ -2186,13 +2134,6 @@
       }
       .bento-timer .btn-row .btn.success {
         grid-column: 1 / -1;
-      }
-      .bento-pomo .btn-row .btn {
-        min-height: 50px;
-        padding: 14px 14px;
-        font-size: 16px;
-        border-radius: 14px;
-        flex: 1 1 100%;
       }
       .vn-choice-panel.talk-box {
         left: 10px;
@@ -2297,7 +2238,6 @@
       .app { padding: 12px; }
       .card:not(.vn-card) { padding: 12px; }
       .vn-dialogue-text { font-size: 16px; }
-      .pomo-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -2323,7 +2263,7 @@
       <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">보기</label>
     </div>
     <p class="muted keyboard-hint" style="margin:-6px 0 10px;font-size:11px;line-height:1.45;" id="keyboardShortcutsHint">
-      키보드: Alt+1 기록 · Alt+2 통계 · Alt+3 보기 · Home 기록 / End 보기 · Alt+P 포모 시작/정지 · Alt+Shift+S 공부 기록 저장 · Alt+T 타이머 시작/일시정지 (입력란에 포커스가 있을 때는 단축키 비활성) · 온보딩 중 Esc 나중에 닫기
+      키보드: Alt+1 기록 · Alt+2 통계 · Alt+3 보기 · Home 기록 / End 보기 · Alt+Shift+S 공부 기록 저장 · Alt+T 타이머 시작/일시정지 (입력란에 포커스가 있을 때는 단축키 비활성) · 온보딩 중 Esc 나중에 닫기
     </p>
     <div id="insightBannerWrap" class="insight-banner-wrap" hidden>
       <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="알림"></div>
@@ -2457,40 +2397,6 @@
                 </div>
               </div>
 
-              <div class="card bento-card bento-pomo">
-                <h3 style="margin-bottom:8px;">집중모드 (포모도로)</h3>
-                <div class="pomo-box">
-                  <div class="pomo-grid">
-                    <div>
-                      <label for="focusMinutes">집중 (분)</label>
-                      <input id="focusMinutes" type="number" min="5" step="1" value="25" />
-                    </div>
-                    <div>
-                      <label for="breakMinutes">휴식 (분)</label>
-                      <input id="breakMinutes" type="number" min="1" step="1" value="5" />
-                    </div>
-                  </div>
-                  <div class="pomo-time" id="pomoDisplay">집중 25:00</div>
-                  <div class="muted" id="todaySessionCount">오늘 포모도로 세션 0회</div>
-                  <p class="muted" id="pomoWeekMonthStats" style="font-size:12px;margin:4px 0 0;line-height:1.45;"></p>
-                  <label for="pomoSessionNoteInput" class="muted" style="display:block;margin-top:10px;font-size:12px;">집중 세션 메모 (포모 한 사이클 끝날 때 함께 저장)</label>
-                  <input id="pomoSessionNoteInput" type="text" maxlength="200" placeholder="이번 집중에서 끝낸 내용을 한 줄로…" style="width:100%;margin-top:4px;" autocomplete="off" />
-                  <label class="toggle-row" style="margin-top:10px;">
-                    <input id="autoViewSwitch" type="checkbox" />
-                    집중 종료 시 자동으로 보기 탭 전환
-                  </label>
-                  <div class="pomo-notify-row">
-                    <button type="button" class="btn secondary" id="pomoBrowserNotifyBtn">브라우저 알림</button>
-                    <span class="muted" id="pomoNotifyStatus" style="font-size:12px;line-height:1.4;"></span>
-                  </div>
-                  <div class="btn-row">
-                    <button class="btn primary" id="startPomoBtn" aria-label="포모도로 집중 시작">포모도로 시작</button>
-                    <button class="btn secondary" id="stopPomoBtn" aria-label="포모도로 정지">포모도로 정지</button>
-                    <button class="btn" id="resetPomoBtn" aria-label="포모도로 타이머 리셋">포모도로 리셋</button>
-                    <button class="btn" id="soundToggleBtn" aria-label="포모 알림음 켜기 또는 끄기">알림음: 켜짐</button>
-                  </div>
-                </div>
-              </div>
                 </div>
               </div>
             </div>
@@ -2596,8 +2502,6 @@
       </div>
     </section>
 
-    <div id="pomoNotifyBadge" class="pomo-phase-badge" hidden aria-live="polite"></div>
-
     <footer class="record-mobile-dock" id="recordMobileDock" aria-label="기록 요약">
       <div class="record-mobile-dock-col">
         <span class="record-mobile-dock-k">오늘</span>
@@ -2606,10 +2510,6 @@
       <div class="record-mobile-dock-col">
         <span class="record-mobile-dock-k">타이머</span>
         <span class="record-mobile-dock-v" id="dockTimerShort">00:00:00</span>
-      </div>
-      <div class="record-mobile-dock-col">
-        <span class="record-mobile-dock-k">포모</span>
-        <span class="record-mobile-dock-v" id="dockPomoShort">—</span>
       </div>
     </footer>
 
@@ -2739,7 +2639,7 @@
         <div class="card">
           <h3>스토리 다시보기</h3>
           <p class="muted">관계가 진전될 때의 짧은 이야기, 선택지 대화, 엔딩까지 시간 순으로 저장됩니다. 아래에는 지금까지 도달한 호감·엔딩 단계의 캐릭터 이미지만 나타납니다.</p>
-          <p class="muted" id="dateCutsceneHint" style="font-size:12px;line-height:1.45;margin-top:6px;">오늘 일정 분 이상 기록하거나 포모를 여러 번 마치면, 그날 한 번 스토리 로그에 짧은 데이트 장면이 남을 수 있어요.</p>
+          <p class="muted" id="dateCutsceneHint" style="font-size:12px;line-height:1.45;margin-top:6px;">오늘 일정 분 이상 공부를 기록하면, 그날 한 번 스토리 로그에 짧은 데이트 장면이 남을 수 있어요.</p>
           <div id="storyPortraitGallery" class="story-portrait-gallery" style="display:none;" aria-live="polite"></div>
           <div id="storySummaryPanel" class="story-summary-box" aria-live="polite"></div>
           <div id="milestoneBadgeSection" class="memory-diary-box" style="margin-top:12px;">

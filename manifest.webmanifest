@@ -1,7 +1,7 @@
 {
   "name": "너의 옆자리",
   "short_name": "옆자리",
-  "description": "공부 기록·포모도로와 인안나 스토리를 한 화면에서.",
+  "description": "공부 기록·타이머와 인안나 스토리를 한 화면에서.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

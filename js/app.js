@@ -21,14 +21,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       timerRunning: false,
       timerId: null,
       editingRecordIndex: -1,
-      focusMinutes: 25,
-      breakMinutes: 5,
-      pomoSecondsLeft: 1500,
-      pomoPhase: "focus",
-      pomoRunning: false,
-      pomoId: null,
       soundEnabled: true,
-      autoSwitchToView: false,
       activeInteraction: null,
       lastReplyText: "",
       replyAffectionBonus: 0,
@@ -43,7 +36,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       maxAffectionEver: 0,
       affectionBaselineSeconds: 0,
       a11yPreset: "romance",
-      pomoBrowserNotify: false,
       todayJournalDate: "",
       todayJournalLine: "",
       showInnerMonologue: true,
@@ -83,8 +75,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       baseDocumentTitle: "",
       timerWallStartMs: null,
       timerWallBaseSec: 0,
-      pomoWallStartMs: null,
-      pomoWallInitialLeft: 0,
       undoDelete: null,
       undoTimerId: null,
       visibilityHookInstalled: false,
@@ -645,7 +635,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const op = sc.op || ">=";
       let cur = 0;
       if (sc.when === "todayMin") cur = Math.round(sumSecondsByDate(todayKey) / 60);
-      else if (sc.when === "todayPomo") cur = getTodayPomodoroSessions();
       else return false;
       if (op === ">=") return cur >= v;
       if (op === ">") return cur > v;
@@ -815,11 +804,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const m = Math.floor((sec % 3600) / 60);
       return h + "시간 " + m + "분";
     };
-    const fmtMmSs = (sec) => {
-      const m = String(Math.floor(sec / 60)).padStart(2, "0");
-      const s = String(sec % 60).padStart(2, "0");
-      return m + ":" + s;
-    };
     const dateKey = (d) => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -874,24 +858,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const sd6 = new Date(sd0);
       sd6.setDate(sd0.getDate() + 6);
       const endKey = dateKey(sd6);
-      const pomoN = state.records.filter((r) => r.source === "pomo" && r.date && r.date >= pmk && r.date <= endKey).length;
-      return "지난주(" + pmk + " ~ " + endKey + ") 총 " + min + "분 · 포모 " + pomoN + "회.";
-    }
-
-    function countPomoSessionsInWeek(now) {
-      const mk = mondayKeyOfWeekContaining(now);
-      const sd = new Date(mk + "T12:00:00");
-      const ed = new Date(sd);
-      ed.setDate(sd.getDate() + 6);
-      const endKey = dateKey(ed);
-      return state.records.filter((r) => r.source === "pomo" && r.date >= mk && r.date <= endKey).length;
-    }
-
-    function countPomoSessionsInMonth(now) {
-      const y = now.getFullYear();
-      const m = now.getMonth();
-      const prefix = y + "-" + String(m + 1).padStart(2, "0") + "-";
-      return state.records.filter((r) => r.source === "pomo" && r.date && r.date.startsWith(prefix)).length;
+      return "지난주(" + pmk + " ~ " + endKey + ") 총 " + min + "분.";
     }
 
     function aggregateSecondsByTag() {
@@ -930,7 +897,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
     function buildWeekReportPlainText(now) {
       const wr = weekDateRangeKeys(now);
       const weekSec = sumSecondsWeekMonSun(now);
-      const pomoN = state.records.filter((r) => r.source === "pomo" && wr.keys.includes(r.date)).length;
       const tagMap = aggregateTagMinutesWeekMonSun(now);
       const topTags = Object.keys(tagMap).sort((a, b) => tagMap[b] - tagMap[a]).slice(0, 3);
       const streak = computeStudyStreakDays();
@@ -940,7 +906,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const lines = [
         "━━ 주간 리포트 (" + wr.mondayKey + " ~ 7일) ━━",
         "· 총 집중: " + fmtHourMin(weekSec),
-        "· 포모 세션: " + pomoN + "회",
         "· 태그 상위: " + tagLine,
         "· 연속 출석: " + streak + "일",
         "· 한 줄 메모: 이번 주 리듬은 아래 히트맵과 함께 보면 좋아요."
@@ -1090,8 +1055,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
 
     const MILESTONE_BADGE_DEFS = [
       { id: "m1", title: "첫 스텝", desc: "기록 1건", ok: () => state.records.length >= 1 },
-      { id: "m2", title: "포모 10", desc: "포모 10회", ok: () => state.records.filter((r) => r.source === "pomo").length >= 10 },
-      { id: "m3", title: "포모 50", desc: "포모 50회", ok: () => state.records.filter((r) => r.source === "pomo").length >= 50 },
+      { id: "m2", title: "기록 10", desc: "공부 기록 10건", ok: () => state.records.length >= 10 },
+      { id: "m3", title: "기록 50", desc: "공부 기록 50건", ok: () => state.records.length >= 50 },
       { id: "m4", title: "7일 연속", desc: "연속 7일+", ok: () => computeStudyStreakDays() >= 7 },
       { id: "m5", title: "30일 연속", desc: "연속 30일+", ok: () => computeStudyStreakDays() >= 30 },
       { id: "m6", title: "태그 탐험", desc: "태그 5종+", ok: () => {
@@ -1348,10 +1313,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         affection: state.affection,
         totalSeconds: state.totalSeconds,
         records: state.records,
-        focusMinutes: state.focusMinutes,
-        breakMinutes: state.breakMinutes,
         soundEnabled: state.soundEnabled,
-        autoSwitchToView: state.autoSwitchToView,
         replyAffectionBonus: state.replyAffectionBonus,
         routeMarriage: state.routeMarriage,
         routeYandere: state.routeYandere,
@@ -1365,7 +1327,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         maxAffectionEver: state.maxAffectionEver,
         affectionBaselineSeconds: state.affectionBaselineSeconds,
         a11yPreset: state.a11yPreset,
-        pomoBrowserNotify: state.pomoBrowserNotify === true,
         todayJournalDate: state.todayJournalDate || "",
         todayJournalLine: state.todayJournalLine || "",
         showInnerMonologue: state.showInnerMonologue !== false,
@@ -1415,10 +1376,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       state.totalSeconds = Number(data.totalSeconds || 0);
       state.records = Array.isArray(data.records) ? data.records : [];
       state.records = state.records.map(sanitizeRecordRow).filter(Boolean);
-      state.focusMinutes = Number(data.focusMinutes || 25);
-      state.breakMinutes = Number(data.breakMinutes || 5);
       state.soundEnabled = data.soundEnabled !== false;
-      state.autoSwitchToView = data.autoSwitchToView === true;
       state.replyAffectionBonus = Number(data.replyAffectionBonus || 0);
       state.routeMarriage = Number(data.routeMarriage || 0);
       state.routeYandere = Number(data.routeYandere || 0);
@@ -1437,7 +1395,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       );
       state.affectionBaselineSeconds = Math.max(0, Number(data.affectionBaselineSeconds || 0));
       state.a11yPreset = "romance";
-      state.pomoBrowserNotify = data.pomoBrowserNotify === true;
       state.todayJournalDate = typeof data.todayJournalDate === "string" ? data.todayJournalDate : "";
       state.todayJournalLine = typeof data.todayJournalLine === "string" ? data.todayJournalLine : "";
       state.showInnerMonologue = data.showInnerMonologue !== false;
@@ -1461,7 +1418,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         state.dailyChecklistChecked.push(false);
       }
       state.dailyChecklistChecked = state.dailyChecklistChecked.slice(0, state.dailyChecklistItems.length);
-      state.pomoSecondsLeft = state.focusMinutes * 60;
       if (!Array.isArray(state.memoryMoments)) state.memoryMoments = [];
       state.memoryMoments = state.memoryMoments.map(sanitizeMemoryMoment).filter(Boolean).slice(-50);
       state.bannerDismissedWeekly = typeof data.bannerDismissedWeekly === "string" ? data.bannerDismissedWeekly : "";
@@ -1499,35 +1455,12 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
 
     function resetRuntimeTimersAfterHydrate() {
       if (state.timerId) clearInterval(state.timerId);
-      if (state.pomoId) clearInterval(state.pomoId);
       state.timerId = null;
-      state.pomoId = null;
       state.timerRunning = false;
-      state.pomoRunning = false;
       state.timerSeconds = 0;
-      state.pomoPhase = "focus";
-      state.pomoSecondsLeft = state.focusMinutes * 60;
       state.editingRecordIndex = -1;
       sessionRuntime.timerWallStartMs = null;
-      sessionRuntime.pomoWallStartMs = null;
       clearUndoDelete();
-    }
-
-    function playNotificationSound() {
-      if (!state.soundEnabled) return;
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 880;
-      gain.gain.value = 0.12;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      setTimeout(() => osc.stop(), 220);
-      setTimeout(() => ctx.close(), 300);
     }
 
     function getDisplayName() {
@@ -1626,11 +1559,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         }
       }
       return null;
-    }
-
-    function getTodayPomodoroSessions() {
-      const today = dateKey(new Date());
-      return state.records.filter((r) => r.date === today && r.source === "pomo").length;
     }
 
     function getPanelViewSection() {
@@ -1772,19 +1700,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       };
       return "<div class='route-meter-line'>" + chip("청혼", m) + " · " + chip("얀데레", y) + " · " + chip("유학", a) + "</div>"
         + "<div class='route-meter-foot muted'>숫자가 가장 큰 루트가 살짝 강조됩니다. " + foot + "</div>";
-    }
-
-    function maybeNotifyPomo(title, body) {
-      if (!state.pomoBrowserNotify || !("Notification" in window)) return;
-      if (Notification.permission !== "granted") return;
-      try {
-        const n = new Notification(title, { body: body, tag: "study-pomo", silent: false });
-        setTimeout(() => {
-          try {
-            n.close();
-          } catch (_) {}
-        }, 8000);
-      } catch (_) {}
     }
 
     function chapterSnippetLine(d, reached) {
@@ -2204,21 +2119,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         document.title = "[" + fmtTime(state.timerSeconds) + "] 타이머 · " + base;
         return;
       }
-      if (state.pomoRunning) {
-        const label = state.pomoPhase === "focus" ? "집중" : "휴식";
-        document.title = "[" + label + " " + fmtMmSs(state.pomoSecondsLeft) + "] · " + base;
-        return;
-      }
       document.title = base;
-    }
-
-    function armPomoWallClock() {
-      if (state.pomoRunning) {
-        sessionRuntime.pomoWallStartMs = Date.now();
-        sessionRuntime.pomoWallInitialLeft = Math.max(0, Number(state.pomoSecondsLeft || 0));
-      } else {
-        sessionRuntime.pomoWallStartMs = null;
-      }
     }
 
     function normalizeMainTabId(tabId) {
@@ -2307,36 +2208,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       }).join("");
     }
 
-    /* ===== JS §4 Main render — charts, VN; 포모 1초 틱은 renderPomoTickHud ===== */
-    /** 포모 실행 중 1초마다 — 전체 render() 대신 표시·독·배지만 갱신 */
-    function renderPomoTickHud() {
-      const pomoEl = $("pomoDisplay");
-      if (pomoEl) {
-        pomoEl.textContent = (state.pomoPhase === "focus" ? "집중 " : "휴식 ") + fmtMmSs(state.pomoSecondsLeft);
-      }
-      const badge = $("pomoNotifyBadge");
-      if (badge) {
-        if (state.pomoRunning) {
-          badge.hidden = false;
-          const mins = Math.max(0, Math.ceil(state.pomoSecondsLeft / 60));
-          if (state.pomoPhase === "break") {
-            badge.textContent = "다음 집중까지 약 " + mins + "분";
-          } else {
-            badge.textContent = "집중 남음 · 약 " + mins + "분";
-          }
-        } else {
-          badge.hidden = true;
-        }
-      }
-      const dPomo = $("dockPomoShort");
-      if (dPomo) {
-        if (!state.pomoRunning) dPomo.textContent = "정지";
-        else if (state.pomoPhase === "break") dPomo.textContent = "휴식 " + fmtMmSs(state.pomoSecondsLeft);
-        else dPomo.textContent = "집중 " + fmtMmSs(state.pomoSecondsLeft);
-      }
-      updateSessionDocumentTitle();
-    }
-
+    /* ===== JS §4 Main render — charts, VN ===== */
     /** 타이머 실행 중 1초마다 — 전체 render() 대신 시계·독만 갱신 */
     function renderTimerTickHud() {
       const tEl = $("timerDisplay");
@@ -2420,12 +2292,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       if (goalHoursEl) goalHoursEl.value = state.goalHours || "";
       const questTextEl = $("questText");
       if (questTextEl) questTextEl.value = state.quest || "";
-      const focusMinEl = $("focusMinutes");
-      if (focusMinEl) focusMinEl.value = state.focusMinutes;
-      const breakMinEl = $("breakMinutes");
-      if (breakMinEl) breakMinEl.value = state.breakMinutes;
-      const autoViewEl = $("autoViewSwitch");
-      if (autoViewEl) autoViewEl.checked = state.autoSwitchToView;
       const goalQuestStatusEl = $("goalQuestStatus");
       if (goalQuestStatusEl) {
         goalQuestStatusEl.textContent = state.goalHours
@@ -2447,21 +2313,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         jHint.textContent = (state.todayJournalLine || "").trim()
           ? "스토리 탭 요약 상단에 함께 표시됩니다."
           : "저장하면 오늘 날짜에 묶여 스토리 요약과 로그 위에 보입니다. 다정·활발·사교적이라는 설정도 한 줄에 살짝 녹여도 좋아요.";
-      }
-
-      const pomoSt = $("pomoNotifyStatus");
-      if (pomoSt) {
-        if (!("Notification" in window)) {
-          pomoSt.textContent = "이 환경에서는 브라우저 알림을 쓸 수 없습니다.";
-        } else if (Notification.permission === "denied") {
-          pomoSt.textContent = "알림이 차단되어 있어요. 브라우저 설정에서 이 사이트 알림을 허용해 주세요.";
-        } else if (Notification.permission === "granted") {
-          pomoSt.textContent = state.pomoBrowserNotify
-            ? "포모 단계가 바뀔 때 알림을 보냅니다. 상단 배지로 남은 분도 확인할 수 있어요."
-            : "알림 권한은 허용됨. 버튼으로 켜면 포모 전환 시 알림이 갑니다.";
-        } else {
-          pomoSt.textContent = "버튼을 누르면 권한을 요청합니다. 거부해도 상단 배지는 동작합니다.";
-        }
       }
 
       safeSetText("todayTotal", Math.round(sumSecondsByDate(today) / 60) + "분");
@@ -2513,10 +2364,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
           const pct = needMin ? Math.min(100, Math.round((doneMin / needMin) * 100)) : 0;
           wgLine.textContent = "이번 주 " + doneMin + "분 / 목표 " + needMin + "분 (" + pct + "%)";
         }
-      }
-      const pw = $("pomoWeekMonthStats");
-      if (pw) {
-        pw.textContent = "이번 주 포모 세션 " + countPomoSessionsInWeek(nowDate) + "회 · 이번 달 " + countPomoSessionsInMonth(nowDate) + "회";
       }
       const tagLineEl = $("tagStatsLine");
       if (tagLineEl) {
@@ -2629,7 +2476,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         const eligible = !state.storyContactChannel && !state.endingId && state.affection >= 12 && state.affection < 72;
         cpw.hidden = !eligible;
       }
-      safeSetText("todaySessionCount", "오늘 포모도로 세션 " + getTodayPomodoroSessions() + "회");
       const dToday = $("dockTodayShort");
       if (dToday) dToday.textContent = Math.round(sumSecondsByDate(today) / 60) + "분";
       safeSetText("soundToggleBtn", "알림음: " + (state.soundEnabled ? "켜짐" : "꺼짐"));
@@ -2683,7 +2529,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         }
         try {
           renderTimerTickHud();
-          renderPomoTickHud();
         } catch (_) {}
         try {
           updateSessionDocumentTitle();
@@ -2769,31 +2614,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       }
     }
 
-    function switchPomodoroPhase() {
-      if (state.pomoPhase === "focus") {
-        const noteEl = $("pomoSessionNoteInput");
-        const note = noteEl && noteEl.value ? noteEl.value.trim().slice(0, 200) : "";
-        addSessionRecord(state.focusMinutes * 60, "pomo", {
-          note: note || undefined,
-          tag: (state.defaultSessionTag || "").trim() || undefined
-        });
-        if (noteEl) noteEl.value = "";
-        if (state.autoSwitchToView) {
-          activateTab("view");
-        }
-        state.pomoPhase = "break";
-        state.pomoSecondsLeft = state.breakMinutes * 60;
-        maybeNotifyPomo("포모도로", "집중 시간이 끝났어요. 휴식을 시작합니다.");
-      } else {
-        state.pomoPhase = "focus";
-        state.pomoSecondsLeft = state.focusMinutes * 60;
-        maybeNotifyPomo("포모도로", "휴식이 끝났어요. 다음 집중을 시작해 보세요.");
-      }
-      playNotificationSound();
-      armPomoWallClock();
-      saveState();
-    }
-
     function applyMainTabToDom() {
       const tabId = normalizeMainTabId(state.uiMainTab);
       state.uiMainTab = tabId;
@@ -2853,14 +2673,13 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       if (!el) return;
       const scenes = (romanceNarrative && romanceNarrative.dateCutscenes) || [];
       if (!scenes.length) {
-        el.textContent = "오늘 일정 분 이상 기록하거나 포모를 여러 번 마치면, 그날 한 번 스토리 로그에 짧은 데이트 장면이 남을 수 있어요.";
+        el.textContent = "오늘 일정 분 이상 공부를 기록하면, 그날 한 번 스토리 로그에 짧은 데이트 장면이 남을 수 있어요.";
         return;
       }
       const bits = scenes.map((sc) => {
         const op = sc.op || ">=";
         const v = sc.value;
         if (sc.when === "todayMin") return "오늘 누적 기록 " + op + " 약 " + v + "분";
-        if (sc.when === "todayPomo") return "오늘 포모 세션 " + op + " " + v + "회";
         return "";
       }).filter(Boolean);
       el.textContent = "짧은 데이트(배경·로그): " + (bits.join(" · ") || "assets/romance-narrative.json 에서 조건을 바꿀 수 있어요.") + " · 같은 날 한 번만.";
@@ -2903,8 +2722,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
 
     function paintOnboardingStep() {
       const bodies = [
-        "「너의 옆자리」는 기록 탭에서 포모·타이머로 집중 시간을 쌓고, 통계 탭에서 기록·그래프를 보고, 보기 탭에서 인안나와의 대사·스토리를 이어 가요.",
-        "집중은 기록 탭의 목표·타이머·포모 카드에서 바로 시작할 수 있어요. Alt+1 기록 · Alt+2 통계 · Alt+3 보기, Home / End로도 탭을 옮길 수 있어요.",
+        "「너의 옆자리」는 기록 탭에서 타이머로 집중 시간을 쌓고, 통계 탭에서 기록·그래프를 보고, 보기 탭에서 인안나와의 대사·스토리를 이어 가요.",
+        "집중은 기록 탭의 목표·타이머에서 바로 시작할 수 있어요. Alt+1 기록 · Alt+2 통계 · Alt+3 보기, Home / End로도 탭을 옮길 수 있어요.",
         "공부 시간이 쌓이면 호감도가 오르고, 가끔 짧은 대화 이벤트가 열려요. 스토리 탭에서 지금까지의 흐름을 다시 볼 수 있어요.",
         "데이터는 이 브라우저 안(localStorage)에만 저장돼요. 브라우저 데이터를 지우면 기록이 사라질 수 있어요."
       ];
@@ -2988,12 +2807,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
           if (e.code === "Digit3" || e.code === "Numpad3") {
             e.preventDefault();
             $("tabBtnView")?.click();
-            return;
-          }
-          if (e.code === "KeyP") {
-            e.preventDefault();
-            if (state.pomoRunning) $("stopPomoBtn")?.click();
-            else $("startPomoBtn")?.click();
             return;
           }
           if (e.code === "KeyT") {
@@ -3146,45 +2959,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         });
       }
 
-      const pomoNotifyBtn = $("pomoBrowserNotifyBtn");
-      if (pomoNotifyBtn) {
-        pomoNotifyBtn.addEventListener("click", () => {
-          if (!("Notification" in window)) {
-            window.alert("이 브라우저는 알림을 지원하지 않습니다.");
-            return;
-          }
-          if (Notification.permission === "denied") {
-            window.alert("브라우저 설정에서 이 사이트의 알림을 허용해 주세요.");
-            return;
-          }
-          const ask = () => {
-            Notification.requestPermission().then((perm) => {
-              if (perm !== "granted") {
-                window.alert("알림을 허용하지 않으면 시스템 알림은 보내지 않습니다. 화면 상단 배지는 포모 실행 중 계속 표시됩니다.");
-                render();
-                return;
-              }
-              state.pomoBrowserNotify = true;
-              saveState();
-              render();
-              try {
-                new Notification(APP_DISPLAY_NAME, { body: "포모 단계가 바뀔 때 알려 드릴게요." });
-              } catch (_) {}
-            });
-          };
-          if (Notification.permission === "default") {
-            ask();
-          } else if (Notification.permission === "granted") {
-            state.pomoBrowserNotify = true;
-            saveState();
-            render();
-            try {
-              new Notification(APP_DISPLAY_NAME, { body: "포모 알림이 켜졌어요." });
-            } catch (_) {}
-          }
-        });
-      }
-
       $("userNameViewEdit")?.addEventListener("input", () => {
         const el = $("userNameViewEdit");
         state.userName = el && el.value ? el.value.trim() : "";
@@ -3287,75 +3061,14 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         render();
       });
 
-      $("startPomoBtn")?.addEventListener("click", () => {
-        const fm = $("focusMinutes");
-        const bm = $("breakMinutes");
-        const focus = Number(fm && fm.value);
-        const rest = Number(bm && bm.value);
-        if (!Number.isFinite(focus) || focus < 5 || !Number.isFinite(rest) || rest < 1) {
-          window.alert("집중은 5분 이상, 휴식은 1분 이상 입력해 주세요.");
-          return;
-        }
-        state.focusMinutes = Math.round(focus);
-        state.breakMinutes = Math.round(rest);
-        if (!state.pomoRunning && state.pomoSecondsLeft <= 0) {
-          state.pomoPhase = "focus";
-          state.pomoSecondsLeft = state.focusMinutes * 60;
-        }
-        if (state.pomoRunning) return;
-        state.pomoRunning = true;
-        armPomoWallClock();
-        state.pomoId = setInterval(() => {
-          if (!state.pomoRunning) return;
-          if (sessionRuntime.pomoWallStartMs != null) {
-            const elapsed = Math.floor((Date.now() - sessionRuntime.pomoWallStartMs) / 1000);
-            state.pomoSecondsLeft = Math.max(0, sessionRuntime.pomoWallInitialLeft - elapsed);
-          } else {
-            state.pomoSecondsLeft -= 1;
-          }
-          if (state.pomoSecondsLeft <= 0) {
-            switchPomodoroPhase();
-            render();
-          } else {
-            renderPomoTickHud();
-          }
-        }, 1000);
-        saveState();
-        render();
-      });
-
-      $("stopPomoBtn")?.addEventListener("click", () => {
-        if (!state.pomoRunning) return;
-        clearInterval(state.pomoId);
-        state.pomoRunning = false;
-        sessionRuntime.pomoWallStartMs = null;
-        saveState();
-        render();
-      });
-
-      $("resetPomoBtn")?.addEventListener("click", () => {
-        clearInterval(state.pomoId);
-        state.pomoRunning = false;
-        state.pomoPhase = "focus";
-        state.pomoSecondsLeft = state.focusMinutes * 60;
-        sessionRuntime.pomoWallStartMs = null;
-        saveState();
-        render();
-      });
-
       if (!sessionRuntime.visibilityHookInstalled) {
         sessionRuntime.visibilityHookInstalled = true;
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") {
-            if (state.pomoRunning && sessionRuntime.pomoWallStartMs != null) {
-              const elapsed = Math.floor((Date.now() - sessionRuntime.pomoWallStartMs) / 1000);
-              state.pomoSecondsLeft = Math.max(0, sessionRuntime.pomoWallInitialLeft - elapsed);
-            }
             if (state.timerRunning && sessionRuntime.timerWallStartMs != null) {
               state.timerSeconds = sessionRuntime.timerWallBaseSec + Math.floor((Date.now() - sessionRuntime.timerWallStartMs) / 1000);
             }
             renderTimerTickHud();
-            renderPomoTickHud();
           }
           updateSessionDocumentTitle();
         });
@@ -3365,12 +3078,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         state.soundEnabled = !state.soundEnabled;
         saveState();
         render();
-      });
-
-      $("autoViewSwitch")?.addEventListener("change", () => {
-        const el = $("autoViewSwitch");
-        state.autoSwitchToView = !!(el && el.checked);
-        saveState();
       });
 
       const copyWeeklyReportBtn = $("copyWeeklyReportBtn");
