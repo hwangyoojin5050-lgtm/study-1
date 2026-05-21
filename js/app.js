@@ -921,10 +921,10 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
-      const cellFill = "rgba(201, 137, 122, 0.18)";
-      const cellHi = "rgba(232, 90, 154, 0.52)";
-      const grid = "rgba(201, 137, 122, 0.22)";
-      const label = "#3d2a35";
+      const cellFill = "rgba(197, 184, 232, 0.2)";
+      const cellHi = "rgba(232, 166, 200, 0.52)";
+      const grid = "rgba(45, 38, 72, 0.1)";
+      const label = "#2d2648";
       const pad = { l: 34, t: 10, r: 8, b: 22 };
       const gridW = w - pad.l - pad.r;
       const gridH = h - pad.t - pad.b;
@@ -1974,10 +1974,10 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      const barA = "#e85a9a";
-      const barB = "#9b7a8f";
-      const gridStroke = "rgba(201, 137, 122, 0.22)";
-      const labelFill = "#3d2a35";
+      const barA = "#e8a6c8";
+      const barB = "#c5b8e8";
+      const gridStroke = "rgba(45, 38, 58, 0.12)";
+      const labelFill = "#2d2640";
 
       const pad = { l: 32, r: 12, t: 16, b: 30 };
       const graphW = w - pad.l - pad.r;
@@ -2505,8 +2505,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       }
 
       renderHistory();
-      drawBarChart("weeklyChart", getSeries(7), "#a8435c", "#9b7a8f");
-      drawBarChart("monthlyChart", getSeriesLastMonths(6), "#c9897a", "#8fa892");
+      drawBarChart("weeklyChart", getSeries(7), "#e8a6c8", "#c5b8e8");
+      drawBarChart("monthlyChart", getSeriesLastMonths(6), "#d4a8c8", "#a89bcf");
       updateDateCutsceneHintEl();
       syncOnboardingOverlay();
       const tgt = $("togetherLinesMaxDayInput");
