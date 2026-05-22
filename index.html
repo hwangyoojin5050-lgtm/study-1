@@ -65,7 +65,6 @@
     html[data-theme="romance"] .card h3,
     html[data-theme="romance"] .record-rail-brand,
     html[data-theme="romance"] .bento-card h3,
-    html[data-theme="romance"] .record-hero-title,
     html[data-theme="romance"] .habit-streak-num,
     html[data-theme="romance"] .habit-month-val {
       color: var(--library-ink);
@@ -503,36 +502,6 @@
       color: var(--pale-ash);
       margin-bottom: 16px;
     }
-    .record-rail-user {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--surface-line);
-    }
-    .record-rail-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 16px;
-      color: #2d2648;
-      background: linear-gradient(135deg, #f0b8d0 0%, #c5b8e8 100%);
-      border: 2px solid rgba(255, 255, 255, 0.85);
-      flex-shrink: 0;
-    }
-    .record-rail-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.35;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
     .record-rail-nav {
       display: flex;
       flex-direction: column;
@@ -571,22 +540,6 @@
       flex-direction: column;
       gap: 14px;
       min-width: 0;
-    }
-    .record-hero {
-      border-radius: 22px;
-      padding: 18px 20px;
-    }
-    .record-hero-kicker {
-      margin: 0 0 6px;
-      font-size: 12px;
-    }
-    .record-hero-title {
-      margin: 0;
-      font-family: "Noto Serif KR", Georgia, serif;
-      font-weight: 700;
-      font-size: clamp(22px, 3.2vw, 30px);
-      letter-spacing: -0.02em;
-      color: var(--pale-ash);
     }
     .record-cluster {
       margin-bottom: 4px;
@@ -1783,115 +1736,6 @@
     .story-chapter-actions {
       margin-top: 12px;
     }
-    .daily-goal-checklist {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--surface-line);
-      background: rgba(0, 0, 0, 0.1);
-    }
-    html[data-theme="romance"] .daily-goal-checklist {
-      background: rgba(255, 252, 247, 0.88);
-      border-color: rgba(140, 128, 97, 0.28);
-    }
-    .daily-goal-checklist h4 {
-      margin: 0 0 8px;
-      font-size: 13px;
-      font-weight: 800;
-    }
-    .daily-goal-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      margin: 8px 0;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-    .daily-goal-row input {
-      margin-top: 3px;
-      width: 18px;
-      height: 18px;
-      accent-color: var(--berry-wine);
-      flex-shrink: 0;
-    }
-    .daily-goal-row label {
-      flex: 1;
-      min-width: 0;
-      cursor: pointer;
-    }
-    .daily-goal-cheer {
-      margin-top: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 2px solid rgba(90, 143, 126, 0.55);
-      background: rgba(90, 143, 126, 0.14);
-      color: var(--pale-ash);
-    }
-    html[data-theme="romance"] .daily-goal-cheer {
-      color: var(--library-ink);
-      border-color: rgba(255, 255, 255, 0.75);
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(245, 212, 228, 0.4) 45%, rgba(216, 204, 240, 0.35) 100%);
-      box-shadow: var(--soft-shadow-sm);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    .daily-goal-cheer-inner {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .daily-goal-cheer-badge {
-      flex-shrink: 0;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      background: linear-gradient(145deg, rgba(245, 212, 228, 0.9) 0%, rgba(216, 204, 240, 0.85) 100%);
-      color: #2d2648;
-      border: 2px solid rgba(255, 255, 255, 0.85);
-      box-shadow: var(--soft-shadow-sm);
-    }
-    html[data-theme="romance"] .daily-goal-cheer-badge {
-      background: linear-gradient(145deg, rgba(252, 220, 234, 0.95) 0%, rgba(216, 204, 240, 0.9) 100%);
-      color: #2d2648;
-    }
-    .daily-goal-cheer-badge svg {
-      width: 28px;
-      height: 28px;
-      display: block;
-    }
-    .daily-goal-cheer-copy {
-      flex: 1;
-      min-width: 0;
-    }
-    .daily-goal-cheer .daily-goal-cheer-who {
-      display: block;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      color: var(--pale-ash);
-      margin: 0 0 2px;
-      font-family: "Noto Sans KR", Segoe UI, sans-serif;
-    }
-    html[data-theme="romance"] .daily-goal-cheer .daily-goal-cheer-who {
-      color: var(--library-ink);
-    }
-    .daily-goal-cheer-from {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 6px;
-      font-family: "Noto Sans KR", Segoe UI, sans-serif;
-    }
-    .daily-goal-cheer-line {
-      margin: 0;
-      font-size: 15px;
-      line-height: 1.55;
-      font-family: "Noto Serif KR", Georgia, serif;
-    }
     .today-inanna-strip {
       margin: 0 0 12px;
       padding: 10px 12px;
@@ -2236,11 +2080,6 @@
         grid-column: 1 / -1;
         margin-bottom: 0;
       }
-      .record-rail-user {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: none;
-      }
       .record-rail-nav {
         flex-direction: row;
         flex-wrap: wrap;
@@ -2297,12 +2136,12 @@
       </div>
     </div>
     <div class="tabs" role="tablist" aria-label="메인 화면">
-      <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">기록</label>
-      <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">통계</label>
-      <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">보기</label>
+      <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">함께 쌓기</label>
+      <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">흐름</label>
+      <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">이야기</label>
     </div>
     <p class="muted keyboard-hint" style="margin:-6px 0 10px;font-size:11px;line-height:1.45;" id="keyboardShortcutsHint">
-      키보드: Alt+1 기록 · Alt+2 통계 · Alt+3 보기 · Home 기록 / End 보기 · Alt+Shift+S 공부 기록 저장 · Alt+T 타이머 시작/일시정지 (입력란에 포커스가 있을 때는 단축키 비활성) · 온보딩 중 Esc 나중에 닫기
+      키보드: Alt+1 함께 쌓기 · Alt+2 흐름 · Alt+3 이야기 · Home 함께 쌓기 / End 이야기 · Alt+Shift+S 공부 기록 저장 · Alt+T 타이머 시작/일시정지 (입력란에 포커스가 있을 때는 단축키 비활성) · 온보딩 중 Esc 나중에 닫기
     </p>
     <div id="insightBannerWrap" class="insight-banner-wrap" hidden>
       <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="알림"></div>
@@ -2317,76 +2156,23 @@
 
     <section id="record" class="view active" role="tabpanel" aria-labelledby="tabBtnRecord" aria-hidden="false">
       <div class="record-shell">
-        <aside class="card record-rail" aria-label="기록 내비게이션">
+        <aside class="card record-rail" aria-label="함께 쌓기 내비게이션">
           <div class="record-rail-brand">너의 옆자리</div>
-          <div class="record-rail-user">
-            <div class="record-rail-avatar" id="recordRailAvatar">메</div>
-            <div class="record-rail-name" id="recordRailName">메이트</div>
-          </div>
           <nav class="record-rail-nav">
             <button type="button" class="record-rail-tab active" data-record-rail="dashboard">대시보드</button>
-            <button type="button" class="record-rail-tab" data-go-tab="stats">통계</button>
-            <button type="button" class="record-rail-tab" data-go-tab="view">보기</button>
+            <button type="button" class="record-rail-tab" data-go-tab="stats">흐름</button>
+            <button type="button" class="record-rail-tab" data-go-tab="view">이야기</button>
           </nav>
           <p class="record-rail-note muted">인안나와 함께하는 공부</p>
         </aside>
 
         <div class="record-main">
-          <header class="card record-hero">
-            <p class="record-hero-kicker muted" id="recordHeroDate"></p>
-            <h2 class="record-hero-title" id="recordGreeting">안녕하세요!</h2>
-          </header>
-
-          <div class="record-cluster record-cluster--pulse">
-            <header class="record-cluster-head">
-              <p class="record-cluster-eyebrow">오늘 · 이번 주</p>
-              <h3 class="record-cluster-title">리듬 한눈에</h3>
-            </header>
-            <div class="record-cluster-body">
-              <div class="card today-journal-card">
-                <label for="todayJournalInput">오늘 한 줄 (일기)</label>
-                <div class="today-journal-row">
-                  <input id="todayJournalInput" type="text" maxlength="140" placeholder="오늘 공부·기분을 한 줄로 남겨 보세요." autocomplete="off" />
-                  <button type="button" class="btn secondary" id="saveTodayJournalBtn">저장</button>
-                </div>
-                <p class="muted" id="todayJournalHint" style="margin:8px 0 0;font-size:12px;"></p>
-              </div>
-
-              <div class="card bento-card habit-dashboard habit-dashboard--pulse">
-                <div class="habit-dashboard-row">
-                  <div class="habit-block habit-goal-block">
-                    <div class="habit-block-title">오늘 목표 달성</div>
-                    <div class="habit-goal-row">
-                      <div class="habit-ring-wrap">
-                        <div class="habit-ring" id="todayGoalRing" style="--goal-p: 0;">
-                          <div class="habit-ring-hole" id="todayGoalRingPct">0%</div>
-                        </div>
-                      </div>
-                      <p class="habit-goal-text muted" id="todayGoalRingText">목표 시간을 저장하면 달성률이 표시됩니다.</p>
-                    </div>
-                  </div>
-                  <div class="habit-block">
-                    <div class="habit-block-title">연속 출석</div>
-                    <div class="habit-streak-num" id="studyStreakValue">0</div>
-                    <p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;">매일 1분 이상 기록 시 일수가 이어집니다.</p>
-                    <p class="muted" id="studyStreakHint" style="margin:4px 0 0;font-size:12px;"></p>
-                  </div>
-                  <div class="habit-block">
-                    <div class="habit-block-title">이번 주 누적</div>
-                    <div class="habit-month-val" id="weeklyTotalShort">0시간 0분</div>
-                    <p class="muted" id="weeklyGoalLine" style="margin:6px 0 0;font-size:12px;line-height:1.45;">주간 목표를 아래에서 설정하면 진행률이 표시됩니다.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card bento-card habit-dashboard habit-dashboard--archive">
+          <div class="card bento-card habit-dashboard">
             <div class="habit-dashboard-row">
               <div class="habit-block">
-                <div class="habit-block-title">이번 달 총 공부</div>
-                <div class="habit-month-val" id="monthTotalTime">0시간 0분</div>
-                <p class="muted" style="margin:6px 0 0;font-size:12px;">이번 달력 월의 기록만 합산합니다.</p>
+                <div class="habit-block-title">연속 목표 달성일수</div>
+                <div class="habit-streak-num" id="studyStreakValue">0</div>
+                <p class="muted" id="studyStreakHint" style="margin:6px 0 0;font-size:12px;line-height:1.45;"></p>
               </div>
             </div>
           </div>
@@ -2401,18 +2187,12 @@
                 <div class="record-cluster-body">
                   <div class="record-bento-top">
                     <div class="card bento-card bento-goal">
-                  <h3>공부 목표 / 퀘스트</h3>
+                  <h3>공부 목표</h3>
                   <label for="goalHours">하루 공부 목표 시간 (시간 단위)</label>
                   <input id="goalHours" type="number" min="0.5" step="0.5" placeholder="예: 3" />
 
                   <label for="weeklyGoalHours" style="margin-top:10px;">이번 주 목표 시간 (시간 단위, 월~일 합산 기준)</label>
                   <input id="weeklyGoalHours" type="number" min="0" step="0.5" placeholder="예: 15 (비우면 주간 링 없음)" />
-
-                  <label for="questText" style="margin-top:10px;">오늘의 퀘스트 (목표)</label>
-                  <textarea id="questText" placeholder="한 줄에 하나씩 적으면 아래에 체크리스트가 생겨요.&#10;예: 화성학 정리&#10;밴드 합주 1시간&#10;영어 단어"></textarea>
-                  <p class="muted" style="font-size:12px;margin-top:8px;line-height:1.45;">여러 줄로 적은 항목은 <strong>오늘 날짜</strong> 기준 체크리스트로 표시됩니다. 목표 저장 후 체크해 주세요.</p>
-                  <div id="dailyGoalChecklistWrap" class="daily-goal-checklist" aria-label="오늘 퀘스트 체크리스트"></div>
-                  <div id="dailyGoalCompleteCheer" class="daily-goal-cheer" hidden role="status" aria-live="polite"></div>
 
                   <div class="btn-row">
                     <button class="btn secondary" id="saveGoalQuestBtn">목표 저장</button>
@@ -2447,7 +2227,7 @@
     <section id="panelStats" class="view stats-panel" role="tabpanel" aria-labelledby="tabBtnStats" aria-hidden="true">
       <header class="card stats-hero">
         <p class="muted stats-hero-kicker" id="statsHeroDate"></p>
-        <h2 class="stats-hero-title">통계</h2>
+        <h2 class="stats-hero-title">흐름</h2>
         <p class="muted" style="font-size:12px;margin:8px 0 0;line-height:1.45;">공부 기록·리듬·그래프·진행 상태를 한곳에서 확인합니다.</p>
       </header>
 
@@ -2553,7 +2333,7 @@
     </footer>
 
     <section id="panelView" class="view" role="tabpanel" aria-labelledby="tabBtnView" aria-hidden="true">
-      <div class="view-sub-tabs" role="tablist" aria-label="보기 하위">
+      <div class="view-sub-tabs" role="tablist" aria-label="이야기 하위">
         <button type="button" class="tab-btn active" role="tab" id="tabBtnViewChar" data-view-sub="character" aria-controls="viewPanelCharacter" aria-selected="true" aria-pressed="true" tabindex="0">캐릭터</button>
         <button type="button" class="tab-btn" role="tab" id="tabBtnViewStory" data-view-sub="story" aria-controls="viewPanelStory" aria-selected="false" aria-pressed="false" tabindex="-1">스토리보드</button>
       </div>

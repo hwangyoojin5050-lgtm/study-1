@@ -6,14 +6,13 @@ import {
   sanitizeMemoryMoment,
   migratePersistedPayload
 } from "./state.js";
-import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.js";
+import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     /* ===== JS §1 Persistence key, state shape ===== */
     /** 저장소: localStorage 단일 기기. gatherPersistedState() / hydrateStateFromPlainObject() 스키마를 유지합니다. */
     const state = {
       userName: "",
       goalHours: 0,
-      quest: "",
       affection: 0,
       totalSeconds: 0,
       records: [],
@@ -46,9 +45,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       storyContactChannel: "",
       storyFreshReset: false,
       storySummaryFullView: false,
-      dailyChecklistDate: "",
-      dailyChecklistItems: [],
-      dailyChecklistChecked: [],
       memoryMoments: [],
       bannerDismissedWeekly: "",
       romanceLastSeenDate: "",
@@ -904,7 +900,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         "━━ 주간 리포트 (" + wr.mondayKey + " ~ 7일) ━━",
         "· 총 집중: " + fmtHourMin(weekSec),
         "· 태그 상위: " + tagLine,
-        "· 연속 출석: " + streak + "일",
+        "· 연속 목표 달성: " + streak + "일",
         "· 한 줄 메모: 이번 주 리듬은 아래 히트맵과 함께 보면 좋아요."
       ];
       return appendWeeklyInannaLineToReport(lines.join("\n"), now);
@@ -1054,8 +1050,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       { id: "m1", title: "첫 스텝", desc: "기록 1건", ok: () => state.records.length >= 1 },
       { id: "m2", title: "기록 10", desc: "공부 기록 10건", ok: () => state.records.length >= 10 },
       { id: "m3", title: "기록 50", desc: "공부 기록 50건", ok: () => state.records.length >= 50 },
-      { id: "m4", title: "7일 연속", desc: "연속 7일+", ok: () => computeStudyStreakDays() >= 7 },
-      { id: "m5", title: "30일 연속", desc: "연속 30일+", ok: () => computeStudyStreakDays() >= 30 },
+      { id: "m4", title: "7일 연속", desc: "목표 달성 연속 7일+", ok: () => computeStudyStreakDays() >= 7 },
+      { id: "m5", title: "30일 연속", desc: "목표 달성 연속 30일+", ok: () => computeStudyStreakDays() >= 30 },
       { id: "m6", title: "태그 탐험", desc: "태그 5종+", ok: () => {
         const s = new Set();
         state.records.forEach((r) => {
@@ -1224,7 +1220,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       } else {
         bullets.push("엔딩: 아직 도달 전 (호감도 " + ENDING_MIN_AFFECTION + "+ 및 주력 루트 " + ENDING_MIN_ROUTE + "+ 필요)");
       }
-      bullets.push("루트 누적 — 청혼 " + state.routeMarriage + " · 얀데레 " + state.routeYandere + " · 유학 " + state.routeAbroad + " (보기 탭에서 주력 루트가 강조됩니다)");
+      bullets.push("루트 누적 — 청혼 " + state.routeMarriage + " · 얀데레 " + state.routeYandere + " · 유학 " + state.routeAbroad + " (이야기 탭에서 주력 루트가 강조됩니다)");
       bullets.push("기록된 이벤트 — 관계 진전 " + cnt.milestone + " · 말 걸기 " + cnt.interaction + " · 대화 " + cnt.choice + " · 엔딩 로그 " + cnt.ending
         + (cnt.userReaction ? " · 나의 한 줄 " + cnt.userReaction : "")
         + (cnt.branch ? " · 짧은 분기 " + cnt.branch : "")
@@ -1306,7 +1302,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         schemaVersion: PERSIST_SCHEMA_VERSION,
         userName: state.userName,
         goalHours: state.goalHours,
-        quest: state.quest,
         affection: state.affection,
         totalSeconds: state.totalSeconds,
         records: state.records,
@@ -1334,9 +1329,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         storyContactChannel: state.storyContactChannel || "",
         storyFreshReset: state.storyFreshReset === true,
         storySummaryFullView: state.storySummaryFullView === true,
-        dailyChecklistDate: state.dailyChecklistDate || "",
-        dailyChecklistItems: Array.isArray(state.dailyChecklistItems) ? state.dailyChecklistItems : [],
-        dailyChecklistChecked: Array.isArray(state.dailyChecklistChecked) ? state.dailyChecklistChecked : [],
         memoryMoments: Array.isArray(state.memoryMoments) ? state.memoryMoments : [],
         bannerDismissedWeekly: state.bannerDismissedWeekly || "",
         romanceLastSeenDate: state.romanceLastSeenDate || "",
@@ -1368,7 +1360,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const data = migratePersistedPayload({ ...src });
       state.userName = data.userName || "";
       state.goalHours = Number(data.goalHours || 0);
-      state.quest = data.quest || "";
       state.affection = Number(data.affection || 0);
       state.totalSeconds = Number(data.totalSeconds || 0);
       state.records = Array.isArray(data.records) ? data.records : [];
@@ -1404,17 +1395,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         : "";
       state.storyFreshReset = data.storyFreshReset === true;
       state.storySummaryFullView = data.storySummaryFullView === true;
-      state.dailyChecklistDate = typeof data.dailyChecklistDate === "string" ? data.dailyChecklistDate : "";
-      state.dailyChecklistItems = Array.isArray(data.dailyChecklistItems)
-        ? data.dailyChecklistItems.map((s) => String(s || "").trim()).filter(Boolean).slice(0, 15)
-        : [];
-      state.dailyChecklistChecked = Array.isArray(data.dailyChecklistChecked)
-        ? data.dailyChecklistChecked.map((x) => x === true)
-        : [];
-      while (state.dailyChecklistChecked.length < state.dailyChecklistItems.length) {
-        state.dailyChecklistChecked.push(false);
-      }
-      state.dailyChecklistChecked = state.dailyChecklistChecked.slice(0, state.dailyChecklistItems.length);
       if (!Array.isArray(state.memoryMoments)) state.memoryMoments = [];
       state.memoryMoments = state.memoryMoments.map(sanitizeMemoryMoment).filter(Boolean).slice(-50);
       state.bannerDismissedWeekly = typeof data.bannerDismissedWeekly === "string" ? data.bannerDismissedWeekly : "";
@@ -1583,99 +1563,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       if (state.todayJournalDate !== today) {
         state.todayJournalDate = today;
         state.todayJournalLine = "";
-      }
-    }
-
-    function questLinesToChecklist() {
-      return state.quest.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 15);
-    }
-
-    function rolloverDailyChecklistIfNeeded() {
-      if (!Array.isArray(state.dailyChecklistItems)) state.dailyChecklistItems = [];
-      if (!Array.isArray(state.dailyChecklistChecked)) state.dailyChecklistChecked = [];
-      const today = dateKey(new Date());
-      if (state.dailyChecklistDate !== today) {
-        state.dailyChecklistDate = today;
-        const lines = questLinesToChecklist();
-        state.dailyChecklistItems = lines.slice();
-        state.dailyChecklistChecked = lines.map(() => false);
-      } else {
-        while (state.dailyChecklistChecked.length < state.dailyChecklistItems.length) {
-          state.dailyChecklistChecked.push(false);
-        }
-        if (state.dailyChecklistChecked.length > state.dailyChecklistItems.length) {
-          state.dailyChecklistChecked = state.dailyChecklistChecked.slice(0, state.dailyChecklistItems.length);
-        }
-      }
-    }
-
-    function rebuildDailyChecklistFromSavedQuest() {
-      const today = dateKey(new Date());
-      state.dailyChecklistDate = today;
-      const lines = questLinesToChecklist();
-      state.dailyChecklistItems = lines.slice();
-      state.dailyChecklistChecked = lines.map(() => false);
-    }
-
-    function allDailyGoalsMet(todayKey) {
-      const todayMin = Math.round(sumSecondsByDate(todayKey) / 60);
-      const goalMin = Math.max(0, Number(state.goalHours || 0)) * 60;
-      const timeOk = goalMin <= 0 ? true : todayMin >= goalMin;
-      const items = Array.isArray(state.dailyChecklistItems) ? state.dailyChecklistItems : [];
-      const ch = Array.isArray(state.dailyChecklistChecked) ? state.dailyChecklistChecked : [];
-      const listOk = items.length === 0 ? true : items.every((_, i) => ch[i] === true);
-      if (goalMin <= 0 && items.length === 0) return false;
-      return timeOk && listOk;
-    }
-
-    function pickDailyCompleteCheerLine() {
-      const name = getDisplayName();
-      const voc = getVocative(name);
-      const lines = [
-        name + voc + ", 오늘 적어 둔 목표 전부 끝냈네… 박자 완벽해. 나도 한 곡 더 연습할게.",
-        "이렇게까지 해 내다니, " + name + voc + ". 나도 셋리스트에 ‘오늘’이라는 곡 제목 하나 적어둘게.",
-        "다정한 " + name + voc + " 덕분에 오늘 내 가사에 ‘뿌듯’이라는 단어가 생겼어.",
-        name + voc + ", 활발하게 쏟아낸 하루… 자랑해도 돼. 나는 옆에서 박수 칠게.",
-        name + voc + ", 공부랑 퀘스트 둘 다 잡았네. 사교적인 네가 사람들한테도 자랑할 만한 하루야."
-      ];
-      const seed = dateKey(new Date()) + "_" + String(state.affection);
-      let h = 0;
-      for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-      return lines[h % lines.length];
-    }
-
-    function renderDailyGoalChecklist() {
-      const wrap = $("dailyGoalChecklistWrap");
-      const cheer = $("dailyGoalCompleteCheer");
-      if (!wrap) return;
-      const items = Array.isArray(state.dailyChecklistItems) ? state.dailyChecklistItems : [];
-      if (!items.length) {
-        wrap.innerHTML = "<p class='muted' style='margin:0;font-size:12px;line-height:1.45;'>퀘스트를 여러 줄로 저장하면 여기에 체크리스트가 나타납니다.</p>";
-      } else {
-        const rows = items.map((text, i) => {
-          const checked = state.dailyChecklistChecked[i] === true;
-          return "<div class='daily-goal-row'>" +
-            "<input type='checkbox' id='dailyGoalCk" + i + "' data-checklist-idx='" + i + "' " + (checked ? "checked " : "") + "/>" +
-            "<label for='dailyGoalCk" + i + "'>" + escapeHtml(text) + "</label></div>";
-        });
-        wrap.innerHTML = "<h4>오늘 체크리스트</h4>" + rows.join("");
-      }
-      if (cheer) {
-        const today = dateKey(new Date());
-        if (allDailyGoalsMet(today)) {
-          cheer.hidden = false;
-          cheer.innerHTML =
-            "<div class='daily-goal-cheer-inner'>" +
-            "<span class='daily-goal-cheer-badge' aria-label='도전 과제 달성'>" + DAILY_QUEST_COMPLETE_SVG + "</span>" +
-            "<div class='daily-goal-cheer-copy'>" +
-            "<span class='daily-goal-cheer-who'>도전 과제 달성</span>" +
-            "<span class='daily-goal-cheer-from'>인안나</span>" +
-            "<p class='daily-goal-cheer-line'>" + escapeHtml(pickDailyCompleteCheerLine()) + "</p>" +
-            "</div></div>";
-        } else {
-          cheer.hidden = true;
-          cheer.innerHTML = "";
-        }
       }
     }
 
@@ -1897,30 +1784,25 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
         .reduce((sum, r) => sum + Number(r.seconds || 0), 0);
     }
 
-    function getCurrentMonthTotalSeconds() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = now.getMonth();
-      const prefix = y + "-" + String(m + 1).padStart(2, "0") + "-";
-      let sec = 0;
-      state.records.forEach((r) => {
-        if (r.date && r.date.startsWith(prefix)) sec += Number(r.seconds || 0);
-      });
-      return sec;
+    function isDailyGoalMet(dayKey) {
+      const goalMin = Math.max(0, Number(state.goalHours || 0)) * 60;
+      if (goalMin <= 0) return false;
+      return Math.round(sumSecondsByDate(dayKey) / 60) >= goalMin;
     }
 
     function computeStudyStreakDays() {
+      const goalMin = Math.max(0, Number(state.goalHours || 0)) * 60;
+      if (goalMin <= 0) return 0;
       const now = new Date();
       const todayKey = dateKey(now);
-      const todaySec = sumSecondsByDate(todayKey);
       const cursor = new Date(now);
-      if (todaySec < 60) {
+      if (!isDailyGoalMet(todayKey)) {
         cursor.setDate(cursor.getDate() - 1);
       }
       let streak = 0;
       while (true) {
         const key = dateKey(cursor);
-        if (sumSecondsByDate(key) >= 60) {
+        if (isDailyGoalMet(key)) {
           streak += 1;
           cursor.setDate(cursor.getDate() - 1);
         } else {
@@ -2184,7 +2066,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
           "<button type='button' class='mini-btn' data-action='edit' data-edit-index='" + idx + "'>수정</button>" +
           "<button type='button' class='mini-btn delete' data-action='quick-delete' data-edit-index='" + idx + "'>삭제</button>" +
           "</div></div>" +
-          "<div class='muted'>퀘스트: " + escapeHtml(r.quest || "미입력") + "</div>" +
           tagLine +
           noteLine +
           intentLine +
@@ -2234,13 +2115,13 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       }
       const streak = computeStudyStreakDays();
       const h = new Date().getHours();
-      if (streak >= 1 && todayMin < 1 && h >= 17 && state.bannerDismissedStreak !== today) {
+      if (goalDayMin > 0 && streak >= 1 && todayMin < goalDayMin && h >= 17 && state.bannerDismissedStreak !== today) {
         parts.push("<div class='insight-banner insight-banner--warn' role='status'>"
           + "<div class='insight-banner-main'>"
           + "<span class='insight-banner-icon' aria-hidden='true'>!</span>"
           + "<div class='insight-banner-copy'>"
-          + "<strong class='insight-banner-title'>연속 출석 지키기</strong>"
-          + "<span class='insight-banner-desc'>오늘 1분만 기록해도 연속일이 이어져요.</span>"
+          + "<strong class='insight-banner-title'>연속 목표 달성 이어가기</strong>"
+          + "<span class='insight-banner-desc'>오늘 목표 시간을 채우면 연속 목표 달성일이 이어져요.</span>"
           + "</div></div>"
           + "<button type='button' class='mini-btn' data-banner-dismiss='streak'>닫기</button></div>");
       }
@@ -2274,7 +2155,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
     function render() {
       try {
       ensureTodayJournalRollover();
-      rolloverDailyChecklistIfNeeded();
       applyA11yPresetToDocument();
       const today = dateKey(new Date());
       clearRomanceBackdropIfStale(today);
@@ -2287,15 +2167,13 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       if (userNameViewEdit) userNameViewEdit.value = state.userName || "";
       const goalHoursEl = $("goalHours");
       if (goalHoursEl) goalHoursEl.value = state.goalHours || "";
-      const questTextEl = $("questText");
-      if (questTextEl) questTextEl.value = state.quest || "";
       const goalQuestStatusEl = $("goalQuestStatus");
       if (goalQuestStatusEl) {
-        goalQuestStatusEl.textContent = state.goalHours
-          ? "하루 목표 " + state.goalHours + "시간 / 퀘스트 저장됨"
-          : "저장된 목표 없음";
+        const parts = [];
+        if (state.goalHours) parts.push("하루 목표 " + state.goalHours + "시간");
+        if (state.weeklyGoalHours) parts.push("주간 목표 " + state.weeklyGoalHours + "시간");
+        goalQuestStatusEl.textContent = parts.length ? parts.join(" · ") + " 저장됨" : "저장된 목표 없음";
       }
-      renderDailyGoalChecklist();
       const wgh = $("weeklyGoalHours");
       if (wgh) wgh.value = state.weeklyGoalHours || "";
       const dft = $("defaultSessionTagInput");
@@ -2337,31 +2215,20 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       }
       const streakVal = $("studyStreakValue");
       const streakHint = $("studyStreakHint");
-      if (streakVal) streakVal.textContent = String(computeStudyStreakDays());
+      const goalMinForStreak = Math.max(0, Number(state.goalHours || 0)) * 60;
+      const streakDays = computeStudyStreakDays();
+      if (streakVal) streakVal.textContent = String(streakDays);
       if (streakHint) {
-        const todayOk = sumSecondsByDate(today) >= 60;
-        streakHint.textContent = todayOk
-          ? "오늘 1분 이상 기록으로 연속일에 오늘이 포함됐어요."
-          : "오늘은 아직 미반영이면 어제까지의 연속일을 보여 줘요. 1분만 적어도 이어져요.";
-      }
-      const monthTotalEl = $("monthTotalTime");
-      if (monthTotalEl) monthTotalEl.textContent = fmtHourMin(getCurrentMonthTotalSeconds());
-
-      const nowDate = new Date();
-      const weekSec = sumSecondsWeekMonSun(nowDate);
-      const wtot = $("weeklyTotalShort");
-      if (wtot) wtot.textContent = fmtHourMin(weekSec);
-      const wgLine = $("weeklyGoalLine");
-      if (wgLine) {
-        const wh = Number(state.weeklyGoalHours || 0);
-        if (!wh) wgLine.textContent = "주간 목표(시간)을 목표 카드에서 저장하면 진행률이 표시됩니다.";
-        else {
-          const needMin = wh * 60;
-          const doneMin = Math.round(weekSec / 60);
-          const pct = needMin ? Math.min(100, Math.round((doneMin / needMin) * 100)) : 0;
-          wgLine.textContent = "이번 주 " + doneMin + "분 / 목표 " + needMin + "분 (" + pct + "%)";
+        if (!goalMinForStreak) {
+          streakHint.textContent = "하루 공부 목표를 저장하면 연속 목표 달성일수가 표시됩니다.";
+        } else if (isDailyGoalMet(today)) {
+          streakHint.textContent = "오늘 하루 목표를 달성해 연속일에 오늘이 포함됐어요.";
+        } else {
+          streakHint.textContent = "오늘은 아직 미달성이면 어제까지 달성한 연속일을 보여 줘요.";
         }
       }
+
+      const nowDate = new Date();
       const tagLineEl = $("tagStatsLine");
       if (tagLineEl) {
         const m = aggregateSecondsByTag();
@@ -2400,19 +2267,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const nextDialogue = getNextDialogueInfo();
       const displayName = getDisplayName();
       const voc = getVocative(displayName);
-      const recordGreeting = $("recordGreeting");
-      if (recordGreeting) recordGreeting.textContent = "안녕하세요, " + displayName + "님";
-      const recordHeroDate = $("recordHeroDate");
-      if (recordHeroDate) recordHeroDate.textContent = formatVnHudDate();
       const statsHeroDate = $("statsHeroDate");
       if (statsHeroDate) statsHeroDate.textContent = formatVnHudDate();
-      const recordRailName = $("recordRailName");
-      if (recordRailName) recordRailName.textContent = displayName;
-      const recordRailAvatar = $("recordRailAvatar");
-      if (recordRailAvatar) {
-        const ch = (displayName.trim().charAt(0) || "메");
-        recordRailAvatar.textContent = ch;
-      }
       const vnStageEl = $("vnRomanceStage");
       const dlg = $("dialogueBox");
       if (state.endingId) {
@@ -2537,7 +2393,7 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       const rec = {
         date: today,
         seconds,
-        quest: state.quest,
+        quest: "",
         source: source || "manual"
       };
       const tag = (opts.tag != null ? String(opts.tag) : (state.defaultSessionTag || "")).trim().slice(0, 24);
@@ -2715,8 +2571,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
 
     function paintOnboardingStep() {
       const bodies = [
-        "「너의 옆자리」는 기록 탭에서 타이머로 집중 시간을 쌓고, 통계 탭에서 기록·그래프를 보고, 보기 탭에서 인안나와의 대사·스토리를 이어 가요.",
-        "집중은 기록 탭의 목표·타이머에서 바로 시작할 수 있어요. Alt+1 기록 · Alt+2 통계 · Alt+3 보기, Home / End로도 탭을 옮길 수 있어요.",
+        "「너의 옆자리」는 함께 쌓기 탭에서 타이머로 집중 시간을 쌓고, 흐름 탭에서 기록·그래프를 보고, 이야기 탭에서 인안나와의 대사·스토리를 이어 가요.",
+        "집중은 함께 쌓기 탭의 목표·타이머에서 바로 시작할 수 있어요. Alt+1 함께 쌓기 · Alt+2 흐름 · Alt+3 이야기, Home / End로도 탭을 옮길 수 있어요.",
         "공부 시간이 쌓이면 호감도가 오르고, 가끔 짧은 대화 이벤트가 열려요. 스토리 탭에서 지금까지의 흐름을 다시 볼 수 있어요.",
         "데이터는 이 브라우저 안(localStorage)에만 저장돼요. 브라우저 데이터를 지우면 기록이 사라질 수 있어요."
       ];
@@ -2885,13 +2741,10 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       $("saveGoalQuestBtn")?.addEventListener("click", () => {
         const ghEl = $("goalHours");
         const wghEl = $("weeklyGoalHours");
-        const qtEl = $("questText");
         state.goalHours = Number((ghEl && ghEl.value) || 0);
         state.weeklyGoalHours = Math.max(0, Number((wghEl && wghEl.value) || 0));
-        state.quest = qtEl && qtEl.value ? qtEl.value.trim() : "";
         const tg = $("defaultSessionTagInput");
         if (tg) state.defaultSessionTag = tg.value.trim().slice(0, 24);
-        rebuildDailyChecklistFromSavedQuest();
         saveState();
         render();
       });
@@ -2903,23 +2756,6 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
           const btn = e.target instanceof HTMLElement ? e.target.closest("[data-story-full-toggle]") : null;
           if (!btn) return;
           state.storySummaryFullView = !state.storySummaryFullView;
-          saveState();
-          render();
-        });
-      }
-
-      const dailyGoalChecklistWrap = $("dailyGoalChecklistWrap");
-      if (dailyGoalChecklistWrap && dailyGoalChecklistWrap.dataset.checklistBound !== "1") {
-        dailyGoalChecklistWrap.dataset.checklistBound = "1";
-        dailyGoalChecklistWrap.addEventListener("change", (e) => {
-          const t = e.target;
-          if (!(t instanceof HTMLInputElement) || !t.hasAttribute("data-checklist-idx")) return;
-          const idx = Number(t.getAttribute("data-checklist-idx"));
-          if (!Number.isFinite(idx) || idx < 0) return;
-          rolloverDailyChecklistIfNeeded();
-          if (!Array.isArray(state.dailyChecklistChecked)) state.dailyChecklistChecked = [];
-          while (state.dailyChecklistChecked.length <= idx) state.dailyChecklistChecked.push(false);
-          state.dailyChecklistChecked[idx] = t.checked;
           saveState();
           render();
         });
@@ -3002,8 +2838,8 @@ import { milestoneBadgeIconHtml, DAILY_QUEST_COMPLETE_SVG } from "./badge-icons.
       document.querySelectorAll(".record-rail-tab[data-record-rail='dashboard']").forEach((btn) => {
         btn.addEventListener("click", () => {
           activateTab("record");
-          const hero = document.querySelector(".record-hero");
-          if (hero) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+          const main = document.querySelector(".record-main");
+          if (main) main.scrollIntoView({ behavior: "smooth", block: "start" });
           render();
         });
       });
