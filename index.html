@@ -55,6 +55,14 @@
       --soft-shadow-sm: 0 6px 22px rgba(45, 38, 72, 0.06);
       --radius-card: 22px;
       --radius-pill: 999px;
+      --space-1: 8px;
+      --space-2: 12px;
+      --space-3: 16px;
+      --space-4: 24px;
+      --text-title: 19px;
+      --text-body: 14px;
+      --text-caption: 12px;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     }
     html[data-theme="romance"] .card {
       border-color: rgba(255, 255, 255, 0.65);
@@ -302,6 +310,8 @@
     body {
       margin: 0;
       font-family: "Noto Sans KR", "Segoe UI", sans-serif;
+      font-size: var(--text-body);
+      line-height: 1.5;
       background-color: var(--bg);
       background-image:
         radial-gradient(ellipse 90% 70% at 8% 0%, rgba(240, 184, 208, 0.55) 0%, transparent 52%),
@@ -315,7 +325,46 @@
     .app {
       max-width: 1120px;
       margin: 0 auto;
-      padding: 16px;
+      padding: var(--space-3);
+    }
+    .text-title,
+    h2.onboarding-title,
+    .stats-hero-title,
+    .record-cluster-title {
+      font-size: var(--text-title);
+      line-height: 1.35;
+    }
+    .text-caption,
+    label,
+    .muted {
+      font-size: var(--text-caption);
+      line-height: 1.45;
+    }
+    .metric-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 2px var(--space-1);
+    }
+    .metric-val {
+      font-size: clamp(26px, 5vw, 34px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--library-ink);
+      line-height: 1.1;
+    }
+    .metric-unit {
+      font-size: var(--text-caption);
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .metric-sep {
+      color: var(--muted);
+      font-size: var(--text-caption);
+      margin: 0 2px;
+    }
+    .stat-label {
+      margin-bottom: var(--space-1);
     }
     .insight-banner-wrap {
       margin: 0 0 12px;
@@ -419,7 +468,17 @@
       user-select: none;
     }
     .view { display: none; }
-    .view.active { display: block; }
+    .view.active {
+      display: block;
+      animation: viewPanelIn 0.22s var(--ease-out);
+    }
+    @keyframes viewPanelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .insight-banner-wrap:not([hidden]) .insight-banner {
+      animation: viewPanelIn 0.2s var(--ease-out);
+    }
     /* 메인 탭: 라디오 :checked 기준으로 패널 표시(JS 없이도 전환) */
     .main-tab-input {
       position: absolute;
@@ -467,7 +526,7 @@
       background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 100%);
       border: 1px solid var(--surface-line);
       border-radius: var(--radius-card);
-      padding: 18px;
+      padding: var(--space-3);
       box-shadow: var(--soft-shadow);
     }
     /* ===== §2 Record tab — shell, bento, habits (색·폰트 토큰 유지) ===== */
@@ -821,13 +880,14 @@
       margin-top: 4px;
     }
     .card h3 {
-      margin: 0 0 12px;
+      margin: 0 0 var(--space-2);
       font-family: "Noto Serif KR", Georgia, serif;
+      font-size: var(--text-title);
       font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--pale-ash);
     }
-    label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+    label { color: var(--muted); display: block; margin-bottom: var(--space-1); }
     input, textarea {
       width: 100%;
       border: 1px solid rgba(17, 70, 101, 0.65);
@@ -842,7 +902,7 @@
       box-shadow: 0 0 0 2px rgba(114, 15, 50, 0.2);
     }
     textarea { resize: vertical; min-height: 72px; }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
     .btn {
       border-radius: 10px;
       padding: 10px 12px;
@@ -882,7 +942,7 @@
       padding: 10px;
       border: 1px solid var(--surface-line);
     }
-    .muted { color: var(--muted); font-size: 13px; }
+    .muted { color: var(--muted); }
     /* —— 캐릭터 탭 · 비주얼노벨 레이아웃 (색·폰트 토큰 유지) —— */
     /* ===== §3 VN / character view, story, portrait gallery ===== */
     .vn-card {
@@ -1136,6 +1196,9 @@
       bottom: 12px;
       z-index: 4;
       padding-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .vn-nameplate {
       position: absolute;
@@ -1155,6 +1218,8 @@
     }
     .vn-dialogue-inner {
       position: relative;
+      width: 100%;
+      max-width: 36em;
       border-radius: 20px;
       border: 3px solid var(--pale-ash);
       padding: 28px 16px 16px;
@@ -1170,29 +1235,163 @@
     }
     .vn-dialogue-text {
       font-family: "Noto Serif KR", Georgia, serif;
-      font-size: 18px;
-      line-height: 1.5;
+      font-size: var(--text-body);
+      line-height: 1.65;
       margin: 0;
+      max-width: 36em;
       color: var(--text);
       overflow-wrap: anywhere;
       word-break: keep-all;
     }
+    .timer-display-hit {
+      cursor: pointer;
+      user-select: none;
+      border-radius: 12px;
+      transition: background 0.18s var(--ease-out);
+    }
+    body:not(.timer-active) .timer-display-hit:active {
+      background: rgba(197, 184, 232, 0.2);
+    }
     @keyframes vnDialogueFlash {
       0% {
-        text-shadow: 0 0 0 rgba(255, 214, 230, 0);
-        filter: brightness(1);
+        opacity: 0.88;
+        transform: translateY(2px);
       }
-      35% {
-        text-shadow: 0 0 14px rgba(255, 200, 220, 0.55);
-        filter: brightness(1.12);
+      45% {
+        opacity: 1;
+        transform: translateY(0);
       }
       100% {
-        text-shadow: 0 0 0 rgba(255, 214, 230, 0);
-        filter: brightness(1);
+        opacity: 1;
+        transform: translateY(0);
       }
     }
     .vn-dialogue-text.vn-dialogue--flash {
-      animation: vnDialogueFlash 1s ease-out 1;
+      animation: vnDialogueFlash 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1;
+    }
+    .story-log-day {
+      font-size: var(--text-caption);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: var(--space-3) 0 var(--space-2);
+      padding-bottom: var(--space-1);
+      border-bottom: 1px solid var(--surface-line);
+    }
+    .story-log-day:first-child {
+      margin-top: 0;
+    }
+    .stats-kpi-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-1) var(--space-2);
+      padding: var(--space-2);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+    }
+    .kpi-chip {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .kpi-k {
+      font-size: var(--text-caption);
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .kpi-v {
+      font-size: var(--text-body);
+      font-weight: 800;
+      color: var(--library-ink);
+    }
+    .kpi-sep {
+      color: var(--muted);
+      font-weight: 700;
+      user-select: none;
+    }
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      flex-wrap: wrap;
+      margin: var(--space-2) 0 0;
+    }
+    .chart-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .chart-legend-swatch--bar {
+      background: linear-gradient(180deg, #e8a6c8, #c5b8e8);
+    }
+    .chart-legend-swatch--bar-alt {
+      background: linear-gradient(180deg, #d4a8c8, #a89bcf);
+    }
+    .chart-legend-swatch--lo {
+      background: rgba(197, 184, 232, 0.35);
+    }
+    .chart-legend-swatch--hi {
+      background: rgba(232, 166, 200, 0.85);
+    }
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      margin-bottom: var(--space-2);
+    }
+    .filter-pill {
+      border: 1px solid rgba(216, 204, 240, 0.65);
+      background: rgba(255, 255, 255, 0.65);
+      color: var(--text);
+      border-radius: var(--radius-pill);
+      padding: 6px 12px;
+      font-size: var(--text-caption);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s var(--ease-out), color 0.18s var(--ease-out), border-color 0.18s var(--ease-out);
+    }
+    .filter-pill[aria-pressed="true"] {
+      background: linear-gradient(135deg, #4a4268 0%, #2d2648 100%);
+      color: #fff;
+      border-color: transparent;
+    }
+    .filter-pill-panel {
+      margin-bottom: var(--space-2);
+    }
+    .filter-pill-panel input {
+      max-width: 220px;
+    }
+    .filter-more {
+      margin-top: var(--space-1);
+    }
+    .filter-more summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 600;
+      list-style: none;
+    }
+    .filter-more summary::-webkit-details-marker {
+      display: none;
+    }
+    .filter-more-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
     .vn-inner-panel {
       margin-top: 12px;
@@ -1272,12 +1471,8 @@
       padding-right: 6px;
     }
     .history-filter-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-      align-items: flex-end;
-      margin-bottom: 10px;
-      padding: 10px 10px 8px;
+      margin-bottom: var(--space-2);
+      padding: var(--space-2);
       border-radius: 12px;
       background: rgba(0, 0, 0, 0.16);
       border: 1px solid var(--surface-line);
@@ -1308,24 +1503,117 @@
     html[data-theme="romance"] .history-filter-bar {
       background: rgba(255, 252, 247, 0.75);
     }
+    .app-snackbar,
     .record-snackbar {
       position: fixed;
-      bottom: 88px;
+      top: max(var(--space-2), env(safe-area-inset-top, 0px));
       left: 50%;
       transform: translateX(-50%);
       z-index: 5000;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 12px;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: 14px;
       background: var(--card);
       border: 1px solid var(--surface-line);
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
-      max-width: min(440px, calc(100vw - 24px));
+      box-shadow: var(--soft-shadow);
+      max-width: min(440px, calc(100vw - var(--space-4)));
+      font-size: var(--text-body);
+      animation: snackIn 0.22s var(--ease-out);
     }
+    @keyframes snackIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .app-snackbar[hidden],
     .record-snackbar[hidden] {
       display: none !important;
+    }
+    .app-snackbar .btn.secondary,
+    .record-snackbar .btn.secondary {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      font-size: var(--text-caption);
+    }
+    .timer-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      flex-wrap: wrap;
+    }
+    .timer-actions-primary {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      gap: var(--space-1);
+    }
+    .timer-actions-primary .btn {
+      flex: 1;
+      min-width: 0;
+    }
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: var(--soft-shadow-sm);
+      transition: background 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+    }
+    .btn-icon:hover {
+      transform: translateY(-1px);
+    }
+    .timer-more-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + var(--space-1));
+      min-width: 148px;
+      padding: var(--space-1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--surface-line);
+      box-shadow: var(--soft-shadow);
+      z-index: 20;
+    }
+    .timer-actions-more {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .timer-more-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: var(--space-2);
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-size: var(--text-body);
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .timer-more-item:hover {
+      background: rgba(197, 184, 232, 0.25);
+    }
+    body.timer-active .bento-timer {
+      border-color: rgba(235, 168, 196, 0.75);
+      box-shadow: 0 0 0 1px rgba(235, 168, 196, 0.35), var(--soft-shadow-sm);
+      transition: box-shadow 0.22s var(--ease-out), border-color 0.22s var(--ease-out);
+    }
+    body.timer-active .btn-timer-primary {
+      background: linear-gradient(135deg, #6b4a62 0%, #4a3560 100%);
+      box-shadow: 0 0 0 3px rgba(235, 168, 196, 0.35);
+    }
+    .tab-btn {
+      transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
     }
     .history-item { border-bottom: 1px dashed var(--surface-line); padding: 8px 0; }
     .history-row {
@@ -1726,14 +2014,15 @@
       margin-top: 12px;
     }
     .today-inanna-strip {
-      margin: 0 0 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
+      margin: 0 0 var(--space-2);
+      padding: var(--space-2);
+      border-radius: 14px;
       border: 1px solid rgba(123, 68, 90, 0.45);
       background: rgba(114, 15, 50, 0.12);
-      font-size: 13px;
+      font-size: var(--text-body);
       line-height: 1.5;
       color: var(--text);
+      min-height: 88px;
     }
     html[data-theme="romance"] .today-inanna-strip {
       background: rgba(243, 226, 169, 0.45);
@@ -1741,13 +2030,15 @@
     }
     .today-inanna-inner {
       display: flex;
-      gap: 12px;
-      align-items: flex-start;
+      gap: var(--space-2);
+      align-items: stretch;
+      min-height: 72px;
     }
     .today-inanna-img {
       width: 72px;
       height: 72px;
       object-fit: cover;
+      object-position: center top;
       border-radius: 10px;
       flex-shrink: 0;
       border: 1px solid rgba(89, 66, 110, 0.2);
@@ -1758,12 +2049,15 @@
       min-width: 0;
     }
     .today-inanna-strip .today-inanna-k {
-      font-size: 11px;
+      font-size: var(--text-caption);
       font-weight: 800;
       letter-spacing: 0.08em;
       color: var(--muted);
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: var(--space-1);
+    }
+    #todayInannaLine {
+      font-size: var(--text-body);
     }
     .insight-banner--info {
       background: rgba(17, 70, 101, 0.22);
@@ -2105,13 +2399,13 @@
           <button type="button" class="btn secondary" id="onboardingSkipBtn">나중에</button>
           <button type="button" class="btn primary" id="onboardingNextBtn">다음</button>
         </div>
-        <p class="muted" id="onboardingStepInd" style="font-size:11px;margin-top:10px;">1 / 4</p>
+        <p class="muted" id="onboardingStepInd" style="margin-top:10px;">1 / 2</p>
       </div>
     </div>
     <div class="tabs" role="tablist" aria-label="메인 화면">
       <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">함께 쌓기</label>
-      <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">흐름</label>
       <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">이야기</label>
+      <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">흐름</label>
     </div>
     <div id="insightBannerWrap" class="insight-banner-wrap" hidden>
       <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="알림"></div>
@@ -2143,8 +2437,8 @@
           <div class="record-rail-brand">너의 옆자리</div>
           <nav class="record-rail-nav">
             <button type="button" class="record-rail-tab active" data-record-rail="dashboard">대시보드</button>
-            <button type="button" class="record-rail-tab" data-go-tab="stats">흐름</button>
             <button type="button" class="record-rail-tab" data-go-tab="view">이야기</button>
+            <button type="button" class="record-rail-tab" data-go-tab="stats">흐름</button>
           </nav>
           <p class="record-rail-note muted">인안나와 함께하는 공부</p>
         </aside>
@@ -2153,9 +2447,11 @@
           <div class="card bento-card habit-dashboard">
             <div class="habit-dashboard-row">
               <div class="habit-block">
-                <div class="habit-block-title">연속 목표 달성일수</div>
-                <div class="habit-streak-num" id="studyStreakValue">0</div>
-                <p class="muted" id="studyStreakHint" style="margin:6px 0 0;font-size:12px;line-height:1.45;"></p>
+                <div class="habit-block-title text-caption">연속 목표 달성</div>
+                <div class="metric-line">
+                  <span class="habit-streak-num metric-val" id="studyStreakValue">0</span><span class="metric-unit">일</span>
+                </div>
+                <p class="muted text-caption" id="studyStreakHint" style="margin:var(--space-1) 0 0;"></p>
               </div>
             </div>
           </div>
@@ -2174,28 +2470,31 @@
                   <label for="goalHours">하루 공부 목표 시간 (시간 단위)</label>
                   <input id="goalHours" type="number" min="0.5" step="0.5" placeholder="예: 3" />
 
-                  <label for="weeklyGoalHours" style="margin-top:10px;">이번 주 목표 시간 (시간 단위, 월~일 합산 기준)</label>
-                  <input id="weeklyGoalHours" type="number" min="0" step="0.5" placeholder="예: 15 (비우면 주간 링 없음)" />
+                  <label for="weeklyGoalHours" style="margin-top:var(--space-2);">이번 주 목표 (시간, 비우면 생략)</label>
+                  <input id="weeklyGoalHours" type="number" min="0" step="0.5" placeholder="예: 15" />
 
-                  <div class="btn-row">
-                    <button class="btn secondary" id="saveGoalQuestBtn">목표 저장</button>
-                  </div>
-                  <p class="muted" id="goalQuestStatus">저장된 목표 없음</p>
+                  <p class="muted text-caption" id="goalQuestStatus" style="margin:var(--space-2) 0 0;">입력 후 자동 저장돼요.</p>
                 </div>
 
                 <div class="card bento-card bento-timer">
                   <h3>공부 타이머</h3>
-                  <div class="big-time" id="timerDisplay">00:00:00</div>
+                  <div class="big-time timer-display-hit" id="timerDisplay" title="길게 누르면 시간 리셋">00:00:00</div>
+                  <p class="muted text-caption" style="margin:0 0 var(--space-1);">시간 숫자를 길게 누르면 리셋할 수 있어요.</p>
                   <label for="defaultSessionTagInput" class="muted" style="display:block;margin-bottom:6px;font-size:12px;">기본 태그 (저장 시 기록에 붙음, 비워 두면 생략)</label>
                   <input id="defaultSessionTagInput" type="text" maxlength="24" placeholder="예: 수학, 영어, 밴드" style="width:100%;max-width:320px;margin-bottom:10px;" autocomplete="off" />
-                  <div class="btn-row">
-                    <button class="btn primary" id="startBtn" aria-label="공부 타이머 시작">시작</button>
-                    <button class="btn secondary" id="pauseBtn" aria-label="공부 타이머 일시정지">일시정지</button>
-                    <button class="btn" id="resetBtn" aria-label="공부 타이머 시간 리셋">리셋</button>
-                    <button class="btn success" id="saveSessionBtn" aria-label="지금까지의 타이머 시간을 공부 기록으로 저장">공부 기록 저장</button>
-                    <button class="btn" id="soundToggleBtn" aria-label="단계 알림음 켜기 또는 끄기">알림음: 켜짐</button>
+                  <div class="timer-actions">
+                    <div class="timer-actions-primary">
+                      <button type="button" class="btn primary btn-timer-primary" id="timerPrimaryBtn" aria-label="타이머 시작">시작</button>
+                      <button type="button" class="btn success" id="saveSessionBtn" aria-label="지금까지의 타이머 시간을 공부 기록으로 저장">저장</button>
+                    </div>
+                    <div class="timer-actions-more">
+                      <button type="button" class="btn-icon" id="timerMoreBtn" aria-expanded="false" aria-haspopup="true" aria-controls="timerMoreMenu" aria-label="타이머 더보기">⋯</button>
+                      <div id="timerMoreMenu" class="timer-more-menu" role="menu" hidden>
+                        <button type="button" class="timer-more-item" role="menuitem" id="soundToggleBtn">알림음 켜짐</button>
+                      </div>
+                    </div>
                   </div>
-                  <p class="muted">세션 저장 시 누적 공부 시간과 호감도가 반영됩니다.</p>
+                  <p class="muted text-caption timer-hint" style="margin:var(--space-2) 0 0;">저장하면 오늘 공부·호감도에 반영돼요.</p>
                 </div>
               </div>
 
@@ -2217,29 +2516,8 @@
       <div class="stats-layout">
         <div class="card bento-card stats-progress-card" aria-label="진행 상태">
           <h3>진행 상태</h3>
-          <div class="stats">
-            <div class="stat">
-              <div class="muted">오늘 누적</div>
-              <div id="todayTotal">0분</div>
-            </div>
-            <div class="stat">
-              <div class="muted">전체 누적</div>
-              <div id="allTotal">0시간 0분</div>
-            </div>
-            <div class="stat">
-              <div class="muted">호감도</div>
-              <div id="affectionDisplay">0</div>
-            </div>
-            <div class="stat">
-              <div class="muted">인안나와의 관계</div>
-              <div id="romanceStage">친해지는 중</div>
-            </div>
-            <div class="stat">
-              <div class="muted">다음 단계까지</div>
-              <div id="nextStageInfo">-</div>
-            </div>
-          </div>
-          <p class="muted" id="tagStatsLine" style="margin:10px 0 0;font-size:12px;line-height:1.45;"></p>
+          <div class="stats-kpi-row" id="statsKpiRow" aria-live="polite"></div>
+          <p class="muted text-caption" id="tagStatsLine" style="margin:var(--space-2) 0 0;"></p>
         </div>
 
         <div class="card bento-card stats-charts-card" aria-label="공부 시간 그래프">
@@ -2247,51 +2525,57 @@
             <div class="bento-chart-block">
               <h3>주간 그래프</h3>
               <canvas id="weeklyChart" width="320" height="130" role="img" aria-label="최근 7일 공부 시간 막대 그래프"></canvas>
+              <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--bar"></span>분 단위 · 막대 높이 = 공부 시간</p>
             </div>
             <div class="bento-chart-block">
               <h3>월간 그래프 (최근 6개월)</h3>
               <canvas id="monthlyChart" width="320" height="130" role="img" aria-label="최근 6개월 월별 공부 시간 막대 그래프"></canvas>
+              <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--bar-alt"></span>분 단위 · 월별 합산</p>
             </div>
           </div>
         </div>
 
         <div class="card bento-card weekly-insights-card">
           <h3>집중 구간 히트맵</h3>
-          <p class="muted" style="font-size:12px;margin:0 0 10px;line-height:1.45;">최근 28일간 <strong>시간대가 저장된</strong> 기록만 모읍니다. 요일·시간대별로 얼마나 모였는지 한눈에 볼 수 있어요.</p>
+          <p class="muted text-caption" style="margin:0 0 var(--space-2);">최근 28일 · 시간대가 있는 기록만</p>
           <div class="rhythm-heatmap-wrap">
             <canvas id="rhythmHeatmap" width="480" height="210" role="img" aria-label="요일과 시간대별 집중 히트맵"></canvas>
-            <p class="muted" id="rhythmHeatmapHint" style="font-size:11px;margin:6px 0 0;line-height:1.45;"></p>
+            <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--lo"></span>낮음 <span class="chart-legend-swatch chart-legend-swatch--hi"></span>높음 · 가로 0–23시</p>
+            <p class="muted text-caption" id="rhythmHeatmapHint" style="margin:var(--space-1) 0 0;"></p>
           </div>
         </div>
 
         <div class="card bento-card bento-history">
           <h3>최근 기록</h3>
           <div class="history-filter-bar" id="historyFilterBar" aria-label="기록 필터">
-            <div class="hf-field">
-              <label for="historyFilterDateFrom">시작일</label>
-              <input type="date" id="historyFilterDateFrom" />
+            <div class="filter-pills" role="group" aria-label="빠른 필터">
+              <button type="button" class="filter-pill" data-filter-pill="week" aria-pressed="false">이번 주만</button>
+              <button type="button" class="filter-pill" data-filter-pill="tag" aria-pressed="false" aria-expanded="false" aria-controls="historyTagPanel">태그</button>
             </div>
-            <div class="hf-field">
-              <label for="historyFilterDateTo">종료일</label>
-              <input type="date" id="historyFilterDateTo" />
+            <div class="filter-pill-panel" id="historyTagPanel" hidden>
+              <input type="text" id="historyFilterTagContains" maxlength="24" placeholder="태그 일부 입력" autocomplete="off" aria-label="태그 포함" />
             </div>
-            <div class="hf-field" style="flex:1;min-width:120px;">
-              <label for="historyFilterTagContains">태그 포함</label>
-              <input type="text" id="historyFilterTagContains" maxlength="24" placeholder="부분 일치" autocomplete="off" />
-            </div>
-            <div class="hf-field">
-              <label for="historyFilterSort">정렬</label>
-              <select id="historyFilterSort">
-                <option value="date-desc">최신순</option>
-                <option value="date-asc">오래된순</option>
-              </select>
-            </div>
-            <div class="hf-field hf-toggle">
-              <label>
-                <input type="checkbox" id="historyFilterWeekOnly" />
-                이번 주만
-              </label>
-            </div>
+            <details class="filter-more">
+              <summary class="text-caption">날짜 · 정렬</summary>
+              <div class="filter-more-grid">
+                <div class="hf-field">
+                  <label for="historyFilterDateFrom">시작일</label>
+                  <input type="date" id="historyFilterDateFrom" />
+                </div>
+                <div class="hf-field">
+                  <label for="historyFilterDateTo">종료일</label>
+                  <input type="date" id="historyFilterDateTo" />
+                </div>
+                <div class="hf-field">
+                  <label for="historyFilterSort">정렬</label>
+                  <select id="historyFilterSort">
+                    <option value="date-desc">최신순</option>
+                    <option value="date-asc">오래된순</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+            <input type="checkbox" id="historyFilterWeekOnly" class="visually-hidden" tabindex="-1" aria-hidden="true" />
           </div>
           <div class="history" id="historyList"></div>
         </div>
@@ -2436,9 +2720,9 @@
       </div>
     </section>
 
-    <div id="recordUndoSnackbar" class="record-snackbar" hidden role="status" aria-live="polite">
+    <div id="recordUndoSnackbar" class="app-snackbar record-snackbar" hidden role="status" aria-live="polite">
       <span id="recordUndoSnackbarMsg">기록을 삭제했습니다.</span>
-      <button type="button" class="btn secondary" id="recordUndoSnackbarBtn">되돌리기</button>
+      <button type="button" class="btn secondary" id="recordUndoSnackbarBtn" hidden>되돌리기</button>
     </div>
   </div>
 

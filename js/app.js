@@ -754,6 +754,13 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const m = Math.floor((sec % 3600) / 60);
       return h + "시간 " + m + "분";
     };
+    const fmtCompactStudy = (totalMin) => {
+      const m = Math.max(0, Math.round(Number(totalMin) || 0));
+      if (m < 60) return m + "m";
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return r > 0 ? h + "h " + r + "m" : h + "h";
+    };
     const dateKey = (d) => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -811,8 +818,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
-      const cellFill = "rgba(197, 184, 232, 0.2)";
-      const cellHi = "rgba(232, 166, 200, 0.52)";
+      const cellEmpty = "rgba(197, 184, 232, 0.18)";
+      const cellMid = "rgba(216, 196, 232, 0.48)";
+      const cellHi = "rgba(232, 166, 200, 0.82)";
       const grid = "rgba(45, 38, 72, 0.1)";
       const label = "#2d2648";
       const pad = { l: 34, t: 10, r: 8, b: 22 };
@@ -847,10 +855,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         for (let col = 0; col < cols; col++) {
           const v = bins[row * cols + col];
           const t = vmax ? Math.min(1, v / vmax) : 0;
-          ctx.fillStyle = t > 0.08 ? cellHi : cellFill;
-          ctx.globalAlpha = 0.15 + t * 0.85;
-          ctx.fillRect(pad.l + col * cw + 0.5, pad.t + row * ch + 0.5, cw - 1, ch - 1);
+          ctx.fillStyle = t <= 0.08 ? cellEmpty : t < 0.55 ? cellMid : cellHi;
           ctx.globalAlpha = 1;
+          ctx.fillRect(pad.l + col * cw + 0.5, pad.t + row * ch + 0.5, cw - 1, ch - 1);
         }
       }
       ctx.strokeStyle = grid;
@@ -877,9 +884,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         ctx.fillText(rowLabels[row], pad.l - 4, pad.t + row * ch + ch * 0.72);
       }
       ctx.textAlign = "center";
-      for (let col = 0; col < cols; col += 3) {
-        ctx.fillText(String(col), pad.l + col * cw + cw / 2, h - 6);
-      }
+      [0, 6, 12, 18].forEach((col) => {
+        if (col < cols) ctx.fillText(String(col) + "시", pad.l + col * cw + cw / 2, h - 6);
+      });
       const hintEl = $("rhythmHeatmapHint");
       if (hintEl) {
         if (!withHour) {
@@ -1114,6 +1121,18 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return top + "<h4 class='story-subheading'>지금까지의 스토리 요약</h4><ul class='story-summary-list'>" + items + "</ul>";
     }
 
+    function storyLogDayKey(ts) {
+      if (!ts || typeof ts !== "string") return "";
+      return ts.slice(0, 10);
+    }
+
+    function formatStoryLogDayHeader(dayKey) {
+      if (!dayKey || !/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return "날짜 없음";
+      const d = new Date(dayKey + "T12:00:00");
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      return dayKey.replace(/-/g, ".") + " (" + days[d.getDay()] + ")";
+    }
+
     function renderStoryLogList() {
       const list = $("storyLogList");
       if (!list) return;
@@ -1137,15 +1156,22 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         if (t === "routeHint") return "작은 메모";
         return t || "";
       };
-      const rows = [...visibleLog].reverse().map((e) => {
-        const when = e.ts ? e.ts.slice(0, 19).replace("T", " ") : "";
-        return "<div class='story-entry'>" +
-          "<div class='story-meta'>" + escapeHtml(when) + " · " + escapeHtml(typeLabel(e.type)) + "</div>" +
+      let html = "";
+      let lastDay = "";
+      [...visibleLog].reverse().forEach((e) => {
+        const dk = storyLogDayKey(e.ts);
+        if (dk !== lastDay) {
+          lastDay = dk;
+          html += "<div class='story-log-day'>" + escapeHtml(formatStoryLogDayHeader(dk)) + "</div>";
+        }
+        const when = e.ts ? e.ts.slice(11, 16) : "";
+        html += "<div class='story-entry'>" +
+          "<div class='story-meta'>" + escapeHtml(when ? when + " · " : "") + escapeHtml(typeLabel(e.type)) + "</div>" +
           "<h4>" + escapeHtml(e.title || "") + "</h4>" +
           "<div class='story-body'>" + escapeHtml(e.body || "").replace(/\n/g, "<br>") + "</div>" +
           "</div>";
       });
-      list.innerHTML = rows.join("");
+      list.innerHTML = html;
     }
 
     function syncViewSubPanels() {
@@ -1753,6 +1779,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const maxVal = Math.max(10, ...series.map((s) => s.minutes));
       const barW = graphW / series.length * 0.7;
       const gap = graphW / series.length * 0.3;
+      const peakMin = Math.max(...series.map((s) => s.minutes));
 
       ctx.strokeStyle = gridStroke;
       ctx.lineWidth = 1;
@@ -1763,22 +1790,28 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         ctx.lineTo(w - pad.r, y);
         ctx.stroke();
       }
+      ctx.fillStyle = labelFill;
+      ctx.font = "10px Noto Sans KR, Segoe UI, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      [maxVal, Math.round(maxVal / 2), 0].forEach((v, i) => {
+        const y = pad.t + (graphH / 2) * i;
+        ctx.fillText(String(v) + "분", pad.l - 4, y);
+      });
+      ctx.textBaseline = "alphabetic";
 
       series.forEach((item, i) => {
         const x = pad.l + i * (barW + gap) + gap / 2;
         const bh = (item.minutes / maxVal) * graphH;
         const y = pad.t + graphH - bh;
-
-        const grad = ctx.createLinearGradient(0, y, 0, pad.t + graphH);
-        grad.addColorStop(0, barA);
-        grad.addColorStop(1, barB);
-        ctx.fillStyle = grad;
+        const isPeak = item.minutes === peakMin && peakMin > 0;
+        ctx.fillStyle = isPeak ? barA : barB;
         ctx.fillRect(x, y, barW, bh);
 
         ctx.fillStyle = labelFill;
-        ctx.font = "11px Noto Sans KR, Segoe UI, sans-serif";
+        ctx.font = "10px Noto Sans KR, Segoe UI, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(item.label, x + barW / 2, h - 10);
+        ctx.fillText(item.label, x + barW / 2, h - 8);
       });
     }
 
@@ -1787,14 +1820,54 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const f = $("historyFilterDateFrom");
       const t = $("historyFilterDateTo");
       const tg = $("historyFilterTagContains");
-      const wk = $("historyFilterWeekOnly");
       const s = $("historyFilterSort");
+      const weekPill = document.querySelector(".filter-pill[data-filter-pill='week']");
       if (f instanceof HTMLInputElement) out.from = f.value.trim();
       if (t instanceof HTMLInputElement) out.to = t.value.trim();
-      if (tg instanceof HTMLInputElement) out.tag = tg.value.trim().toLowerCase();
-      if (wk instanceof HTMLInputElement) out.weekOnly = wk.checked === true;
+      const tagPill = document.querySelector(".filter-pill[data-filter-pill='tag']");
+      if (tg instanceof HTMLInputElement && tagPill && tagPill.getAttribute("aria-pressed") === "true") {
+        out.tag = tg.value.trim().toLowerCase();
+      }
+      if (weekPill instanceof HTMLElement) out.weekOnly = weekPill.getAttribute("aria-pressed") === "true";
+      const wk = $("historyFilterWeekOnly");
+      if (wk instanceof HTMLInputElement) wk.checked = out.weekOnly;
       if (s instanceof HTMLSelectElement && (s.value === "date-desc" || s.value === "date-asc")) out.sort = s.value;
       return out;
+    }
+
+    function persistGoalsFromDom() {
+      const ghEl = $("goalHours");
+      const wghEl = $("weeklyGoalHours");
+      state.goalHours = Number((ghEl && ghEl.value) || 0);
+      state.weeklyGoalHours = Math.max(0, Number((wghEl && wghEl.value) || 0));
+      const tg = $("defaultSessionTagInput");
+      if (tg) state.defaultSessionTag = tg.value.trim().slice(0, 24);
+      saveState();
+      const goalQuestStatusEl = $("goalQuestStatus");
+      if (goalQuestStatusEl) {
+        const parts = [];
+        if (state.goalHours) parts.push("하루 " + state.goalHours + "h");
+        if (state.weeklyGoalHours) parts.push("주간 " + state.weeklyGoalHours + "h");
+        goalQuestStatusEl.textContent = parts.length ? parts.join(" · ") + " · 저장됨" : "입력 후 자동 저장돼요.";
+      }
+      updateInsightBanners(dateKey(new Date()));
+    }
+
+    function renderStatsKpiRow(today, nowDate) {
+      const row = $("statsKpiRow");
+      if (!row) return;
+      const todayMin = Math.round(sumSecondsByDate(today) / 60);
+      const weekMin = Math.round(sumSecondsWeekMonSun(nowDate) / 60);
+      const streak = computeStudyStreakDays();
+      const aff = Math.max(0, Number(state.affection || 0));
+      const chip = (k, v) => "<span class='kpi-chip'><span class='kpi-k'>" + escapeHtml(k) + "</span><span class='kpi-v'>" + escapeHtml(v) + "</span></span>";
+      row.innerHTML = chip("오늘", todayMin + "분") +
+        "<span class='kpi-sep' aria-hidden='true'>·</span>" +
+        chip("주간", weekMin + "분") +
+        "<span class='kpi-sep' aria-hidden='true'>·</span>" +
+        chip("연속", streak + "일") +
+        "<span class='kpi-sep' aria-hidden='true'>·</span>" +
+        chip("호감", String(aff));
     }
 
     function getFilteredHistoryRows() {
@@ -1826,18 +1899,65 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return slice;
     }
 
+    let appSnackbarHideTimer = null;
+
+    function hideAppSnackbar() {
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
+      const sb = $("recordUndoSnackbar");
+      if (sb && !sessionRuntime.undoDelete) sb.hidden = true;
+    }
+
+    function showAppSnackbar(message, opts) {
+      const sb = $("recordUndoSnackbar");
+      const msg = $("recordUndoSnackbarMsg");
+      const btn = $("recordUndoSnackbarBtn");
+      if (!sb || !msg) return;
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
+      msg.textContent = message;
+      if (btn) {
+        if (opts && opts.actionLabel && typeof opts.onAction === "function") {
+          btn.hidden = false;
+          btn.textContent = opts.actionLabel;
+          btn.onclick = () => opts.onAction();
+        } else if (!sessionRuntime.undoDelete) {
+          btn.hidden = true;
+          btn.onclick = null;
+        }
+      }
+      sb.hidden = false;
+      if (!sessionRuntime.undoDelete) {
+        appSnackbarHideTimer = setTimeout(() => {
+          appSnackbarHideTimer = null;
+          hideAppSnackbar();
+        }, (opts && opts.durationMs) || 3200);
+      }
+    }
+
     function clearUndoDelete() {
       if (sessionRuntime.undoTimerId != null) {
         clearTimeout(sessionRuntime.undoTimerId);
         sessionRuntime.undoTimerId = null;
       }
       sessionRuntime.undoDelete = null;
-      const sb = $("recordUndoSnackbar");
-      if (sb) sb.hidden = true;
+      const btn = $("recordUndoSnackbarBtn");
+      if (btn) {
+        btn.hidden = true;
+        btn.onclick = null;
+      }
+      hideAppSnackbar();
     }
 
     function scheduleUndoDelete(removedRecord, insertIndex) {
-      clearUndoDelete();
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
       try {
         sessionRuntime.undoDelete = { record: JSON.parse(JSON.stringify(removedRecord)), index: insertIndex };
       } catch (_) {
@@ -1845,26 +1965,63 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }
       const sb = $("recordUndoSnackbar");
       const msg = $("recordUndoSnackbarMsg");
-      if (msg) msg.textContent = "기록 1건을 삭제했습니다. 되돌리기는 약 8초 동안만 보입니다.";
+      const btn = $("recordUndoSnackbarBtn");
+      if (msg) msg.textContent = "기록 1건을 삭제했어요.";
+      if (btn) {
+        btn.hidden = false;
+        btn.textContent = "되돌리기";
+        btn.onclick = null;
+      }
       if (sb) sb.hidden = false;
       sessionRuntime.undoTimerId = setTimeout(() => {
         sessionRuntime.undoTimerId = null;
         sessionRuntime.undoDelete = null;
+        if (btn) btn.hidden = true;
         if (sb) sb.hidden = true;
       }, 8000);
     }
 
-    function updateSessionDocumentTitle() {
-      const base = sessionRuntime.baseDocumentTitle || APP_DISPLAY_NAME;
-      if (!document.hidden) {
-        if (document.title !== base) document.title = base;
-        return;
+    function updateTimerFavicon() {
+      const link = document.querySelector('link[rel="icon"]');
+      if (!link) return;
+      if (!sessionRuntime.defaultFaviconHref) {
+        sessionRuntime.defaultFaviconHref = link.getAttribute("href") || "./assets/icon.svg";
       }
       if (state.timerRunning) {
-        document.title = "[" + fmtTime(state.timerSeconds) + "] 타이머 · " + base;
+        const svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><circle cx=\"16\" cy=\"16\" r=\"14\" fill=\"#eba8c4\"/><circle cx=\"16\" cy=\"16\" r=\"5\" fill=\"#2d2648\"/></svg>";
+        link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+      } else {
+        link.href = sessionRuntime.defaultFaviconHref;
+      }
+    }
+
+    function updateTimerChrome() {
+      document.body.classList.toggle("timer-active", state.timerRunning);
+      const primary = $("timerPrimaryBtn");
+      if (primary) {
+        primary.textContent = state.timerRunning ? "일시정지" : (state.timerSeconds > 0 ? "이어하기" : "시작");
+        primary.setAttribute("aria-label", state.timerRunning ? "타이머 일시정지" : "타이머 시작");
+      }
+      const snd = $("soundToggleBtn");
+      if (snd) snd.textContent = "알림음 " + (state.soundEnabled ? "켜짐" : "꺼짐");
+      updateSessionDocumentTitle();
+      updateTimerFavicon();
+    }
+
+    function closeTimerMoreMenu() {
+      const menu = $("timerMoreMenu");
+      const more = $("timerMoreBtn");
+      if (menu) menu.hidden = true;
+      if (more) more.setAttribute("aria-expanded", "false");
+    }
+
+    function updateSessionDocumentTitle() {
+      const base = sessionRuntime.baseDocumentTitle || APP_DISPLAY_NAME;
+      if (state.timerRunning) {
+        document.title = "[" + fmtTime(state.timerSeconds) + "] · " + base;
         return;
       }
-      document.title = base;
+      if (document.title !== base) document.title = base;
     }
 
     function normalizeMainTabId(tabId) {
@@ -1959,7 +2116,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       if (tEl) tEl.textContent = fmtTime(state.timerSeconds);
       const dT = $("dockTimerShort");
       if (dT) dT.textContent = fmtTime(state.timerSeconds);
-      updateSessionDocumentTitle();
+      updateTimerChrome();
     }
 
     function updateInsightBanners(today) {
@@ -2038,7 +2195,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         const parts = [];
         if (state.goalHours) parts.push("하루 목표 " + state.goalHours + "시간");
         if (state.weeklyGoalHours) parts.push("주간 목표 " + state.weeklyGoalHours + "시간");
-        goalQuestStatusEl.textContent = parts.length ? parts.join(" · ") + " 저장됨" : "저장된 목표 없음";
+        goalQuestStatusEl.textContent = parts.length ? parts.join(" · ") + " · 저장됨" : "입력 후 자동 저장돼요.";
       }
       const wgh = $("weeklyGoalHours");
       if (wgh) wgh.value = state.weeklyGoalHours || "";
@@ -2056,9 +2213,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           : "저장하면 오늘 날짜에 묶여 스토리 요약과 로그 위에 보입니다. 다정·활발·사교적이라는 설정도 한 줄에 살짝 녹여도 좋아요.";
       }
 
-      safeSetText("todayTotal", Math.round(sumSecondsByDate(today) / 60) + "분");
-      safeSetText("allTotal", fmtHourMin(state.totalSeconds));
-      safeSetText("affectionDisplay", String(state.affection));
+      const todayMinRounded = Math.round(sumSecondsByDate(today) / 60);
 
       const goalRing = $("todayGoalRing");
       const goalPctEl = $("todayGoalRingPct");
@@ -2085,16 +2240,16 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const streakDays = computeStudyStreakDays();
       if (streakVal) streakVal.textContent = String(streakDays);
       if (streakHint) {
+        const todayMinStreak = Math.round(sumSecondsByDate(today) / 60);
         if (!goalMinForStreak) {
-          streakHint.textContent = "하루 공부 목표를 저장하면 연속 목표 달성일수가 표시됩니다.";
-        } else if (isDailyGoalMet(today)) {
-          streakHint.textContent = "오늘 하루 목표를 달성해 연속일에 오늘이 포함됐어요.";
+          streakHint.textContent = "하루 목표를 저장하면 연속일이 표시돼요.";
         } else {
-          streakHint.textContent = "오늘은 아직 미달성이면 어제까지 달성한 연속일을 보여 줘요.";
+          streakHint.textContent = "목표 " + state.goalHours + "h · 오늘 " + fmtCompactStudy(todayMinStreak) + " · 연속 " + streakDays + "일";
         }
       }
 
       const nowDate = new Date();
+      renderStatsKpiRow(today, nowDate);
       const tagLineEl = $("tagStatsLine");
       if (tagLineEl) {
         const m = aggregateSecondsByTag();
@@ -2135,24 +2290,18 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const dlg = $("dialogueBox");
       if (state.endingId) {
         const st = state.endingId === 1 ? "엔딩 · 청혼" : state.endingId === 2 ? "엔딩 · 얀데레" : "엔딩 · 유학 제안";
-        safeSetText("romanceStage", st);
         if (vnStageEl) vnStageEl.textContent = st;
         if (dlg) dlg.textContent = getEndingMainDialogue(displayName, voc);
-        safeSetText("nextStageInfo", "-");
       } else {
-        safeSetText("romanceStage", nowDialogue.stage);
         if (vnStageEl) vnStageEl.textContent = nowDialogue.stage;
         if (dlg) dlg.textContent = buildMainDialogueLine(displayName, voc, nowDialogue.text);
-        safeSetText("nextStageInfo", nextDialogue
-          ? nextDialogue.targetStage + "까지 " + nextDialogue.need + " 필요"
-          : "최고 단계 달성");
       }
       if (dlg && sessionRuntime.vnDialogueFlashOneShot) {
         sessionRuntime.vnDialogueFlashOneShot = false;
         dlg.classList.remove("vn-dialogue--flash");
         void dlg.offsetWidth;
         dlg.classList.add("vn-dialogue--flash");
-        setTimeout(() => dlg.classList.remove("vn-dialogue--flash"), 1200);
+        setTimeout(() => dlg.classList.remove("vn-dialogue--flash"), 580);
       }
       const relMeta = $("relationshipMetaLine");
       if (relMeta) relMeta.textContent = getRelationshipMetaLine();
@@ -2189,7 +2338,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }
       const dToday = $("dockTodayShort");
       if (dToday) dToday.textContent = Math.round(sumSecondsByDate(today) / 60) + "분";
-      safeSetText("soundToggleBtn", "알림음: " + (state.soundEnabled ? "켜짐" : "꺼짐"));
+      updateTimerChrome();
       if (state.activeInteraction && !state.endingId) {
         safeStyle("talkBox", "display", "block");
         safeSetText("npcTalkLine", "인안나: " + state.activeInteraction.npc);
@@ -2433,10 +2582,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     function paintOnboardingStep() {
       const bodies = [
-        "「너의 옆자리」는 함께 쌓기 탭에서 타이머로 집중 시간을 쌓고, 흐름 탭에서 기록·그래프를 보고, 이야기 탭에서 인안나와의 대사·스토리를 이어 가요.",
-        "집중은 함께 쌓기 탭의 목표·타이머에서 바로 시작할 수 있어요. Alt+1 함께 쌓기 · Alt+2 흐름 · Alt+3 이야기, Home / End로도 탭을 옮길 수 있어요.",
-        "공부 시간이 쌓이면 호감도가 오르고, 가끔 짧은 대화 이벤트가 열려요. 스토리 탭에서 지금까지의 흐름을 다시 볼 수 있어요.",
-        "데이터는 이 브라우저 안(localStorage)에만 저장돼요. 브라우저 데이터를 지우면 기록이 사라질 수 있어요."
+        "함께 쌓기에서 타이머로 공부 시간을 쌓고, 이야기에서 인안나와의 스토리를, 흐름에서 그래프를 봐요. Alt+1~3으로 탭을 바꿀 수 있어요.",
+        "기록은 이 브라우저에만 저장돼요. 목표를 저장하고 타이머를 시작해 보세요."
       ];
       const b = $("onboardingBody");
       const ind = $("onboardingStepInd");
@@ -2454,7 +2601,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       paintOnboardingStep();
       $("onboardingSkipBtn")?.addEventListener("click", () => dismissOnboarding());
       $("onboardingNextBtn")?.addEventListener("click", () => {
-        if (onboardingStepIndex >= 3) {
+        if (onboardingStepIndex >= 1) {
           dismissOnboarding();
           return;
         }
@@ -2479,7 +2626,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           }
           if (e.key === "End") {
             e.preventDefault();
-            $("tabBtnView")?.click();
+            $("tabBtnStats")?.click();
             return;
           }
         }
@@ -2512,18 +2659,17 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           }
           if (e.code === "Digit2" || e.code === "Numpad2") {
             e.preventDefault();
-            $("tabBtnStats")?.click();
+            $("tabBtnView")?.click();
             return;
           }
           if (e.code === "Digit3" || e.code === "Numpad3") {
             e.preventDefault();
-            $("tabBtnView")?.click();
+            $("tabBtnStats")?.click();
             return;
           }
           if (e.code === "KeyT") {
             e.preventDefault();
-            if (state.timerRunning) $("pauseBtn")?.click();
-            else $("startBtn")?.click();
+            $("timerPrimaryBtn")?.click();
             return;
           }
         }
@@ -2600,16 +2746,25 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       sessionRuntime.baseDocumentTitle = document.title || APP_DISPLAY_NAME;
       bindOnboarding();
 
-      $("saveGoalQuestBtn")?.addEventListener("click", () => {
-        const ghEl = $("goalHours");
-        const wghEl = $("weeklyGoalHours");
-        state.goalHours = Number((ghEl && ghEl.value) || 0);
-        state.weeklyGoalHours = Math.max(0, Number((wghEl && wghEl.value) || 0));
-        const tg = $("defaultSessionTagInput");
-        if (tg) state.defaultSessionTag = tg.value.trim().slice(0, 24);
-        saveState();
-        render();
-      });
+      const bindGoalAutosave = (el) => {
+        if (!el || el.dataset.goalAutosaveBound === "1") return;
+        el.dataset.goalAutosaveBound = "1";
+        const run = () => {
+          persistGoalsFromDom();
+          render();
+        };
+        el.addEventListener("change", run);
+        el.addEventListener("blur", run);
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            run();
+            el.blur();
+          }
+        });
+      };
+      bindGoalAutosave($("goalHours"));
+      bindGoalAutosave($("weeklyGoalHours"));
 
       const storySummaryPanel = $("storySummaryPanel");
       if (storySummaryPanel && storySummaryPanel.dataset.storyToggleBound !== "1") {
@@ -2690,8 +2845,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         });
       });
 
-      $("startBtn")?.addEventListener("click", () => {
+      const startStudyTimer = () => {
         if (state.timerRunning) return;
+        closeTimerMoreMenu();
         state.timerRunning = true;
         sessionRuntime.timerWallStartMs = Date.now();
         sessionRuntime.timerWallBaseSec = state.timerSeconds;
@@ -2705,35 +2861,81 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           renderTimerTickHud();
         }, 1000);
         render();
-      });
+      };
 
-      $("pauseBtn")?.addEventListener("click", () => {
+      const pauseStudyTimer = () => {
         if (!state.timerRunning) return;
         clearInterval(state.timerId);
         state.timerRunning = false;
         sessionRuntime.timerWallStartMs = null;
-        updateSessionDocumentTitle();
+        render();
+      };
+
+      $("timerPrimaryBtn")?.addEventListener("click", () => {
+        if (state.timerRunning) pauseStudyTimer();
+        else startStudyTimer();
       });
 
-      $("resetBtn")?.addEventListener("click", () => {
+      $("timerMoreBtn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const menu = $("timerMoreMenu");
+        const btn = $("timerMoreBtn");
+        if (!menu || !btn) return;
+        const open = menu.hidden;
+        menu.hidden = !open;
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      if (!sessionRuntime.timerMoreMenuBound) {
+        sessionRuntime.timerMoreMenuBound = true;
+        document.addEventListener("click", () => closeTimerMoreMenu());
+      }
+
+      const resetTimerToZero = () => {
         clearInterval(state.timerId);
         state.timerRunning = false;
         state.timerSeconds = 0;
         sessionRuntime.timerWallStartMs = null;
+        closeTimerMoreMenu();
         saveState();
         render();
-      });
+        showAppSnackbar("타이머를 0으로 맞췄어요.");
+      };
+
+      const timerDisplayEl = $("timerDisplay");
+      if (timerDisplayEl && timerDisplayEl.dataset.resetLongPressBound !== "1") {
+        timerDisplayEl.dataset.resetLongPressBound = "1";
+        let resetPressId = null;
+        const cancelResetPress = () => {
+          if (resetPressId != null) {
+            clearTimeout(resetPressId);
+            resetPressId = null;
+          }
+        };
+        timerDisplayEl.addEventListener("pointerdown", () => {
+          cancelResetPress();
+          resetPressId = setTimeout(() => {
+            resetPressId = null;
+            if (window.confirm("타이머를 0으로 맞출까요?")) resetTimerToZero();
+          }, 720);
+        });
+        timerDisplayEl.addEventListener("pointerup", cancelResetPress);
+        timerDisplayEl.addEventListener("pointerleave", cancelResetPress);
+        timerDisplayEl.addEventListener("pointercancel", cancelResetPress);
+      }
 
       $("saveSessionBtn")?.addEventListener("click", () => {
-        if (state.timerRunning) {
-          clearInterval(state.timerId);
-          state.timerRunning = false;
-          sessionRuntime.timerWallStartMs = null;
+        const savedSec = state.timerSeconds;
+        if (savedSec <= 0) {
+          showAppSnackbar("저장할 시간이 없어요.");
+          return;
         }
-        addSessionRecord(state.timerSeconds, "manual", { tag: state.defaultSessionTag || undefined });
+        if (state.timerRunning) pauseStudyTimer();
+        addSessionRecord(savedSec, "manual", { tag: state.defaultSessionTag || undefined });
         state.timerSeconds = 0;
         saveState();
         render();
+        showAppSnackbar("공부 " + Math.round(savedSec / 60) + "분을 기록했어요.");
       });
 
       if (!sessionRuntime.visibilityHookInstalled) {
@@ -2845,11 +3047,30 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const historyFilterBar = $("historyFilterBar");
       if (historyFilterBar && historyFilterBar.dataset.filterBound !== "1") {
         historyFilterBar.dataset.filterBound = "1";
-        historyFilterBar.addEventListener("input", () => {
-          render();
-        });
-        historyFilterBar.addEventListener("change", () => {
-          render();
+        const onFilterChange = () => renderHistory();
+        historyFilterBar.addEventListener("input", onFilterChange);
+        historyFilterBar.addEventListener("change", onFilterChange);
+        document.querySelectorAll(".filter-pill[data-filter-pill]").forEach((pill) => {
+          pill.addEventListener("click", () => {
+            const kind = pill.getAttribute("data-filter-pill");
+            const on = pill.getAttribute("aria-pressed") === "true";
+            if (kind === "week") {
+              pill.setAttribute("aria-pressed", on ? "false" : "true");
+              const wk = $("historyFilterWeekOnly");
+              if (wk instanceof HTMLInputElement) wk.checked = !on;
+            } else if (kind === "tag") {
+              const next = !on;
+              pill.setAttribute("aria-pressed", next ? "true" : "false");
+              pill.setAttribute("aria-expanded", next ? "true" : "false");
+              const panel = $("historyTagPanel");
+              if (panel) panel.hidden = !next;
+              if (next) {
+                const tg = $("historyFilterTagContains");
+                if (tg instanceof HTMLElement) tg.focus();
+              }
+            }
+            renderHistory();
+          });
         });
       }
 
@@ -2908,18 +3129,18 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         const trimmedDate = dateInputEl.value.trim();
         const datePattern = /^\d{4}-\d{2}-\d{2}$/;
         if (!datePattern.test(trimmedDate)) {
-          window.alert("날짜 형식은 YYYY-MM-DD로 입력해 주세요.");
+          showAppSnackbar("날짜 형식은 YYYY-MM-DD로 입력해 주세요.", { durationMs: 4500 });
           return;
         }
         const parsed = new Date(trimmedDate + "T00:00:00");
         if (Number.isNaN(parsed.getTime()) || dateKey(parsed) !== trimmedDate) {
-          window.alert("유효한 날짜를 입력해 주세요.");
+          showAppSnackbar("유효한 날짜를 입력해 주세요.", { durationMs: 4500 });
           return;
         }
 
         const newMinutes = Number(minutesInputEl.value);
         if (!Number.isFinite(newMinutes) || newMinutes <= 0) {
-          window.alert("1분 이상 숫자로 입력해 주세요.");
+          showAppSnackbar("1분 이상 숫자로 입력해 주세요.", { durationMs: 4500 });
           return;
         }
 
