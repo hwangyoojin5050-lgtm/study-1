@@ -1,0 +1,543 @@
+    /* ===== §2 Record tab — shell, bento, habits (색·폰트 토큰 유지) ===== */
+    .record-shell {
+      display: grid;
+      grid-template-columns: 196px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .record-rail {
+      position: sticky;
+      top: 64px;
+      padding: 18px 14px;
+      border-radius: 22px;
+    }
+    .record-rail-brand {
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+      margin-bottom: 16px;
+    }
+    .record-rail-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .record-rail-tab {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .record-rail-tab:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: var(--text);
+    }
+    .record-rail-tab.active {
+      background: linear-gradient(135deg, #4a4268 0%, #2d2648 100%);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 6px 18px rgba(45, 38, 72, 0.14);
+    }
+    .record-rail-note {
+      margin: 14px 0 0;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .record-main {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .record-cluster {
+      margin-bottom: 4px;
+      padding: 14px 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--surface-line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(252, 248, 255, 0.5) 100%);
+      box-shadow: var(--soft-shadow-sm);
+    }
+    html[data-theme="romance"] .record-cluster {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(252, 248, 255, 0.55) 100%);
+      border-color: rgba(255, 255, 255, 0.75);
+      box-shadow: var(--soft-shadow-sm);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .record-cluster-head {
+      margin: 0 0 12px;
+      padding-bottom: 2px;
+    }
+    .record-cluster-eyebrow {
+      margin: 0 0 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .record-cluster-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      font-family: "Noto Serif KR", Georgia, serif;
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+    }
+    html[data-theme="romance"] .record-cluster-title {
+      color: var(--library-ink);
+    }
+    .record-cluster-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .record-cluster--focus .record-cluster-body {
+      gap: 14px;
+    }
+    .story-contact-pick {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--surface-line);
+    }
+    .story-contact-pick-lede {
+      margin: 0 0 8px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .story-contact-pick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .story-contact-pick-row .btn {
+      flex: 1 1 160px;
+    }
+    .habit-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .habit-dashboard-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 16px;
+    }
+    .habit-block {
+      flex: 1 1 200px;
+      min-width: 0;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: var(--soft-shadow-sm);
+    }
+    .habit-block-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .habit-goal-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .habit-ring-wrap {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0;
+    }
+    .habit-ring {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      --goal-p: 0;
+      background: conic-gradient(
+        #e8a6c8 calc(var(--goal-p) * 1%),
+        rgba(216, 204, 240, 0.35) 0
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .habit-ring-hole {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: linear-gradient(168deg, var(--card) 0%, var(--card-2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--pale-ash);
+    }
+    .habit-goal-text {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .habit-streak-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--pale-ash);
+      line-height: 1.1;
+    }
+    .habit-month-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--pale-ash);
+    }
+    .onboarding-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(10, 14, 20, 0.76);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .onboarding-overlay[hidden] {
+      display: none !important;
+    }
+    body.onboarding-open {
+      overflow: hidden;
+    }
+    .onboarding-card {
+      max-width: 420px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--surface-line);
+      border-radius: 16px;
+      padding: 22px 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .onboarding-title {
+      margin: 0 0 10px;
+      font-size: 1.35rem;
+    }
+    .onboarding-body {
+      margin: 0 0 16px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    html[data-theme="romance"] .onboarding-overlay {
+      background: rgba(45, 38, 72, 0.28);
+    }
+    html[data-theme="romance"] .onboarding-card {
+      box-shadow: var(--soft-shadow);
+      border-color: rgba(255, 255, 255, 0.75);
+    }
+    .habit-backup-row {
+      margin-top: 0;
+      flex-wrap: wrap;
+    }
+    .habit-file-label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .record-bento-row {
+      display: flex;
+      gap: 14px;
+      align-items: stretch;
+      min-width: 0;
+    }
+    .record-bento-left {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .record-bento-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+    .record-bento-bottom {
+      min-width: 0;
+    }
+    .bento-card {
+      border-radius: 22px;
+      padding: 18px;
+    }
+    .bento-charts-side {
+      width: min(340px, 100%);
+      flex-shrink: 0;
+      border-radius: 22px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .bento-chart-block {
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 auto;
+    }
+    .bento-chart-block h3 {
+      margin: 0 0 8px;
+    }
+    .bento-chart-block canvas {
+      flex: 0 0 auto;
+      width: 100%;
+      height: 132px;
+      min-height: 0;
+    }
+    .bento-side-footer {
+      margin-top: 2px;
+      padding-top: 14px;
+      border-top: 1px solid var(--surface-line);
+      flex: 0 0 auto;
+    }
+    .bento-side-footer h3 {
+      margin: 0 0 10px;
+    }
+    /* ===== §2b Stats tab ===== */
+    .stats-panel {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .stats-hero {
+      border-radius: 22px;
+      padding: 18px 20px;
+    }
+    .stats-hero-title {
+      margin: 4px 0 0;
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-weight: 700;
+      font-size: clamp(22px, 4vw, 28px);
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+    }
+    .stats-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .stats-charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      min-width: 0;
+    }
+    .stats-charts-row .bento-chart-block canvas {
+      width: 100%;
+      height: 132px;
+    }
+    .stats-progress-card .stats {
+      margin-top: 4px;
+    }
+    .card h3 {
+      margin: 0 0 var(--space-2);
+      font-family: "Noto Serif KR", Georgia, serif;
+      font-size: var(--text-title);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--pale-ash);
+    }
+    label { color: var(--muted); display: block; margin-bottom: var(--space-1); }
+    input, textarea {
+      width: 100%;
+      border: 1px solid rgba(17, 70, 101, 0.65);
+      background: rgba(15, 24, 34, 0.92);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px;
+      outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: rgba(123, 68, 90, 0.75);
+      box-shadow: 0 0 0 2px rgba(114, 15, 50, 0.2);
+    }
+    textarea { resize: vertical; min-height: 72px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
+    .btn {
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--indigo-night);
+      background: linear-gradient(175deg, var(--pale-ash) 0%, #b9bcc8 100%);
+      border: 1px solid rgba(22, 32, 43, 0.15);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #4a4268 0%, #2d2648 100%);
+      color: #ffffff;
+      border-color: rgba(45, 38, 72, 0.12);
+      box-shadow: 0 8px 22px rgba(45, 38, 72, 0.16);
+    }
+    .btn.secondary {
+      background: var(--ocean-noir);
+      color: var(--pale-ash);
+      border: 1px solid rgba(209, 209, 214, 0.18);
+    }
+    .btn.success {
+      background: linear-gradient(135deg, var(--ok), #3d6d5c);
+      color: var(--pale-ash);
+      border-color: rgba(209, 209, 214, 0.12);
+    }
+    .big-time {
+      font-size: clamp(30px, 6vw, 56px);
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin: 8px 0;
+      color: var(--pale-ash);
+    }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat {
+      background: rgba(0, 0, 0, 0.18);
+      border-radius: 12px;
+      padding: 10px;
+      border: 1px solid var(--surface-line);
+    }
+    .muted { color: var(--muted); }
+    /* —— 캐릭터 탭 · 비주얼노벨 레이아웃 (색·폰트 토큰 유지) —— */
+    /* ===== §4 Responsive — rail, charts, mobile dock ===== */
+    @media (max-width: 720px) {
+      html:has(#record.view.active) {
+        scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      }
+      .app:has(#record.view.active) {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+      }
+      .app:has(#record.view.active) .record-mobile-dock {
+        display: flex;
+      }
+      .bento-timer .btn-row {
+        gap: 10px;
+      }
+      .bento-timer .btn-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .bento-timer .btn-row .btn {
+        min-height: 50px;
+        padding: 14px 14px;
+        font-size: 16px;
+        border-radius: 14px;
+        flex: none;
+      }
+      .bento-timer .btn-row .btn.success {
+        grid-column: 1 / -1;
+      }
+      .vn-choice-panel.talk-box {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        bottom: auto;
+        top: 64px;
+        max-height: min(32vh, 220px);
+      }
+      .vn-choice-list {
+        max-height: min(26vh, 168px);
+      }
+      .vn-dialogue-shell {
+        left: 8px;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom, 0px));
+        padding-top: 10px;
+      }
+      .vn-dialogue-inner {
+        max-height: min(34vh, 240px);
+        padding: 22px 12px 12px;
+      }
+      .vn-inner-monologue {
+        max-height: min(4.8em, 20vh);
+        font-size: 12.5px;
+      }
+      .vn-sprite-wrap {
+        padding: 6px 6px 198px;
+      }
+    }
+    @media (max-width: 1020px) {
+      .record-bento-row {
+        flex-direction: column;
+      }
+      .bento-charts-side {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .bento-charts-side .bento-chart-block {
+        flex: 1 1 200px;
+        min-width: 0;
+      }
+      .bento-charts-side .bento-side-footer {
+        flex: 1 1 100%;
+        width: 100%;
+      }
+    }
+    @media (max-width: 860px) {
+      .record-shell {
+        grid-template-columns: 1fr;
+      }
+      .record-rail {
+        position: static;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+      .record-rail-brand {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+      }
+      .record-rail-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .record-rail-tab {
+        width: auto;
+      }
+      .record-rail-note {
+        grid-column: 1 / -1;
+        margin: 0;
+      }
+      .record-bento-top {
+        grid-template-columns: 1fr;
+      }
+      .bento-charts-side {
+        flex-direction: column;
+      }
+      .stats-charts-row {
+        grid-template-columns: 1fr;
+      }
+      .grid { grid-template-columns: 1fr; }
+      .tab-btn, .btn {
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+      .muted, label { font-size: 14px; }
+      .big-time { font-size: clamp(32px, 11vw, 48px); }
+      .inline-edit {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 520px) {
+      .app { padding: 12px; }
+      .card:not(.vn-card) { padding: 12px; }
+      .vn-dialogue-text { font-size: 16px; }
+    }
+  
