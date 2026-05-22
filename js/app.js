@@ -3,7 +3,6 @@ import {
   APP_DISPLAY_NAME,
   PERSIST_SCHEMA_VERSION,
   sanitizeRecordRow,
-  sanitizeMemoryMoment,
   migratePersistedPayload
 } from "./state.js";
 import { milestoneBadgeIconHtml } from "./badge-icons.js";
@@ -45,7 +44,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       storyContactChannel: "",
       storyFreshReset: false,
       storySummaryFullView: false,
-      memoryMoments: [],
       bannerDismissedWeekly: "",
       romanceLastSeenDate: "",
       romanceConvoDate: "",
@@ -57,14 +55,12 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       romanceSoftMoodShownFor: "",
       romanceStreakDropNoted: "",
       romancePrevStreakSnapshot: -1,
-      autoTogetherLineOnSave: true,
       schemaVersion: PERSIST_SCHEMA_VERSION,
       onboardingCompleted: false,
       togetherLinesMaxPerDay: 8,
       togetherStudyLineDay: "",
       togetherStudyLineCount: 0,
-      romanceDailyWhisperDay: "",
-      stageCueSound: true
+      romanceDailyWhisperDay: ""
     };
 
     const sessionRuntime = {
@@ -580,28 +576,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return { delta: d, routePts: r };
     }
 
-    function playStageCueSound() {
-      if (state.stageCueSound === false) return;
-      if (!state.soundEnabled) return;
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 660;
-      gain.gain.value = 0.08;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      setTimeout(() => osc.stop(), 90);
-      setTimeout(() => {
-        try {
-          ctx.close();
-        } catch (_) {}
-      }, 200);
-    }
-
     function maybeAppendRouteHintLog() {
       if (state.endingId) return;
       if (Math.random() > 0.36) return;
@@ -733,23 +707,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return String(t || "").replace(/\{min\}/g, String(min)).replace(/\{tag\}/g, tagOut);
     }
 
-    function appendWeeklyInannaLineToReport(baseText, now) {
-      const pool = romanceNarrative.weeklyInannaLines || [];
-      const line = pickFromArr(pool, weekDateRangeKeys(now).mondayKey + "_" + fmtHourMin(sumSecondsWeekMonSun(now)));
-      let out = baseText;
-      if (line) out += "\n\n" + line;
-      const tagMap = aggregateTagMinutesWeekMonSun(now);
-      const topTags = Object.keys(tagMap).sort((a, b) => tagMap[b] - tagMap[a]);
-      const top = topTags[0] || "(태그 없음)";
-      const streak = computeStudyStreakDays();
-      const wovenPool = romanceNarrative.weeklyStoryWovenLines || [];
-      const wline = pickFromArr(wovenPool, weekDateRangeKeys(now).mondayKey + "_w_" + top + "_" + streak);
-      if (wline) {
-        out += "\n" + String(wline).replace(/\{tag\}/g, top).replace(/\{streak\}/g, String(streak));
-      }
-      return out;
-    }
-
     function ensureRomanceDailyRollover() {
       const today = dateKey(new Date());
       if (state.romanceConvoDate !== today) {
@@ -825,35 +782,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return sum;
     }
 
-    function sumSecondsWeekStartingOn(mondayKey) {
-      const sd = new Date(mondayKey + "T12:00:00");
-      let sum = 0;
-      for (let i = 0; i < 7; i++) {
-        const dd = new Date(sd);
-        dd.setDate(sd.getDate() + i);
-        sum += sumSecondsByDate(dateKey(dd));
-      }
-      return sum;
-    }
-
-    function previousWeekMondayKey(now) {
-      const mk = mondayKeyOfWeekContaining(now);
-      const anchor = new Date(mk + "T12:00:00");
-      anchor.setDate(anchor.getDate() - 7);
-      return dateKey(anchor);
-    }
-
-    function buildLastWeekOneLineSummary() {
-      const pmk = previousWeekMondayKey(new Date());
-      const sec = sumSecondsWeekStartingOn(pmk);
-      const min = Math.round(sec / 60);
-      const sd0 = new Date(pmk + "T12:00:00");
-      const sd6 = new Date(sd0);
-      sd6.setDate(sd0.getDate() + 6);
-      const endKey = dateKey(sd6);
-      return "지난주(" + pmk + " ~ " + endKey + ") 총 " + min + "분.";
-    }
-
     function aggregateSecondsByTag() {
       const map = {};
       state.records.forEach((r) => {
@@ -873,37 +801,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         keys.push(dateKey(dd));
       }
       return { mondayKey: mk, keys: keys };
-    }
-
-    function aggregateTagMinutesWeekMonSun(now) {
-      const wr = weekDateRangeKeys(now);
-      const set = new Set(wr.keys);
-      const map = {};
-      state.records.forEach((r) => {
-        if (!set.has(r.date)) return;
-        const t = (r.tag && String(r.tag).trim()) ? String(r.tag).trim() : "(태그 없음)";
-        map[t] = (map[t] || 0) + Number(r.seconds || 0);
-      });
-      return map;
-    }
-
-    function buildWeekReportPlainText(now) {
-      const wr = weekDateRangeKeys(now);
-      const weekSec = sumSecondsWeekMonSun(now);
-      const tagMap = aggregateTagMinutesWeekMonSun(now);
-      const topTags = Object.keys(tagMap).sort((a, b) => tagMap[b] - tagMap[a]).slice(0, 3);
-      const streak = computeStudyStreakDays();
-      const tagLine = topTags.length
-        ? topTags.map((k) => k + " " + fmtHourMin(tagMap[k])).join(" · ")
-        : "(이번 주 태그 없음)";
-      const lines = [
-        "━━ 주간 리포트 (" + wr.mondayKey + " ~ 7일) ━━",
-        "· 총 집중: " + fmtHourMin(weekSec),
-        "· 태그 상위: " + tagLine,
-        "· 연속 목표 달성: " + streak + "일",
-        "· 한 줄 메모: 이번 주 리듬은 아래 히트맵과 함께 보면 좋아요."
-      ];
-      return appendWeeklyInannaLineToReport(lines.join("\n"), now);
     }
 
     function drawRhythmHeatmap(now) {
@@ -1036,13 +933,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     }
 
     function renderWeeklyInsightsCard(now) {
-      const block = $("weeklyReportBlock");
-      if (block) {
-        const txt = buildWeekReportPlainText(now);
-        block.innerHTML = "<pre class='weekly-report-pre'>" + escapeHtml(txt) + "</pre>";
-      }
-      const lw = $("lastWeekSummaryLine");
-      if (lw) lw.textContent = buildLastWeekOneLineSummary();
       drawRhythmHeatmap(now);
     }
 
@@ -1075,20 +965,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           "<div class='milestone-badge-title'>" + escapeHtml(def.title) + "</div>" +
           "<div class='milestone-badge-desc'>" + escapeHtml(def.desc) + "</div></div>";
       }).join("");
-    }
-
-    function renderMemoryDiaryList() {
-      const list = $("memoryDiaryList");
-      if (!list) return;
-      const arr = Array.isArray(state.memoryMoments) ? state.memoryMoments.map(sanitizeMemoryMoment).filter(Boolean) : [];
-      if (!arr.length) {
-        list.innerHTML = "<p class='muted' style='font-size:12px;'>아직 없어요. 위에 한 줄만 남겨도 나중에 여기서 고스란히 볼 수 있어요.</p>";
-        return;
-      }
-      list.innerHTML = arr.slice().reverse().map((m) =>
-        "<div class='memory-diary-row'><div class='memory-diary-meta'>" + escapeHtml(m.date) + "</div>" +
-        "<div>" + escapeHtml(m.line) + "</div></div>"
-      ).join("");
     }
 
     function formatVnHudDate() {
@@ -1178,7 +1054,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       mergeOrPushMilestoneLog(bundleTitle, bundleBody);
       if (unlocked.length) {
         sessionRuntime.vnDialogueFlashOneShot = true;
-        playStageCueSound();
       }
     }
 
@@ -1198,14 +1073,14 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           + "<p class='muted' style='font-size:12px;margin:6px 0 0;'>" + escapeHtml(today) + "에 저장됨 · 스토리 로그와 함께 남깁니다.</p></div>";
       }
       top += buildStoryChaptersHtml();
-      const cnt = { milestone: 0, interaction: 0, choice: 0, ending: 0, userReaction: 0, branch: 0, dateScene: 0, studyTogether: 0, dailyWhisper: 0, routeHint: 0, other: 0 };
+      const cnt = { milestone: 0, interaction: 0, choice: 0, ending: 0, branch: 0, dateScene: 0, studyTogether: 0, dailyWhisper: 0, routeHint: 0, other: 0 };
       log.forEach((e) => {
         const t = e.type;
+        if (t === "userReaction") return;
         if (t === "milestone") cnt.milestone += 1;
         else if (t === "interaction") cnt.interaction += 1;
         else if (t === "choice") cnt.choice += 1;
         else if (t === "ending") cnt.ending += 1;
-        else if (t === "userReaction") cnt.userReaction += 1;
         else if (t === "branch") cnt.branch += 1;
         else if (t === "dateScene") cnt.dateScene += 1;
         else if (t === "studyTogether") cnt.studyTogether += 1;
@@ -1222,7 +1097,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }
       bullets.push("루트 누적 — 청혼 " + state.routeMarriage + " · 얀데레 " + state.routeYandere + " · 유학 " + state.routeAbroad + " (이야기 탭에서 주력 루트가 강조됩니다)");
       bullets.push("기록된 이벤트 — 관계 진전 " + cnt.milestone + " · 말 걸기 " + cnt.interaction + " · 대화 " + cnt.choice + " · 엔딩 로그 " + cnt.ending
-        + (cnt.userReaction ? " · 나의 한 줄 " + cnt.userReaction : "")
         + (cnt.branch ? " · 짧은 분기 " + cnt.branch : "")
         + (cnt.dateScene ? " · 짧은 데이트 " + cnt.dateScene : "")
         + (cnt.studyTogether ? " · 함께한 시간 " + cnt.studyTogether : "")
@@ -1246,8 +1120,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       renderStoryPortraitGallery();
       renderStorySummary();
       renderMilestoneBadgesStory();
-      renderMemoryDiaryList();
-      if (!state.storyLog.length) {
+      const visibleLog = state.storyLog.filter((e) => e.type !== "userReaction");
+      if (!visibleLog.length) {
         list.innerHTML = "<p class='muted'>" + escapeHtml(UI_EMPTY_HINT) + "</p>";
         return;
       }
@@ -1256,7 +1130,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         if (t === "interaction") return "말 걸기";
         if (t === "choice") return "대화";
         if (t === "ending") return "엔딩";
-        if (t === "userReaction") return "나의 한 줄";
         if (t === "branch") return "짧은 분기";
         if (t === "dateScene") return "짧은 데이트";
         if (t === "studyTogether") return "함께한 시간";
@@ -1264,7 +1137,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         if (t === "routeHint") return "작은 메모";
         return t || "";
       };
-      const rows = [...state.storyLog].reverse().map((e) => {
+      const rows = [...visibleLog].reverse().map((e) => {
         const when = e.ts ? e.ts.slice(0, 19).replace("T", " ") : "";
         return "<div class='story-entry'>" +
           "<div class='story-meta'>" + escapeHtml(when) + " · " + escapeHtml(typeLabel(e.type)) + "</div>" +
@@ -1329,7 +1202,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         storyContactChannel: state.storyContactChannel || "",
         storyFreshReset: state.storyFreshReset === true,
         storySummaryFullView: state.storySummaryFullView === true,
-        memoryMoments: Array.isArray(state.memoryMoments) ? state.memoryMoments : [],
         bannerDismissedWeekly: state.bannerDismissedWeekly || "",
         romanceLastSeenDate: state.romanceLastSeenDate || "",
         romanceConvoDate: state.romanceConvoDate || "",
@@ -1341,13 +1213,11 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         romanceSoftMoodShownFor: state.romanceSoftMoodShownFor || "",
         romanceStreakDropNoted: state.romanceStreakDropNoted || "",
         romancePrevStreakSnapshot: Number(state.romancePrevStreakSnapshot),
-        autoTogetherLineOnSave: state.autoTogetherLineOnSave !== false,
         onboardingCompleted: state.onboardingCompleted === true,
         togetherLinesMaxPerDay: Math.max(0, Math.min(24, Math.round(Number(state.togetherLinesMaxPerDay || 8)))),
         togetherStudyLineDay: state.togetherStudyLineDay || "",
         togetherStudyLineCount: Math.max(0, Math.round(Number(state.togetherStudyLineCount || 0))),
-        romanceDailyWhisperDay: state.romanceDailyWhisperDay || "",
-        stageCueSound: state.stageCueSound !== false
+        romanceDailyWhisperDay: state.romanceDailyWhisperDay || ""
       };
     }
 
@@ -1395,8 +1265,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         : "";
       state.storyFreshReset = data.storyFreshReset === true;
       state.storySummaryFullView = data.storySummaryFullView === true;
-      if (!Array.isArray(state.memoryMoments)) state.memoryMoments = [];
-      state.memoryMoments = state.memoryMoments.map(sanitizeMemoryMoment).filter(Boolean).slice(-50);
       state.bannerDismissedWeekly = typeof data.bannerDismissedWeekly === "string" ? data.bannerDismissedWeekly : "";
       state.romanceLastSeenDate = typeof data.romanceLastSeenDate === "string" ? data.romanceLastSeenDate : "";
       state.romanceConvoDate = typeof data.romanceConvoDate === "string" ? data.romanceConvoDate : "";
@@ -1410,14 +1278,12 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const rps = data.romancePrevStreakSnapshot;
       state.romancePrevStreakSnapshot = rps === undefined || rps === null || rps === "" ? -1 : Math.round(Number(rps));
       if (!Number.isFinite(state.romancePrevStreakSnapshot)) state.romancePrevStreakSnapshot = -1;
-      state.autoTogetherLineOnSave = data.autoTogetherLineOnSave !== false;
       state.onboardingCompleted = data.onboardingCompleted === true;
       state.togetherLinesMaxPerDay = Math.max(0, Math.min(24, Math.round(Number(data.togetherLinesMaxPerDay != null ? data.togetherLinesMaxPerDay : 8))));
       state.togetherStudyLineDay = typeof data.togetherStudyLineDay === "string" ? data.togetherStudyLineDay : "";
       const tsc = Number(data.togetherStudyLineCount);
       state.togetherStudyLineCount = Number.isFinite(tsc) && tsc >= 0 ? Math.round(tsc) : 0;
       state.romanceDailyWhisperDay = typeof data.romanceDailyWhisperDay === "string" ? data.romanceDailyWhisperDay : "";
-      state.stageCueSound = data.stageCueSound !== false;
       state.schemaVersion = PERSIST_SCHEMA_VERSION;
       migratePassedStagesSilent();
     }
@@ -2237,10 +2103,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           ? "태그별 누적: " + rows.map((k) => k + " " + fmtHourMin(m[k])).join(" · ")
           : UI_EMPTY_TAGS;
       }
-      const autoTog = $("autoTogetherLineChk");
-      if (autoTog && document.activeElement !== autoTog) autoTog.checked = state.autoTogetherLineOnSave !== false;
-      const stageCueChk = $("stageCueSoundChk");
-      if (stageCueChk && document.activeElement !== stageCueChk) stageCueChk.checked = state.stageCueSound !== false;
       updateInsightBanners(today);
       updateTodayInannaStrip();
       renderWeeklyInsightsCard(nowDate);
@@ -2415,7 +2277,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }
       recalcAffectionTotal();
       logRelationshipMilestones(prevAffection, state.affection);
-      if (state.autoTogetherLineOnSave !== false) {
+      {
         const maxN = Math.max(0, Math.min(24, Math.round(Number(state.togetherLinesMaxPerDay || 8))));
         if (maxN > 0) {
           if (state.togetherStudyLineDay !== today) {
@@ -2795,22 +2657,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         render();
       });
 
-      const autoTogetherLineChk = $("autoTogetherLineChk");
-      if (autoTogetherLineChk) {
-        autoTogetherLineChk.addEventListener("change", () => {
-          state.autoTogetherLineOnSave = autoTogetherLineChk.checked;
-          saveState();
-        });
-      }
-
-      const stageCueSoundChk = $("stageCueSoundChk");
-      if (stageCueSoundChk) {
-        stageCueSoundChk.addEventListener("change", () => {
-          state.stageCueSound = stageCueSoundChk.checked;
-          saveState();
-        });
-      }
-
       const togetherMaxIn = $("togetherLinesMaxDayInput");
       if (togetherMaxIn) {
         togetherMaxIn.addEventListener("change", () => {
@@ -2909,46 +2755,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         render();
       });
 
-      const copyWeeklyReportBtn = $("copyWeeklyReportBtn");
-      if (copyWeeklyReportBtn) {
-        copyWeeklyReportBtn.addEventListener("click", async () => {
-          const t = buildWeekReportPlainText(new Date());
-          try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              await navigator.clipboard.writeText(t);
-            } else {
-              throw new Error("clipboard unavailable");
-            }
-          } catch (_) {
-            window.prompt("아래 텍스트를 복사해 주세요:", t);
-            return;
-          }
-          const prev = copyWeeklyReportBtn.textContent;
-          copyWeeklyReportBtn.textContent = "복사됨";
-          setTimeout(() => {
-            copyWeeklyReportBtn.textContent = prev || "주간 리포트 복사";
-          }, 1400);
-        });
-      }
-
-      const memorySaveBtn = $("memorySaveBtn");
-      if (memorySaveBtn) {
-        memorySaveBtn.addEventListener("click", () => {
-          const inp = $("memoryDiaryInput");
-          const line = inp && inp.value ? inp.value.trim().slice(0, 200) : "";
-          if (!line) {
-            window.alert("한 줄을 입력해 주세요.");
-            return;
-          }
-          if (!Array.isArray(state.memoryMoments)) state.memoryMoments = [];
-          state.memoryMoments.push({ date: dateKey(new Date()), line: line });
-          state.memoryMoments = state.memoryMoments.map(sanitizeMemoryMoment).filter(Boolean).slice(-50);
-          if (inp) inp.value = "";
-          saveState();
-          render();
-        });
-      }
-
       const insightWrap = $("insightBannerWrap");
       if (insightWrap) {
         insightWrap.addEventListener("click", (e) => {
@@ -2961,27 +2767,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           if (k === "weekly") state.bannerDismissedWeekly = mondayKeyOfWeekContaining(new Date());
           saveState();
           updateInsightBanners(day);
-        });
-      }
-
-      const saveUserReactBtn = $("saveUserStoryReactionBtn");
-      if (saveUserReactBtn) {
-        saveUserReactBtn.addEventListener("click", () => {
-          const inp = $("userStoryReactionInput");
-          const line = inp && inp.value ? inp.value.trim().slice(0, 120) : "";
-          if (!line) {
-            window.alert("한 줄을 입력해 주세요.");
-            return;
-          }
-          const d = getDialogueByAffection();
-          appendStoryLog({
-            type: "userReaction",
-            title: "나의 한 줄 · " + d.stage,
-            body: line
-          });
-          if (inp) inp.value = "";
-          saveState();
-          render();
         });
       }
 

@@ -34,7 +34,6 @@ const EXPECTED_KEYS = [
   "storyContactChannel",
   "storyFreshReset",
   "storySummaryFullView",
-  "memoryMoments",
   "bannerDismissedWeekly",
   "romanceLastSeenDate",
   "romanceConvoDate",
@@ -46,14 +45,12 @@ const EXPECTED_KEYS = [
   "romanceSoftMoodShownFor",
   "romanceStreakDropNoted",
   "romancePrevStreakSnapshot",
-  "autoTogetherLineOnSave",
   "schemaVersion",
   "onboardingCompleted",
   "togetherLinesMaxPerDay",
   "togetherStudyLineDay",
   "togetherStudyLineCount",
-  "romanceDailyWhisperDay",
-  "stageCueSound"
+  "romanceDailyWhisperDay"
 ];
 
 const sample = {};
@@ -63,7 +60,6 @@ EXPECTED_KEYS.forEach((k) => {
 sample.records = [];
 sample.storyLog = [];
 sample.loggedStageMins = [];
-sample.memoryMoments = [];
 
 const keys = Object.keys(sample).sort();
 const expected = [...EXPECTED_KEYS].sort();

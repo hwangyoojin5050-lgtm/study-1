@@ -1,5 +1,5 @@
 /**
- * 저장소 키·표시 이름·스키마 버전·레코드/회상 정규화.
+ * 저장소 키·표시 이름·스키마 버전·레코드 정규화.
  */
 export const STORAGE_KEY = "studyRomanceAppData_v1";
 export const APP_DISPLAY_NAME = "너의 옆자리";
@@ -29,14 +29,6 @@ export function sanitizeRecordRow(r) {
     if (Number.isFinite(sh) && sh >= 0 && sh <= 23) out.startHour = sh;
   }
   return out;
-}
-
-export function sanitizeMemoryMoment(m) {
-  if (!m || typeof m !== "object") return null;
-  const date = String(m.date || "").trim();
-  const line = String(m.line != null ? m.line : "").trim().slice(0, 200);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !line) return null;
-  return { date: date, line: line };
 }
 
 /**

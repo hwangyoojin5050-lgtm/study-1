@@ -16,10 +16,6 @@ body = body.replace(/^    const STORAGE_KEY = .*\r?\n/m, "");
 body = body.replace(/^    const APP_DISPLAY_NAME = .*\r?\n/m, "");
 body = body.replace(/^    const BACKUP_SCHEMA_VERSION = .*\r?\n/m, "");
 body = body.replace(
-  /    function sanitizeMemoryMoment\(m\) \{[\s\S]*?\r?\n    \}\r?\n\r?\n    function renderMemoryDiaryList/,
-  "    function renderMemoryDiaryList"
-);
-body = body.replace(
   /    function sanitizeRecordRow\(r\) \{[\s\S]*?\r?\n    \}\r?\n\r?\n    function hydrateStateFromPlainObject/,
   "    function hydrateStateFromPlainObject"
 );
@@ -30,7 +26,6 @@ const header = `import {
   PERSIST_SCHEMA_VERSION,
   BACKUP_SCHEMA_VERSION,
   sanitizeRecordRow,
-  sanitizeMemoryMoment,
   migratePersistedPayload
 } from "./state.js";
 

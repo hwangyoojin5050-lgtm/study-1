@@ -383,17 +383,6 @@
       background: rgba(114, 15, 50, 0.12);
       color: var(--library-ink);
     }
-    .user-reaction-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 6px;
-      align-items: center;
-    }
-    .user-reaction-row input {
-      flex: 1;
-      min-width: 160px;
-    }
     .tabs {
       display: flex;
       gap: 8px;
@@ -1769,23 +1758,8 @@
     .weekly-insights-card {
       margin-top: 0;
     }
-    .weekly-report-block {
-      font-size: 13px;
-      line-height: 1.55;
-      white-space: pre-wrap;
-      padding: 12px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.12);
-      border: 1px solid var(--surface-line);
-      max-height: 280px;
-      overflow-y: auto;
-      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    }
-    html[data-theme="romance"] .weekly-report-block {
-      background: rgba(255, 252, 247, 0.9);
-    }
     .rhythm-heatmap-wrap {
-      margin-top: 12px;
+      margin-top: 0;
     }
     .rhythm-heatmap-wrap canvas {
       display: block;
@@ -1904,25 +1878,6 @@
     }
     html[data-theme="romance"] .memory-diary-box {
       background: rgba(255, 252, 247, 0.88);
-    }
-    .memory-diary-list {
-      margin-top: 10px;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-    .memory-diary-row {
-      padding: 8px 0;
-      border-bottom: 1px dashed var(--surface-line);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-    .memory-diary-row:last-child {
-      border-bottom: none;
-    }
-    .memory-diary-meta {
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 4px;
     }
     .story-today-journal {
       margin-bottom: 16px;
@@ -2140,9 +2095,6 @@
       <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">흐름</label>
       <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">이야기</label>
     </div>
-    <p class="muted keyboard-hint" style="margin:-6px 0 10px;font-size:11px;line-height:1.45;" id="keyboardShortcutsHint">
-      키보드: Alt+1 함께 쌓기 · Alt+2 흐름 · Alt+3 이야기 · Home 함께 쌓기 / End 이야기 · Alt+Shift+S 공부 기록 저장 · Alt+T 타이머 시작/일시정지 (입력란에 포커스가 있을 때는 단축키 비활성) · 온보딩 중 Esc 나중에 닫기
-    </p>
     <div id="insightBannerWrap" class="insight-banner-wrap" hidden>
       <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="알림"></div>
     </div>
@@ -2273,15 +2225,9 @@
         </div>
 
         <div class="card bento-card weekly-insights-card">
-          <h3>주간 리포트 · 리듬</h3>
-          <p class="muted" style="font-size:12px;margin:0 0 8px;line-height:1.45;">이번 주(월~일) 한 장 요약과, 최근 28일간 <strong>시간대가 저장된</strong> 기록만 모은 히트맵입니다.</p>
-          <div id="weeklyReportBlock" class="weekly-report-block" aria-label="주간 리포트 텍스트"></div>
-          <p class="muted" id="lastWeekSummaryLine" style="font-size:12px;line-height:1.45;margin:8px 0 0;"></p>
-          <div class="btn-row" style="margin-top:10px;">
-            <button type="button" class="btn secondary" id="copyWeeklyReportBtn">주간 리포트 복사</button>
-          </div>
+          <h3>집중 구간 히트맵</h3>
+          <p class="muted" style="font-size:12px;margin:0 0 10px;line-height:1.45;">최근 28일간 <strong>시간대가 저장된</strong> 기록만 모읍니다. 요일·시간대별로 얼마나 모였는지 한눈에 볼 수 있어요.</p>
           <div class="rhythm-heatmap-wrap">
-            <h4 class="story-subheading" style="margin:12px 0 6px;">집중 구간 히트맵</h4>
             <canvas id="rhythmHeatmap" width="480" height="210" role="img" aria-label="요일과 시간대별 집중 히트맵"></canvas>
             <p class="muted" id="rhythmHeatmapHint" style="font-size:11px;margin:6px 0 0;line-height:1.45;"></p>
           </div>
@@ -2417,25 +2363,9 @@
           </div>
           <label for="userNameViewEdit" style="margin-top:8px;">유저 이름 수정</label>
           <input id="userNameViewEdit" type="text" maxlength="20" placeholder="이름을 입력하면 즉시 반영됩니다." />
-          <label class="toggle-row" style="margin-top:10px;">
-            <input type="checkbox" id="autoTogetherLineChk" checked />
-            기록 저장 시 스토리에「함께한 시간」한 줄 자동 남기기
-          </label>
-          <label class="toggle-row" style="margin-top:8px;">
-            <input type="checkbox" id="stageCueSoundChk" checked />
-            호감 단계 넘을 때 짧은 효과음 (전체 소리 설정이 켜져 있을 때만)
-          </label>
           <label for="togetherLinesMaxDayInput" style="margin-top:10px;display:block;font-size:12px;">하루 「함께한 시간」최대 줄 수 (0이면 자동 한 줄 끔)</label>
           <input id="togetherLinesMaxDayInput" type="number" min="0" max="24" step="1" value="8" style="max-width:100px;margin-top:4px;" autocomplete="off" aria-describedby="togetherLinesMaxHint" />
           <p class="muted" id="togetherLinesMaxHint" style="font-size:11px;margin:4px 0 0;line-height:1.45;">같은 날 이 횟수를 넘기면 스토리 로그에는 더 이상 자동 한 줄이 붙지 않아요.</p>
-          <div class="user-reaction-box" style="margin-top:12px;">
-            <label for="userStoryReactionInput">인안나에게 한 줄 (선택 없이 저장)</label>
-            <div class="user-reaction-row">
-              <input id="userStoryReactionInput" type="text" maxlength="120" placeholder="지금 듣는 말에 대한 나의 한 마디…" autocomplete="off" />
-              <button type="button" class="btn secondary" id="saveUserStoryReactionBtn">스토리 로그에 남기기</button>
-            </div>
-            <p class="muted" style="margin:6px 0 0;font-size:11px;">호감도 구간과 관계없이 남기며, 스토리 탭 로그에서 확인할 수 있습니다. 네가 다정하고 활발한 사람이라는 설정도 한 줄에 살짝 녹여도 좋아요.</p>
-          </div>
           <div class="story-contact-pick" id="storyContactPickWrap" hidden>
             <p class="muted story-contact-pick-lede">인안나가 네 성격을 떠올리며 묻는 짧은 분기예요. 연락은 어떤 쪽이 편해? 한 번 고르면 로그에만 남고, 부담 없는 장면 묘사에 쓸게.</p>
             <div class="btn-row story-contact-pick-row">
@@ -2465,15 +2395,6 @@
             <h4 class="story-subheading">마일스톤 배지</h4>
             <p class="muted" style="font-size:12px;line-height:1.45;">이 기기에서만 해금되는 작은 배지예요. 경쟁·랭킹 없이 스스로에게 주는 표시입니다.</p>
             <div id="milestoneBadgeGrid" class="milestone-badge-grid" aria-label="마일스톤 배지"></div>
-          </div>
-          <div id="memoryDiarySection" class="memory-diary-box" style="margin-top:12px;">
-            <h4 class="story-subheading">그때의 나 (회상 일기)</h4>
-            <p class="muted" style="font-size:12px;line-height:1.45;">선택지 되돌리기는 없어요. 그날의 나만 짧게 남기는 공간이에요.</p>
-            <div class="today-journal-row" style="margin-top:8px;">
-              <input id="memoryDiaryInput" type="text" maxlength="200" placeholder="한 줄만 적어 두기 (날짜는 자동)" autocomplete="off" />
-              <button type="button" class="btn secondary" id="memorySaveBtn">남기기</button>
-            </div>
-            <div id="memoryDiaryList" class="memory-diary-list" aria-live="polite"></div>
           </div>
           <div class="story-log" id="storyLogList"></div>
           <div class="story-reset-row">
