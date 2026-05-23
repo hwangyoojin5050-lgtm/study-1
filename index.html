@@ -56,7 +56,7 @@
       <div class="today-inanna-inner">
         <img
           class="today-inanna-img"
-          src="./assets/today-inanna.png?v=21"
+          src="./assets/today-inanna.png?v=22"
           width="72"
           height="72"
           alt=""
@@ -256,7 +256,7 @@
                 alt=""
                 width="56"
                 height="56"
-                src="./assets/character-scene.png?v=21"
+                src="./assets/character-scene.png?v=22"
               />
               <div class="vn-stat-box">
                 <div class="vn-stat-row vn-stat-labels">
@@ -279,7 +279,7 @@
               id="characterImage"
               class="character-img vn-sprite"
               alt="인안나 · 호감도 0~30"
-              src="./assets/character-scene.png?v=21"
+              src="./assets/character-scene.png?v=22"
             />
           </div>
 
@@ -374,17 +374,80 @@
   </div>
 
   <script>
-    window.__studyBootOk = false;
-    setTimeout(function () {
-      if (window.__studyBootOk) return;
-      var box = document.createElement("div");
-      box.setAttribute("role", "alert");
-      box.style.cssText = "position:fixed;inset:12px;z-index:99998;background:#2d1f28;color:#f5eef2;padding:16px 18px;border-radius:12px;font:14px/1.5 system-ui,Segoe UI,sans-serif;max-width:420px;margin:auto;box-shadow:0 12px 48px rgba(0,0,0,.45);";
-      box.innerHTML = "<strong>앱이 아직 시작되지 않았어요</strong><p style='margin:10px 0 0;opacity:.92;'>첫 로딩이 실패했거나 예전 캐시가 남았을 수 있어요.</p><p style='margin:14px 0 0;'><button type='button' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button></p>";
-      box.querySelector("button").addEventListener("click", function () { location.reload(); });
-      (document.body || document.documentElement).appendChild(box);
-    }, 12000);
+    (function () {
+      var FALLBACK_ID = "studyBootFallback";
+      var bootTimer = null;
+
+      function removeBootFallback() {
+        if (bootTimer) {
+          clearTimeout(bootTimer);
+          bootTimer = null;
+        }
+        var el = document.getElementById(FALLBACK_ID);
+        if (el) el.remove();
+      }
+
+      function hardResetCaches() {
+        var p = Promise.resolve();
+        if ("serviceWorker" in navigator) {
+          p = p.then(function () {
+            return navigator.serviceWorker.getRegistrations();
+          }).then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+          });
+        }
+        if ("caches" in window) {
+          p = p.then(function () {
+            return caches.keys();
+          }).then(function (keys) {
+            return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+          });
+        }
+        return p.then(function () { location.reload(); });
+      }
+
+      function showBootFallback(reason) {
+        if (document.getElementById(FALLBACK_ID) || window.__studyBootOk === true) return;
+        var box = document.createElement("div");
+        box.id = FALLBACK_ID;
+        box.setAttribute("role", "alert");
+        box.style.cssText = "position:fixed;inset:12px;z-index:99998;background:#2d1f28;color:#f5eef2;padding:16px 18px;border-radius:12px;font:14px/1.5 system-ui,Segoe UI,sans-serif;max-width:440px;margin:auto;box-shadow:0 12px 48px rgba(0,0,0,.45);";
+        var msg = reason === "module"
+          ? "스크립트를 불러오지 못했어요. 예전 캐시가 남았을 수 있어요."
+          : "시작이 완료되지 않았어요. 네트워크가 느리거나 캐시 문제일 수 있어요.";
+        box.innerHTML = "<strong>앱을 시작하지 못했어요</strong>"
+          + "<p style='margin:10px 0 0;opacity:.92;'>" + msg + "</p>"
+          + "<p style='margin:14px 0 4px;display:flex;flex-wrap:wrap;gap:8px;'>"
+          + "<button type='button' data-act='reload' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button>"
+          + "<button type='button' data-act='reset' style='padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:inherit;font-weight:600;cursor:pointer;'>캐시 지우고 다시</button>"
+          + "</p>";
+        box.addEventListener("click", function (e) {
+          var btn = e.target.closest("[data-act]");
+          if (!btn) return;
+          if (btn.getAttribute("data-act") === "reset") hardResetCaches();
+          else location.reload();
+        });
+        (document.body || document.documentElement).appendChild(box);
+      }
+
+      window.addEventListener("study-app-ready", removeBootFallback);
+      window.addEventListener("study-app-module", function () {
+        if (bootTimer) clearTimeout(bootTimer);
+        bootTimer = setTimeout(function () {
+          if (window.__studyBootOk !== true) showBootFallback("slow");
+        }, 45000);
+      });
+      window.addEventListener("error", function (e) {
+        var src = e.filename || (e.target && e.target.src) || "";
+        if (String(src).indexOf("app.js") < 0 && String(src).indexOf("state.js") < 0) return;
+        showBootFallback("module");
+      }, true);
+      setTimeout(function () {
+        if (window.__studyBootOk === true || window.__studyBootOk === "module") return;
+        showBootFallback("module");
+      }, 15000);
+    })();
   </script>
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/app.js?v=22"></script>
 </body>
 </html>

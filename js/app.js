@@ -7,6 +7,13 @@ import {
 } from "./state.js";
 import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
+    if (typeof window !== "undefined") {
+      window.__studyBootOk = "module";
+      try {
+        window.dispatchEvent(new Event("study-app-module"));
+      } catch (_) {}
+    }
+
     /* ===== JS §1 Persistence key, state shape ===== */
     /** 저장소: localStorage 단일 기기. gatherPersistedState() / hydrateStateFromPlainObject() 스키마를 유지합니다. */
     const state = {
@@ -171,7 +178,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     /** index.html 옆 ./assets/character-scene.png — 단일 장면 이미지(호감·엔딩 구간과 무관하게 동일 표시) */
     /** 정적 이미지·SW 캐시 무효화 — 배포 시 숫자만 올리면 됩니다. */
-    const ASSET_CACHE_BUST = "21";
+    const ASSET_CACHE_BUST = "22";
     const CHARACTER_IMAGE_BASE = "./assets/";
     const CHARACTER_SCENE_FILE = "character-scene.png";
     const CHARACTER_IMAGE_FILES = [
@@ -3416,10 +3423,30 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           "<strong>앱 시작 중 오류</strong>" +
           "<p style='margin:10px 0 0;white-space:pre-wrap;'>" + escapeHtml(msg) + "</p>" +
           "<p style='margin:12px 0 0;font-size:12px;opacity:.88;'>예전 캐시·서비스 워커가 남았을 수 있어요. 아래 새로고침을 누르거나 Ctrl+Shift+R(강력 새로고침)을 시도해 주세요.</p>" +
-          "<p style='margin:14px 0 0;'><button type='button' id='studyBootReloadBtn' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button></p>";
+          "<p style='margin:14px 0 0;display:flex;flex-wrap:wrap;gap:8px;'>"
+          + "<button type='button' id='studyBootReloadBtn' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button>"
+          + "<button type='button' id='studyBootResetBtn' style='padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:inherit;font-weight:600;cursor:pointer;'>캐시 지우고 다시</button>"
+          + "</p>";
         (document.body || document.documentElement).appendChild(div);
         const rb = document.getElementById("studyBootReloadBtn");
         if (rb) rb.addEventListener("click", () => location.reload());
+        const resetBtn = document.getElementById("studyBootResetBtn");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", () => {
+            const p = Promise.resolve();
+            const fin = () => location.reload();
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.getRegistrations()
+                .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+                .then(() => ("caches" in window ? caches.keys() : []))
+                .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+                .then(fin)
+                .catch(fin);
+            } else {
+              fin();
+            }
+          });
+        }
       } catch (_) {}
     }
 
@@ -3435,11 +3462,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           durationMs: 12000
         });
       };
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionRuntime.swReloading) return;
-        sessionRuntime.swReloading = true;
-        location.reload();
-      });
       navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((reg) => {
         if (reg.waiting && navigator.serviceWorker.controller) promptSwReload();
         reg.addEventListener("updatefound", () => {
@@ -3467,7 +3489,12 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     bindPortraitImageFallback($("characterImage"));
     bindPortraitImageFallback($("characterImageThumb"));
     setupServiceWorker();
-    if (typeof window !== "undefined") window.__studyBootOk = true;
+    if (typeof window !== "undefined") {
+      window.__studyBootOk = true;
+      try {
+        window.dispatchEvent(new Event("study-app-ready"));
+      } catch (_) {}
+    }
     render();
     loadRomanceNarrativeRemote().then(() => render()).catch(() => {});
     } catch (err) {

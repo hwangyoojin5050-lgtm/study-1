@@ -33,10 +33,12 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html manifest.webmanifest sw.js _site/
-          cp -r js assets _site/
+          cp -r js assets styles _site/
           test -f _site/index.html
           test -f _site/js/app.js
           test -f _site/js/badge-icons.js
+          test -f _site/styles/tokens.css
+          test -f _site/assets/today-inanna.png
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
