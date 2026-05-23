@@ -1,5 +1,5 @@
 /* Offline shell — index.html, manifest, icon. Google Fonts는 온라인일 때만 사용됩니다. */
-const CACHE = "study-romance-shell-v19";
+const CACHE = "study-romance-shell-v20";
 const CORE = [
   "./index.html",
   "./styles/tokens.css",
