@@ -1126,11 +1126,14 @@
     }
     .rhythm-heatmap-wrap {
       margin-top: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
     }
     .rhythm-heatmap-wrap canvas {
       display: block;
       width: 100%;
-      max-width: 100%;
+      max-width: min(480px, 100%);
       height: auto;
       border-radius: 10px;
       border: 1px solid var(--surface-line);

@@ -24,8 +24,6 @@ const EXPECTED_KEYS = [
   "maxAffectionEver",
   "affectionBaselineSeconds",
   "a11yPreset",
-  "todayJournalDate",
-  "todayJournalLine",
   "showInnerMonologue",
   "weeklyGoalHours",
   "defaultSessionTag",

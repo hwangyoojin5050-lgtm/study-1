@@ -34,8 +34,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       maxAffectionEver: 0,
       affectionBaselineSeconds: 0,
       a11yPreset: "romance",
-      todayJournalDate: "",
-      todayJournalLine: "",
       showInnerMonologue: true,
       weeklyGoalHours: 0,
       defaultSessionTag: "",
@@ -80,7 +78,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       snackbarConfirmMode: false,
       clockSkewNotified: false,
       dayRolloverNotified: false,
-      swReloading: false
+      swReloading: false,
+      timerPauseNotified: false
     };
 
     const TAB_FOCUSABLE =
@@ -231,22 +230,21 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return "밤 풍경의 개와 사자가 나란히 앉아 있는 장면 이미지";
     }
 
-    function hasAnyRomanceProgressTouch() {
-      return state.maxAffectionEver > 0
-        || state.totalSeconds > 0
+    function hasRomanceProgressTouch() {
+      return state.affection > 0
         || state.replyAffectionBonus !== 0
         || (Array.isArray(state.storyLog) && state.storyLog.length > 0)
         || state.endingId === 1 || state.endingId === 2 || state.endingId === 3;
     }
 
     function getSeenPortraitGalleryItems() {
-      const max = Number(state.maxAffectionEver || 0);
+      const aff = Number(state.affection || 0);
       const items = [];
-      if (hasAnyRomanceProgressTouch()) {
+      if (hasRomanceProgressTouch()) {
         items.push({ fileIndex: 0, caption: PORTRAIT_STAGE_LABELS[0] });
       }
-      if (max >= 31) items.push({ fileIndex: 1, caption: PORTRAIT_STAGE_LABELS[1] });
-      if (max >= 51) items.push({ fileIndex: 2, caption: PORTRAIT_STAGE_LABELS[2] });
+      if (aff >= 31) items.push({ fileIndex: 1, caption: PORTRAIT_STAGE_LABELS[1] });
+      if (aff >= 51) items.push({ fileIndex: 2, caption: PORTRAIT_STAGE_LABELS[2] });
       if (state.endingId === 1) items.push({ fileIndex: 3, caption: PORTRAIT_STAGE_LABELS[3] });
       if (state.endingId === 2) items.push({ fileIndex: 4, caption: PORTRAIT_STAGE_LABELS[4] });
       if (state.endingId === 3) items.push({ fileIndex: 5, caption: PORTRAIT_STAGE_LABELS[5] });
@@ -309,6 +307,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       invalidateChartCache();
       saveState();
       render();
+      showAppSnackbar("스토리·호감도를 초기화했어요. 마일스톤 배지는 공부 기록 기준이라 그대로예요.", { durationMs: 4500 });
     }
 
     /* ===== JS §2 Story tables (dialogues, interactions) ===== */
@@ -855,7 +854,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     function handleCalendarDayChange(prevKey, newKey) {
       void prevKey;
-      ensureTodayJournalRollover();
       clearRomanceBackdropIfStale(newKey);
       ensureRomanceDailyRollover();
       invalidateChartCache();
@@ -1086,9 +1084,21 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       { id: "m9", title: "누적 100h", desc: "총 100시간+", ok: () => Number(state.totalSeconds || 0) >= 100 * 3600 }
     ];
 
+    function updateMilestoneBadgeNote() {
+      const note = $("milestoneBadgeNote");
+      if (!note) return;
+      const anyStudyBadge = MILESTONE_BADGE_DEFS.some((def) => def.ok());
+      const show = anyStudyBadge && state.affection === 0 && state.records.length > 0;
+      note.hidden = !show;
+      note.textContent = show
+        ? "배지는 공부·목표 기준이에요. 호감도·스토리 초기화와는 따로 계산돼요."
+        : "";
+    }
+
     function renderMilestoneBadgesStory() {
       const grid = $("milestoneBadgeGrid");
       if (!grid) return;
+      updateMilestoneBadgeNote();
       grid.innerHTML = MILESTONE_BADGE_DEFS.map((def) => {
         const on = def.ok();
         const ic = milestoneBadgeIconHtml(def.id);
@@ -1198,13 +1208,10 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     function buildStorySummaryHtml() {
       const d = getDialogueByAffection();
       const log = Array.isArray(state.storyLog) ? state.storyLog : [];
-      const today = dateKey(new Date());
-      let top = "";
-      if (state.todayJournalLine && state.todayJournalDate === today && state.todayJournalLine.trim()) {
-        top += "<div class='story-today-journal'><strong>오늘 한 줄</strong><p>" + escapeHtml(state.todayJournalLine.trim()) + "</p>"
-          + "<p class='muted' style='font-size:12px;margin:6px 0 0;'>" + escapeHtml(today) + "에 저장됨 · 스토리 로그와 함께 남깁니다.</p></div>";
+      let top = buildStoryChaptersHtml();
+      if (state.storyFreshReset && state.records.length > 0 && state.affection === 0) {
+        top = "<p class='muted text-caption lede-tight' style='margin:0 0 12px;'>스토리·호감도는 초기화됐어요. 공부 기록과 마일스톤 배지는 그대로예요.</p>" + top;
       }
-      top += buildStoryChaptersHtml();
       const cnt = { milestone: 0, interaction: 0, choice: 0, ending: 0, branch: 0, dateScene: 0, studyTogether: 0, dailyWhisper: 0, routeHint: 0, other: 0 };
       log.forEach((e) => {
         const t = e.type;
@@ -1343,8 +1350,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         maxAffectionEver: state.maxAffectionEver,
         affectionBaselineSeconds: state.affectionBaselineSeconds,
         a11yPreset: state.a11yPreset,
-        todayJournalDate: state.todayJournalDate || "",
-        todayJournalLine: state.todayJournalLine || "",
         showInnerMonologue: state.showInnerMonologue !== false,
         weeklyGoalHours: Number(state.weeklyGoalHours || 0),
         defaultSessionTag: state.defaultSessionTag || "",
@@ -1401,14 +1406,11 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       state.viewSubPanel = data.viewSubPanel === "story" ? "story" : "character";
       const tabRaw = String(data.uiMainTab || "").toLowerCase();
       state.uiMainTab = tabRaw === "view" ? "view" : tabRaw === "stats" ? "stats" : "record";
-      state.maxAffectionEver = Math.max(
-        Number(data.maxAffectionEver || 0),
-        Number(data.affection || 0)
-      );
+      const affHydrate = Math.max(0, Number(state.affection || 0));
+      const storedMaxAff = Math.max(0, Number(data.maxAffectionEver || 0));
+      state.maxAffectionEver = Math.max(affHydrate, Math.min(storedMaxAff, affHydrate));
       state.affectionBaselineSeconds = Math.max(0, Number(data.affectionBaselineSeconds || 0));
       state.a11yPreset = "romance";
-      state.todayJournalDate = typeof data.todayJournalDate === "string" ? data.todayJournalDate : "";
-      state.todayJournalLine = typeof data.todayJournalLine === "string" ? data.todayJournalLine : "";
       state.showInnerMonologue = data.showInnerMonologue !== false;
       state.weeklyGoalHours = Math.max(0, Number(data.weeklyGoalHours || 0));
       state.defaultSessionTag = typeof data.defaultSessionTag === "string" ? data.defaultSessionTag.slice(0, 24) : "";
@@ -1577,18 +1579,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       root.style.colorScheme = "light";
     }
 
-    function ensureTodayJournalRollover() {
-      const today = dateKey(new Date());
-      if (!state.todayJournalDate) {
-        state.todayJournalDate = today;
-        return;
-      }
-      if (state.todayJournalDate !== today) {
-        state.todayJournalDate = today;
-        state.todayJournalLine = "";
-      }
-    }
-
     function buildRouteMeterHtml() {
       const m = state.routeMarriage;
       const y = state.routeYandere;
@@ -1747,6 +1737,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const baseFromStudy = calcAffectionBySeconds(studyOnly);
       state.affection = Math.max(0, baseFromStudy + Number(state.replyAffectionBonus || 0));
       state.maxAffectionEver = Math.max(Number(state.maxAffectionEver || 0), state.affection);
+      if (!hasRomanceProgressTouch()) {
+        state.maxAffectionEver = state.affection;
+      }
     }
 
     function createAffectionInteraction() {
@@ -2332,6 +2325,13 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }
       updateSessionDocumentTitle();
       updateTimerFavicon();
+      updateMainTabTimerHints();
+      const dockSave = $("dockSaveSessionBtn");
+      if (dockSave) {
+        const showDockSave = state.uiMainTab === "record" && state.timerSeconds > 0;
+        dockSave.hidden = !showDockSave;
+        dockSave.disabled = state.timerSeconds <= 0;
+      }
     }
 
     function closeTimerMoreMenu() {
@@ -2506,7 +2506,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     function render() {
       try {
       maybeRefreshCalendarDay();
-      ensureTodayJournalRollover();
       applyA11yPresetToDocument();
       const today = dateKey(new Date());
       clearRomanceBackdropIfStale(today);
@@ -2524,17 +2523,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       if (wgh) wgh.value = state.weeklyGoalHours || "";
       const dft = $("defaultSessionTagInput");
       if (dft && document.activeElement !== dft) dft.value = state.defaultSessionTag || "";
-
-      const jIn = $("todayJournalInput");
-      const jHint = $("todayJournalHint");
-      if (jIn && document.activeElement !== jIn) {
-        jIn.value = state.todayJournalLine || "";
-      }
-      if (jHint) {
-        jHint.textContent = (state.todayJournalLine || "").trim()
-          ? "스토리 요약 상단에 함께 보여요."
-          : "저장하면 오늘 날짜에 묶여 스토리에 남아요.";
-      }
 
       const goalRing = $("todayGoalRing");
       const goalPctEl = $("todayGoalRingPct");
@@ -2606,7 +2594,17 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         try {
           updateSessionDocumentTitle();
         } catch (_) {}
+        try {
+          updateMainTabTimerHints();
+        } catch (_) {}
       }
+    }
+
+    function initFileProtocolNotice() {
+      if (location.protocol !== "file:") return;
+      document.documentElement.classList.add("protocol-file");
+      const el = $("fileProtocolBanner");
+      if (el) el.hidden = false;
     }
 
     function addSessionRecord(seconds, source, opts) {
@@ -2732,9 +2730,43 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       });
     }
 
+    function pauseStudyTimerCore(opts) {
+      opts = opts || {};
+      if (!state.timerRunning) return false;
+      if (state.timerId) clearInterval(state.timerId);
+      state.timerId = null;
+      state.timerRunning = false;
+      sessionRuntime.timerWallStartMs = null;
+      if (!opts.skipRender) render();
+      return true;
+    }
+
     function activateTab(tabId) {
-      state.uiMainTab = normalizeMainTabId(tabId);
+      const next = normalizeMainTabId(tabId);
+      const prev = normalizeMainTabId(state.uiMainTab);
+      if (prev === "record" && next !== "record" && state.timerRunning) {
+        pauseStudyTimerCore({ skipRender: true });
+        if (!sessionRuntime.timerPauseNotified) {
+          sessionRuntime.timerPauseNotified = true;
+          showAppSnackbar("다른 탭으로 이동해 타이머를 잠시 멈췄어요. 함께 쌓기에서 이어할 수 있어요.", { durationMs: 4200 });
+        }
+      }
+      state.uiMainTab = next;
       applyMainTabToDom();
+      updateMainTabTimerHints();
+    }
+
+    function updateMainTabTimerHints() {
+      const recordTab = $("tabBtnRecord");
+      const away = state.uiMainTab !== "record" && (state.timerRunning || state.timerSeconds > 0);
+      if (recordTab) {
+        recordTab.classList.toggle("tab-btn--timer-away", away);
+        if (away) {
+          recordTab.setAttribute("title", "타이머 " + fmtTime(state.timerSeconds) + " · 함께 쌓기로 돌아가기");
+        } else {
+          recordTab.removeAttribute("title");
+        }
+      }
     }
 
     function isFormFieldTarget(el) {
@@ -2799,7 +2831,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     function paintOnboardingStep() {
       const bodies = [
-        "함께 쌓기에서 타이머로 공부 시간을 쌓고, 이야기에서 인안나와의 스토리를, 흐름에서 그래프를 봐요. Alt+1~3으로 탭을 바꿀 수 있어요.",
+        "함께 쌓기에서 타이머로 공부 시간을 쌓고, 이야기에서 인안나와의 스토리를, 흐름에서 그래프를 봐요. 상단 탭이 메인 화면이에요. (선택) Alt+1 함께 쌓기 · Alt+2 이야기 · Alt+3 흐름",
         "기록은 이 브라우저에만 저장돼요. 목표를 저장하고 타이머를 시작해 보세요."
       ];
       const b = $("onboardingBody");
@@ -2835,19 +2867,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           dismissOnboarding();
           return;
         }
-        if (!isFormFieldTarget(e.target) && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-          if (e.key === "Home") {
-            e.preventDefault();
-            $("tabBtnRecord")?.click();
-            return;
-          }
-          if (e.key === "End") {
-            e.preventDefault();
-            $("tabBtnStats")?.click();
-            return;
-          }
-        }
         if (isFormFieldTarget(e.target)) return;
+        if (ob && !ob.hidden) return;
         const t = e.target;
         const mainTabs = Array.from(document.querySelectorAll(".tabs > .tab-btn"));
         if (t instanceof HTMLElement && mainTabs.includes(t) && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
@@ -2855,7 +2876,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           const idx = mainTabs.indexOf(t);
           const next = (idx + (e.key === "ArrowRight" ? 1 : -1) + mainTabs.length) % mainTabs.length;
           mainTabs[next].focus();
-          mainTabs[next].click();
           return;
         }
         const subTabs = Array.from(document.querySelectorAll(".view-sub-tabs [data-view-sub]"));
@@ -2864,10 +2884,15 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           const idx = subTabs.indexOf(t);
           const next = (idx + (e.key === "ArrowRight" ? 1 : -1) + subTabs.length) % subTabs.length;
           subTabs[next].focus();
-          subTabs[next].click();
           return;
         }
         if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          if (e.code === "Home" || e.code === "End") {
+            e.preventDefault();
+            if (e.code === "Home") $("tabBtnRecord")?.click();
+            else $("tabBtnStats")?.click();
+            return;
+          }
           if (e.code === "Digit1" || e.code === "Numpad1") {
             e.preventDefault();
             const btn = $("tabBtnRecord");
@@ -2948,11 +2973,11 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const viR = document.getElementById("studyMainTabView");
       if (!recR || !stR || !viR) return;
       const onRadioChange = () => {
-        state.uiMainTab = viR.checked ? "view" : stR.checked ? "stats" : "record";
-        applyMainTabToDom();
+        const tab = viR.checked ? "view" : stR.checked ? "stats" : "record";
+        activateTab(tab);
         saveState();
         render();
-        focusFirstInMainPanel(state.uiMainTab);
+        focusFirstInMainPanel(tab);
       };
       recR.addEventListener("change", onRadioChange);
       stR.addEventListener("change", onRadioChange);
@@ -2987,19 +3012,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           const btn = e.target instanceof HTMLElement ? e.target.closest("[data-story-full-toggle]") : null;
           if (!btn) return;
           state.storySummaryFullView = !state.storySummaryFullView;
-          saveState();
-          render();
-        });
-      }
-
-      const saveJournalBtn = $("saveTodayJournalBtn");
-      if (saveJournalBtn) {
-        saveJournalBtn.addEventListener("click", () => {
-          ensureTodayJournalRollover();
-          const jEl = $("todayJournalInput");
-          const line = jEl && jEl.value ? jEl.value.trim() : "";
-          state.todayJournalLine = line.slice(0, 140);
-          state.todayJournalDate = dateKey(new Date());
           saveState();
           render();
         });
@@ -3064,6 +3076,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const startStudyTimer = () => {
         if (state.timerRunning) return;
         closeTimerMoreMenu();
+        sessionRuntime.timerPauseNotified = false;
         if (!sessionRuntime.timerSessionDateKey) {
           sessionRuntime.timerSessionDateKey = dateKey(new Date());
         }
@@ -3083,11 +3096,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       };
 
       const pauseStudyTimer = () => {
-        if (!state.timerRunning) return;
-        clearInterval(state.timerId);
-        state.timerRunning = false;
-        sessionRuntime.timerWallStartMs = null;
-        render();
+        pauseStudyTimerCore();
       };
 
       $("timerPrimaryBtn")?.addEventListener("click", () => {
@@ -3144,6 +3153,10 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         timerDisplayEl.addEventListener("pointerleave", cancelResetPress);
         timerDisplayEl.addEventListener("pointercancel", cancelResetPress);
       }
+
+      $("dockSaveSessionBtn")?.addEventListener("click", () => {
+        $("saveSessionBtn")?.click();
+      });
 
       $("saveSessionBtn")?.addEventListener("click", () => {
         const savedSec = state.timerSeconds;
@@ -3442,6 +3455,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     try {
     loadState();
     initDeviceClockGuard();
+    initFileProtocolNotice();
     clearUndoDelete();
     recalcAffectionTotal();
     if (tryUnlockEnding()) saveState();

@@ -4,7 +4,7 @@
 export const STORAGE_KEY = "studyRomanceAppData_v1";
 export const APP_DISPLAY_NAME = "너의 옆자리";
 /** localStorage / gatherPersistedState 페이로드 버전 */
-export const PERSIST_SCHEMA_VERSION = 2;
+export const PERSIST_SCHEMA_VERSION = 3;
 
 export function sanitizeRecordRow(r) {
   if (!r || typeof r !== "object") return null;
@@ -53,6 +53,16 @@ export function migratePersistedPayload(data) {
     if (typeof out.togetherStudyLineDay !== "string") out.togetherStudyLineDay = "";
     const c = Number(out.togetherStudyLineCount);
     out.togetherStudyLineCount = Number.isFinite(c) && c >= 0 ? Math.round(c) : 0;
+  }
+  if (v < 3) {
+    out.todayJournalDate = "";
+    out.todayJournalLine = "";
+    const aff = Math.max(0, Number(out.affection || 0));
+    const maxAff = Math.max(0, Number(out.maxAffectionEver || 0));
+    if (maxAff > aff) out.maxAffectionEver = aff;
+    out.schemaVersion = PERSIST_SCHEMA_VERSION;
+  }
+  if (Number(out.schemaVersion) !== PERSIST_SCHEMA_VERSION) {
     out.schemaVersion = PERSIST_SCHEMA_VERSION;
   }
   return out;

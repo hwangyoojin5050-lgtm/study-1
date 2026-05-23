@@ -95,6 +95,17 @@ assert(migrated.onboardingCompleted === false, "온보딩 기본값");
 const migratedOld = migratePersistedPayload({ records: [{ date: "2026-01-01", seconds: 60, quest: "", source: "manual" }], storyLog: [] });
 assert(migratedOld.onboardingCompleted === true, "기존 사용자는 온보딩 스킵");
 
+const migratedJournal = migratePersistedPayload({
+  schemaVersion: 2,
+  todayJournalDate: "2026-01-01",
+  todayJournalLine: "옛 일기",
+  affection: 5,
+  maxAffectionEver: 40
+});
+assert(migratedJournal.schemaVersion === PERSIST_SCHEMA_VERSION, "v3 마이그레이션");
+assert(migratedJournal.todayJournalLine === "", "은퇴한 오늘 한 줄 필드 제거");
+assert(migratedJournal.maxAffectionEver === 5, "최고 호감도는 현재 호감도 이하로 정리");
+
 const srState = sanitizeRecordRowFromState({ date: "2026-05-12", seconds: 60 });
 assert(srState && srState.seconds === 60, "state.js sanitizeRecordRow");
 

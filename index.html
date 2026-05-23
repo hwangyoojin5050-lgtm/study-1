@@ -26,6 +26,9 @@
   <link rel="stylesheet" href="./styles/vn.css" />
 </head>
 <body>
+  <div id="fileProtocolBanner" class="file-protocol-banner" role="status" hidden>
+  이 파일을 직접 열면(localStorage·오프라인·아이콘) 일부 기능이 제한돼요. GitHub Pages 주소나 <code>npm run dev</code> 같은 로컬 서버로 열어 주세요.
+  </div>
   <div class="app">
     <input type="radio" name="studyMainTab" id="studyMainTabRecord" class="main-tab-input" checked />
     <input type="radio" name="studyMainTab" id="studyMainTabStats" class="main-tab-input" />
@@ -41,7 +44,7 @@
         <p class="muted mt-2" id="onboardingStepInd">1 / 2</p>
       </div>
     </div>
-    <div class="tabs" role="tablist" aria-label="메인 화면">
+    <div class="tabs" role="tablist" aria-label="메인 화면: 함께 쌓기, 이야기, 흐름">
       <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">함께 쌓기</label>
       <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">이야기</label>
       <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">흐름</label>
@@ -67,7 +70,7 @@
       </div>
     </div>
     <p class="muted text-caption mb-2 lede-tight" id="privacyLocalNote" style="max-width:720px;">
-      개인정보: 이 앱은 서버로 공부 내용을 보내지 않고, 기기 안(localStorage)에만 저장합니다. 브라우저 데이터·캐시를 지우면 이 기기의 기록이 함께 사라질 수 있어요. 외부 분석·광고 SDK는 붙어 있지 않습니다.
+      개인정보: 공부·스토리는 이 기기(localStorage)에만 저장되고, 계정·다른 기기 동기화·푸시 알림은 없어요. 브라우저 데이터·캐시를 지우면 이 기기의 기록이 함께 사라질 수 있어요. 외부 분석·광고 SDK는 붙어 있지 않습니다.
     </p>
 
     <section id="record" class="view active" role="tabpanel" aria-labelledby="tabBtnRecord" aria-hidden="false">
@@ -79,7 +82,7 @@
             <button type="button" class="record-rail-tab" data-go-tab="view">이야기</button>
             <button type="button" class="record-rail-tab" data-go-tab="stats">흐름</button>
           </nav>
-          <p class="record-rail-note muted">인안나와 함께하는 공부</p>
+          <p class="record-rail-note muted">집중은 이 대시보드 · 이야기·흐름은 <strong>위쪽 메인 탭</strong>과 같아요</p>
         </aside>
 
         <div class="record-main">
@@ -221,7 +224,7 @@
       </div>
     </section>
 
-    <footer class="record-mobile-dock" id="recordMobileDock" aria-label="기록 요약">
+    <footer class="record-mobile-dock" id="recordMobileDock" aria-label="기록 요약·타이머">
       <div class="record-mobile-dock-col">
         <span class="record-mobile-dock-k">오늘</span>
         <span class="record-mobile-dock-v" id="dockTodayShort">0분</span>
@@ -230,6 +233,7 @@
         <span class="record-mobile-dock-k">타이머</span>
         <span class="record-mobile-dock-v" id="dockTimerShort">00:00:00</span>
       </div>
+      <button type="button" class="btn success record-mobile-dock-save" id="dockSaveSessionBtn" hidden aria-label="타이머 시간을 공부 기록으로 저장">저장</button>
     </footer>
 
     <section id="panelView" class="view" role="tabpanel" aria-labelledby="tabBtnView" aria-hidden="true">
@@ -347,7 +351,8 @@
           <div id="storySummaryPanel" class="story-summary-box" aria-live="polite"></div>
           <div id="milestoneBadgeSection" class="memory-diary-box mt-2">
             <h4 class="story-subheading">마일스톤 배지</h4>
-            <p class="muted text-caption lede-tight">이 기기에서만 해금되는 작은 배지예요.</p>
+            <p class="muted text-caption lede-tight">이 기기에서만 해금되는 작은 배지예요. 공부·목표 기준이며 호감도와는 별개예요.</p>
+            <p id="milestoneBadgeNote" class="muted text-caption lede-tight" hidden></p>
             <div id="milestoneBadgeGrid" class="milestone-badge-grid" aria-label="마일스톤 배지"></div>
           </div>
           <div class="story-log" id="storyLogList"></div>
