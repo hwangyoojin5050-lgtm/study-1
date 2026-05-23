@@ -60,20 +60,27 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       togetherLinesMaxPerDay: 8,
       togetherStudyLineDay: "",
       togetherStudyLineCount: 0,
-      romanceDailyWhisperDay: ""
+      romanceDailyWhisperDay: "",
+      deviceLastSeenDateKey: "",
+      deviceLastSeenAtMs: 0
     };
 
     const sessionRuntime = {
       baseDocumentTitle: "",
       timerWallStartMs: null,
       timerWallBaseSec: 0,
+      timerSessionDateKey: "",
+      appDateKey: "",
       undoDelete: null,
       undoTimerId: null,
       visibilityHookInstalled: false,
       pendingSoftMoodPrefix: "",
       vnDialogueFlashOneShot: false,
       chartDrawSig: "",
-      snackbarConfirmMode: false
+      snackbarConfirmMode: false,
+      clockSkewNotified: false,
+      dayRolloverNotified: false,
+      swReloading: false
     };
 
     const TAB_FOCUSABLE =
@@ -164,6 +171,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     const ENDING_MIN_ROUTE = 10;
 
     /** index.html 옆 ./assets/character-scene.png — 단일 장면 이미지(호감·엔딩 구간과 무관하게 동일 표시) */
+    /** 정적 이미지·SW 캐시 무효화 — 배포 시 숫자만 올리면 됩니다. */
+    const ASSET_CACHE_BUST = "21";
     const CHARACTER_IMAGE_BASE = "./assets/";
     const CHARACTER_SCENE_FILE = "character-scene.png";
     const CHARACTER_IMAGE_FILES = [
@@ -179,8 +188,14 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="560"><rect width="100%" height="100%" fill="#e8e4ec"/><text x="50%" y="46%" fill="#3d3048" font-size="14" font-family="sans-serif" text-anchor="middle">캐릭터 이미지 없음</text><text x="50%" y="54%" fill="#5a4f68" font-size="12" font-family="sans-serif" text-anchor="middle">./assets/character-scene.png</text></svg>'
       );
 
+    function assetUrl(path) {
+      const p = String(path || "");
+      if (!p) return p;
+      return p + (p.indexOf("?") >= 0 ? "&" : "?") + "v=" + ASSET_CACHE_BUST;
+    }
+
     function getCharacterImageSrc() {
-      return CHARACTER_IMAGE_BASE + CHARACTER_SCENE_FILE;
+      return assetUrl(CHARACTER_IMAGE_BASE + CHARACTER_SCENE_FILE);
     }
 
     function getCharacterImageAlt() {
@@ -777,6 +792,108 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     };
     const dateLabel = (key) => key.slice(5).replace("-", "/");
 
+    function compareDateKeys(a, b) {
+      if (a === b) return 0;
+      return a < b ? -1 : 1;
+    }
+
+    function daysBetweenDateKeys(fromKey, toKey) {
+      const a = new Date(fromKey + "T12:00:00");
+      const b = new Date(toKey + "T12:00:00");
+      return Math.round((b.getTime() - a.getTime()) / 86400000);
+    }
+
+    function touchDeviceClockAnchor() {
+      state.deviceLastSeenDateKey = dateKey(new Date());
+      state.deviceLastSeenAtMs = Date.now();
+    }
+
+    function sanitizeBannerDismissKeys(today) {
+      let changed = false;
+      ["bannerDismissedGoal", "bannerDismissedStreak"].forEach((k) => {
+        const v = state[k];
+        if (v && compareDateKeys(v, today) > 0) {
+          state[k] = "";
+          changed = true;
+        }
+      });
+      const wmk = mondayKeyOfWeekContaining(new Date());
+      if (state.bannerDismissedWeekly && compareDateKeys(state.bannerDismissedWeekly, wmk) > 0) {
+        state.bannerDismissedWeekly = "";
+        changed = true;
+      }
+      return changed;
+    }
+
+    function noteClockSkewIfNeeded() {
+      const today = dateKey(new Date());
+      const prevKey = state.deviceLastSeenDateKey;
+      const prevMs = Number(state.deviceLastSeenAtMs || 0);
+      if (!prevKey || !prevMs) return;
+      let skew = null;
+      if (compareDateKeys(today, prevKey) < 0) {
+        skew = "backward";
+      } else {
+        const elapsed = Date.now() - prevMs;
+        const dayDiff = daysBetweenDateKeys(prevKey, today);
+        if (dayDiff > 2 && elapsed < 48 * 3600000) skew = "forward";
+      }
+      if (sanitizeBannerDismissKeys(today)) saveState();
+      if (!skew || sessionRuntime.clockSkewNotified) return;
+      sessionRuntime.clockSkewNotified = true;
+      const msg = skew === "backward"
+        ? "시스템 날짜가 이전으로 바뀌었어요. 연속·오늘 목표·배너는 참고만 해 주세요."
+        : "시스템 날짜가 크게 앞으로 갔어요. 기록·연속 표시를 한번 확인해 주세요.";
+      showAppSnackbar(msg, { durationMs: 5200 });
+    }
+
+    function getTimerRecordDateKey() {
+      const k = sessionRuntime.timerSessionDateKey;
+      if (k && /^\d{4}-\d{2}-\d{2}$/.test(k)) return k;
+      return dateKey(new Date());
+    }
+
+    function handleCalendarDayChange(prevKey, newKey) {
+      void prevKey;
+      ensureTodayJournalRollover();
+      clearRomanceBackdropIfStale(newKey);
+      ensureRomanceDailyRollover();
+      invalidateChartCache();
+      if (sanitizeBannerDismissKeys(newKey)) saveState();
+      const recDate = getTimerRecordDateKey();
+      if (state.timerSeconds > 0 && recDate !== newKey && !sessionRuntime.dayRolloverNotified) {
+        sessionRuntime.dayRolloverNotified = true;
+        showAppSnackbar(
+          "날짜가 바뀌었어요. 저장하면 " + dateLabel(recDate) + "에 기록돼요.",
+          { durationMs: 4800 }
+        );
+      }
+      renderRecordChrome(newKey);
+      updateTodayInannaStrip();
+    }
+
+    function maybeRefreshCalendarDay() {
+      const today = dateKey(new Date());
+      if (!sessionRuntime.appDateKey) {
+        sessionRuntime.appDateKey = today;
+        return false;
+      }
+      if (sessionRuntime.appDateKey === today) return false;
+      const prev = sessionRuntime.appDateKey;
+      sessionRuntime.appDateKey = today;
+      sessionRuntime.dayRolloverNotified = false;
+      handleCalendarDayChange(prev, today);
+      return true;
+    }
+
+    function initDeviceClockGuard() {
+      const today = dateKey(new Date());
+      noteClockSkewIfNeeded();
+      if (sanitizeBannerDismissKeys(today)) saveState();
+      touchDeviceClockAnchor();
+      sessionRuntime.appDateKey = today;
+    }
+
     function mondayKeyOfWeekContaining(d) {
       const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const dow = x.getDay();
@@ -942,6 +1059,10 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const wrap = $("todayInannaStrip");
       const line = $("todayInannaLine");
       if (!wrap || !line) return;
+      const img = wrap.querySelector(".today-inanna-img");
+      if (img instanceof HTMLImageElement) {
+        img.src = assetUrl("./assets/today-inanna.png");
+      }
       const t = getTodayInannaPushLine();
       line.textContent = t;
       wrap.hidden = false;
@@ -1247,11 +1368,14 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         togetherLinesMaxPerDay: Math.max(0, Math.min(24, Math.round(Number(state.togetherLinesMaxPerDay || 8)))),
         togetherStudyLineDay: state.togetherStudyLineDay || "",
         togetherStudyLineCount: Math.max(0, Math.round(Number(state.togetherStudyLineCount || 0))),
-        romanceDailyWhisperDay: state.romanceDailyWhisperDay || ""
+        romanceDailyWhisperDay: state.romanceDailyWhisperDay || "",
+        deviceLastSeenDateKey: state.deviceLastSeenDateKey || "",
+        deviceLastSeenAtMs: Math.max(0, Number(state.deviceLastSeenAtMs || 0))
       };
     }
 
     function saveState() {
+      touchDeviceClockAnchor();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(gatherPersistedState()));
     }
 
@@ -1314,6 +1438,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const tsc = Number(data.togetherStudyLineCount);
       state.togetherStudyLineCount = Number.isFinite(tsc) && tsc >= 0 ? Math.round(tsc) : 0;
       state.romanceDailyWhisperDay = typeof data.romanceDailyWhisperDay === "string" ? data.romanceDailyWhisperDay : "";
+      state.deviceLastSeenDateKey = typeof data.deviceLastSeenDateKey === "string" ? data.deviceLastSeenDateKey : "";
+      state.deviceLastSeenAtMs = Math.max(0, Number(data.deviceLastSeenAtMs || 0));
       state.schemaVersion = PERSIST_SCHEMA_VERSION;
       migratePassedStagesSilent();
     }
@@ -1333,6 +1459,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       state.timerSeconds = 0;
       state.editingRecordIndex = -1;
       sessionRuntime.timerWallStartMs = null;
+      sessionRuntime.timerSessionDateKey = "";
       clearUndoDelete();
     }
 
@@ -2193,6 +2320,16 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }
       const snd = $("soundToggleBtn");
       if (snd) snd.textContent = "알림음 " + (state.soundEnabled ? "켜짐" : "꺼짐");
+      const disp = $("timerDisplay");
+      if (disp) {
+        const rec = getTimerRecordDateKey();
+        const today = dateKey(new Date());
+        if (state.timerSeconds > 0 && rec !== today) {
+          disp.title = "길게 누르면 리셋 · 저장 시 " + dateLabel(rec) + " 기록";
+        } else {
+          disp.title = "길게 누르면 시간 리셋";
+        }
+      }
       updateSessionDocumentTitle();
       updateTimerFavicon();
     }
@@ -2302,6 +2439,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     /* ===== JS §4 Main render — charts, VN ===== */
     /** 타이머 실행 중 1초마다 — 전체 render() 대신 시계·독만 갱신 */
     function renderTimerTickHud() {
+      maybeRefreshCalendarDay();
       const tEl = $("timerDisplay");
       if (tEl) tEl.textContent = fmtTime(state.timerSeconds);
       const dT = $("dockTimerShort");
@@ -2367,6 +2505,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     function render() {
       try {
+      maybeRefreshCalendarDay();
       ensureTodayJournalRollover();
       applyA11yPresetToDocument();
       const today = dateKey(new Date());
@@ -2474,7 +2613,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       opts = opts || {};
       if (seconds <= 0) return;
       const prevAffection = state.affection;
-      const today = dateKey(new Date());
+      const today = (opts.date && /^\d{4}-\d{2}-\d{2}$/.test(String(opts.date)))
+        ? String(opts.date)
+        : dateKey(new Date());
       const rec = {
         date: today,
         seconds,
@@ -2923,6 +3064,9 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const startStudyTimer = () => {
         if (state.timerRunning) return;
         closeTimerMoreMenu();
+        if (!sessionRuntime.timerSessionDateKey) {
+          sessionRuntime.timerSessionDateKey = dateKey(new Date());
+        }
         state.timerRunning = true;
         sessionRuntime.timerWallStartMs = Date.now();
         sessionRuntime.timerWallBaseSec = state.timerSeconds;
@@ -2971,6 +3115,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         state.timerRunning = false;
         state.timerSeconds = 0;
         sessionRuntime.timerWallStartMs = null;
+        sessionRuntime.timerSessionDateKey = "";
+        sessionRuntime.dayRolloverNotified = false;
         closeTimerMoreMenu();
         saveState();
         render();
@@ -3006,8 +3152,13 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
           return;
         }
         if (state.timerRunning) pauseStudyTimer();
-        addSessionRecord(savedSec, "manual", { tag: state.defaultSessionTag || undefined });
+        addSessionRecord(savedSec, "manual", {
+          tag: state.defaultSessionTag || undefined,
+          date: getTimerRecordDateKey()
+        });
         state.timerSeconds = 0;
+        sessionRuntime.timerSessionDateKey = "";
+        sessionRuntime.dayRolloverNotified = false;
         saveState();
         invalidateChartCache();
         render();
@@ -3018,10 +3169,14 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         sessionRuntime.visibilityHookInstalled = true;
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") {
+            noteClockSkewIfNeeded();
+            const dayChanged = maybeRefreshCalendarDay();
+            touchDeviceClockAnchor();
             if (state.timerRunning && sessionRuntime.timerWallStartMs != null) {
               state.timerSeconds = sessionRuntime.timerWallBaseSec + Math.floor((Date.now() - sessionRuntime.timerWallStartMs) / 1000);
             }
-            renderTimerTickHud();
+            if (dayChanged) render();
+            else renderTimerTickHud();
           }
           updateSessionDocumentTitle();
         });
@@ -3247,13 +3402,46 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         div.innerHTML =
           "<strong>앱 시작 중 오류</strong>" +
           "<p style='margin:10px 0 0;white-space:pre-wrap;'>" + escapeHtml(msg) + "</p>" +
-          "<p style='margin:12px 0 0;font-size:12px;opacity:.88;'>개발자 도구(F12) → Console에서 스택을 확인해 주세요. 서비스 워커·캐시 때문에 예전 스크립트가 남았을 수 있으면 Ctrl+Shift+R(강력 새로고침) 또는 이 사이트의 저장된 데이터 삭제 후 다시 열어 보세요.</p>";
+          "<p style='margin:12px 0 0;font-size:12px;opacity:.88;'>예전 캐시·서비스 워커가 남았을 수 있어요. 아래 새로고침을 누르거나 Ctrl+Shift+R(강력 새로고침)을 시도해 주세요.</p>" +
+          "<p style='margin:14px 0 0;'><button type='button' id='studyBootReloadBtn' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button></p>";
         (document.body || document.documentElement).appendChild(div);
+        const rb = document.getElementById("studyBootReloadBtn");
+        if (rb) rb.addEventListener("click", () => location.reload());
       } catch (_) {}
+    }
+
+    function setupServiceWorker() {
+      if (!("serviceWorker" in navigator) || (location.protocol !== "http:" && location.protocol !== "https:")) return;
+      const promptSwReload = () => {
+        showAppSnackbar("새 버전이 준비됐어요.", {
+          actionLabel: "새로고침",
+          onAction: () => {
+            sessionRuntime.swReloading = true;
+            location.reload();
+          },
+          durationMs: 12000
+        });
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionRuntime.swReloading) return;
+        sessionRuntime.swReloading = true;
+        location.reload();
+      });
+      navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((reg) => {
+        if (reg.waiting && navigator.serviceWorker.controller) promptSwReload();
+        reg.addEventListener("updatefound", () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener("statechange", () => {
+            if (nw.state === "installed" && navigator.serviceWorker.controller) promptSwReload();
+          });
+        });
+      }).catch(() => {});
     }
 
     try {
     loadState();
+    initDeviceClockGuard();
     clearUndoDelete();
     recalcAffectionTotal();
     if (tryUnlockEnding()) saveState();
@@ -3264,9 +3452,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
     setupKeyboardShortcuts();
     bindPortraitImageFallback($("characterImage"));
     bindPortraitImageFallback($("characterImageThumb"));
-    if ("serviceWorker" in navigator && (location.protocol === "http:" || location.protocol === "https:")) {
-      navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
-    }
+    setupServiceWorker();
+    if (typeof window !== "undefined") window.__studyBootOk = true;
     render();
     loadRomanceNarrativeRemote().then(() => render()).catch(() => {});
     } catch (err) {

@@ -50,7 +50,9 @@ const EXPECTED_KEYS = [
   "togetherLinesMaxPerDay",
   "togetherStudyLineDay",
   "togetherStudyLineCount",
-  "romanceDailyWhisperDay"
+  "romanceDailyWhisperDay",
+  "deviceLastSeenDateKey",
+  "deviceLastSeenAtMs"
 ];
 
 const sample = {};
