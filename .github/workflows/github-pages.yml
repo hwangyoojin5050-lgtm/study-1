@@ -35,6 +35,7 @@ jobs:
           cp index.html manifest.webmanifest sw.js _site/
           cp -r js assets styles _site/
           test -f _site/index.html
+          test -f _site/js/boot.mjs
           test -f _site/js/app.js
           test -f _site/js/badge-icons.js
           test -f _site/styles/tokens.css

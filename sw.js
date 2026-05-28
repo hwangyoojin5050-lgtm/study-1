@@ -1,5 +1,5 @@
 /* Offline shell — index.html, manifest, icon. Google Fonts는 온라인일 때만 사용됩니다. */
-const CACHE = "study-romance-shell-v22";
+const CACHE = "study-romance-shell-v23";
 
 const OFFLINE_HTML = "<!DOCTYPE html><html lang=\"ko\"><head><meta charset=\"UTF-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><title>너의 옆자리</title></head><body style=\"font-family:system-ui,sans-serif;padding:24px;line-height:1.5;max-width:420px;margin:0 auto;\"><h1 style=\"font-size:1.1rem;\">불러오기에 실패했어요</h1><p>네트워크가 불안정하거나 예전 캐시가 남았을 수 있어요.</p><p><button type=\"button\" onclick=\"location.reload()\" style=\"padding:10px 16px;border:0;border-radius:8px;background:#e8a6c8;font-weight:600;cursor:pointer;\">다시 시도</button></p></body></html>";
 
@@ -8,6 +8,7 @@ const CORE = [
   "./styles/tokens.css",
   "./styles/components.css",
   "./styles/vn.css",
+  "./js/boot.mjs",
   "./js/app.js",
   "./js/badge-icons.js",
   "./js/state.js",
@@ -41,7 +42,7 @@ function shouldNetworkFirst(req, url) {
   if (req.mode === "navigate" || req.destination === "document") return true;
   const p = url.pathname.toLowerCase();
   if (p.endsWith(".html") || p.endsWith(".webmanifest")) return true;
-  if (p.endsWith(".js") && p.includes("/js/")) return true;
+  if ((p.endsWith(".js") || p.endsWith(".mjs")) && p.includes("/js/")) return true;
   if (p.endsWith("romance-narrative.json")) return true;
   if (p.endsWith("today-inanna.png") || p.endsWith("character-scene.png")) return true;
   return false;

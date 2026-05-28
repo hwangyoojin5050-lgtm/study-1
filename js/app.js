@@ -7,13 +7,6 @@ import {
 } from "./state.js";
 import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
-    if (typeof window !== "undefined") {
-      window.__studyBootOk = "module";
-      try {
-        window.dispatchEvent(new Event("study-app-module"));
-      } catch (_) {}
-    }
-
     /* ===== JS §1 Persistence key, state shape ===== */
     /** 저장소: localStorage 단일 기기. gatherPersistedState() / hydrateStateFromPlainObject() 스키마를 유지합니다. */
     const state = {
@@ -178,7 +171,7 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     /** index.html 옆 ./assets/character-scene.png — 단일 장면 이미지(호감·엔딩 구간과 무관하게 동일 표시) */
     /** 정적 이미지·SW 캐시 무효화 — 배포 시 숫자만 올리면 됩니다. */
-    const ASSET_CACHE_BUST = "22";
+    const ASSET_CACHE_BUST = "23";
     const CHARACTER_IMAGE_BASE = "./assets/";
     const CHARACTER_SCENE_FILE = "character-scene.png";
     const CHARACTER_IMAGE_FILES = [
@@ -3433,18 +3426,11 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         const resetBtn = document.getElementById("studyBootResetBtn");
         if (resetBtn) {
           resetBtn.addEventListener("click", () => {
-            const p = Promise.resolve();
-            const fin = () => location.reload();
-            if ("serviceWorker" in navigator) {
-              navigator.serviceWorker.getRegistrations()
-                .then((regs) => Promise.all(regs.map((r) => r.unregister())))
-                .then(() => ("caches" in window ? caches.keys() : []))
-                .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-                .then(fin)
-                .catch(fin);
-            } else {
-              fin();
+            if (typeof window.__studyHardResetCaches === "function") {
+              window.__studyHardResetCaches();
+              return;
             }
+            location.reload();
           });
         }
       } catch (_) {}
@@ -3452,6 +3438,12 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
 
     function setupServiceWorker() {
       if (!("serviceWorker" in navigator) || (location.protocol !== "http:" && location.protocol !== "https:")) return;
+      try {
+        if (sessionStorage.getItem("studySkipSwOnce") === "1") {
+          sessionStorage.removeItem("studySkipSwOnce");
+          return;
+        }
+      } catch (_) {}
       const promptSwReload = () => {
         showAppSnackbar("새 버전이 준비됐어요.", {
           actionLabel: "새로고침",
