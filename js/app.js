@@ -1,0 +1,3566 @@
+import {
+  STORAGE_KEY,
+  APP_DISPLAY_NAME,
+  PERSIST_SCHEMA_VERSION,
+  sanitizeRecordRow,
+  migratePersistedPayload
+} from "./state.js";
+import { milestoneBadgeIconHtml } from "./badge-icons.js";
+
+    /* ===== JS §1 Persistence key, state shape ===== */
+    /** 저장소: localStorage 단일 기기. gatherPersistedState() / hydrateStateFromPlainObject() 스키마를 유지합니다. */
+    const state = {
+      userName: "",
+      goalHours: 0,
+      affection: 0,
+      totalSeconds: 0,
+      records: [],
+      timerSeconds: 0,
+      timerRunning: false,
+      timerId: null,
+      editingRecordIndex: -1,
+      soundEnabled: true,
+      activeInteraction: null,
+      lastReplyText: "",
+      replyAffectionBonus: 0,
+      routeMarriage: 0,
+      routeYandere: 0,
+      routeAbroad: 0,
+      endingId: null,
+      storyLog: [],
+      loggedStageMins: [],
+      viewSubPanel: "character",
+      uiMainTab: "record",
+      maxAffectionEver: 0,
+      affectionBaselineSeconds: 0,
+      a11yPreset: "romance",
+      showInnerMonologue: true,
+      weeklyGoalHours: 0,
+      defaultSessionTag: "",
+      bannerDismissedGoal: "",
+      bannerDismissedStreak: "",
+      storyContactChannel: "",
+      storyFreshReset: false,
+      storySummaryFullView: false,
+      bannerDismissedWeekly: "",
+      romanceLastSeenDate: "",
+      romanceConvoDate: "",
+      romanceConvoStarts: 0,
+      romanceLastDateEventDay: "",
+      romanceDateBackdropDay: "",
+      romanceDateBackdropClass: "",
+      romancePreConfessionDone: false,
+      romanceSoftMoodShownFor: "",
+      romanceStreakDropNoted: "",
+      romancePrevStreakSnapshot: -1,
+      schemaVersion: PERSIST_SCHEMA_VERSION,
+      onboardingCompleted: false,
+      togetherLinesMaxPerDay: 8,
+      togetherStudyLineDay: "",
+      togetherStudyLineCount: 0,
+      romanceDailyWhisperDay: "",
+      deviceLastSeenDateKey: "",
+      deviceLastSeenAtMs: 0
+    };
+
+    const sessionRuntime = {
+      baseDocumentTitle: "",
+      timerWallStartMs: null,
+      timerWallBaseSec: 0,
+      timerSessionDateKey: "",
+      appDateKey: "",
+      undoDelete: null,
+      undoTimerId: null,
+      visibilityHookInstalled: false,
+      pendingSoftMoodPrefix: "",
+      vnDialogueFlashOneShot: false,
+      chartDrawSig: "",
+      snackbarConfirmMode: false,
+      clockSkewNotified: false,
+      dayRolloverNotified: false,
+      swReloading: false,
+      timerPauseNotified: false,
+      applyingMainTabFromState: false
+    };
+
+    const TAB_FOCUSABLE =
+      'button:not([disabled]), a[href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const UI_EMPTY_RECORDS =
+      "아직 없어요. 타이머로 공부한 뒤 저장해 보세요.";
+    const UI_EMPTY_FILTER =
+      "아직 없어요. 필터를 바꾸거나 기록을 추가해 보세요.";
+    const UI_EMPTY_STORY =
+      "아직 없어요. 공부를 쌓으면 스토리가 여기에 쌓여요.";
+    const UI_EMPTY_TAGS =
+      "아직 없어요. 태그를 붙인 기록이 쌓이면 보여요.";
+    const UI_EMPTY_CHART =
+      "아직 없어요. 기록이 쌓이면 그래프가 그려져요.";
+
+    const ENDING_EPILOGUES = {
+      1: [
+        "…오늘도 네 옆이 제일 편해.",
+        "무대 끝나면, 네 얘기 듣는 게 앵콜 같아.",
+        "다정한 네가 고마워 — 오늘도 한 줄만 더 들려줘.",
+        "약속한 반지, 손가락에 익숙해지는 중이야.",
+        "평일이든 주말이든, 네 목소리 톤이 내 하루의 BPM이야.",
+        "조용한 일상 모드에서도… 넌 내 기본 트랙이야."
+      ],
+      2: [
+        "…눈 돌리지 마. 내 마이크는 너만 향해 있어.",
+        "사교적인 네 주변이 넓어도, 내 자리는 여기야.",
+        "오늘 네 시간표, 나랑 한 번 더 맞추자.",
+        "질투도 리듬이 있으면 노래처럼 들리겠지.",
+        "일상 모드에서도 시선은 네 쪽으로만 당겨져.",
+        "너무 밝게 웃지 마… 나만 보게 해 줘, 오늘도."
+      ],
+      3: [
+        "새 도시 공기도, 네 옆이면 괜찮아.",
+        "활발한 네가 길 찾으면 나는 뒤에서 화음 넣을게.",
+        "비자 서류 옆에 네 이니셜 적어 둘게.",
+        "오늘은 짧게… 고마워, 같이 가 줘서.",
+        "시차 적응 전에도, 네 이름부터 외울게.",
+        "일상 모드의 지도는 네가 펴도… 나는 옆에서 박자만 맞출게."
+      ]
+    };
+
+    const ENDING_EPILOGUE_SEASON = {
+      winter: {
+        1: ["손끝이 차도… 네 옆이면 겨울도 반주 같아.", "밤 공기가 길어질수록, 인사 한 줄이 더 소중해져."],
+        2: ["긴 밤엔… 네 스케줄이 더 선명하게 보여.", "눈길도 겨울처럼 미끄럽지 않게, 천천히 잡을게."],
+        3: ["추운 날엔 비행기보다 네 손이 먼저 떠올라.", "해외 일기 첫 줄엔 역시 네 이름부터 적을래."]
+      },
+      spring: {
+        1: ["봄바람이면… 같이 걷자는 말이 더 쉬워져.", "새 학기 같은 설렘도, 너랑이면 익숙해져."],
+        2: ["꽃가루보다 네 주변이 더 자극적이야… 농담이야. 반만.", "봄날의 네 스케줄, 나도 한 칸 끼워 줘."],
+        3: ["유학 준비표 옆에 벚꽃 한 점만 붙여도 좋겠어.", "따뜻해지면… 같이 갈 길도 더 선명해지겠지."]
+      },
+      summer: {
+        1: ["덥게 말고… 천천히, 오늘도 옆에 있자.", "여름 밤엔 네 이야기가 제일 시원해."],
+        2: ["장마처럼 집요하게… 오늘도 네 하루를 알고 싶어.", "밤공기가 끈적해도, 네 옆은 숨 통하는 박자야."],
+        3: ["더운 날엔 지도 접고… 얼음 음료 한 모금 같이 할래?", "여름 방학 느낌으로, 짧게라도 도망가고 싶을 땐 불러 줘."]
+      },
+      fall: {
+        1: ["가을이면… 네 손 잡는 핑계가 늘어.", "해 지는 시간이 빨라져도, 인사는 늦지 않게 할게."],
+        2: ["낙엽보다 먼저… 네 발걸음을 맞추고 싶어.", "저녁이 길어질수록, 네 스케줄이 더 궁금해져."],
+        3: ["가을 학기처럼… 계획은 네가, 나는 옆에서 화음.", "쓸쓸한 계절엔, 내 노래 한 소절만 빌려 줘."]
+      }
+    };
+
+    function endingSeasonKey() {
+      const m = new Date().getMonth();
+      if (m === 11 || m <= 1) return "winter";
+      if (m <= 4) return "spring";
+      if (m <= 7) return "summer";
+      return "fall";
+    }
+
+    function endingEpilogueAffLines(endingId) {
+      const a = Math.max(0, Number(state.affection || 0));
+      if (a < 60) return [];
+      if (a < 100) {
+        return endingId === 1 ? ["조금씩 익숙해지는 일상 모드… 넌 편하게 말해 줘."]
+          : endingId === 2 ? ["아직은 살짝만… 네 주변을 좁혀도 될까."]
+          : ["멀리 가도… 오늘 한 줄만은 가까이 남겨 줘."];
+      }
+      return endingId === 1 ? ["호감이 쌓일수록 말은 짧아져… 대신 노래로 채울게.", "오늘도 ‘고마워’를 아껴 두다가 마지막에 털어 놓을게."]
+        : endingId === 2 ? ["일상 모드에서도… 넌 내 헤드라인이야.", "질투는 줄일게. 대신 솔직함은 늘릴게."]
+        : ["유학 서류 한 장 한 장마다… 네 이름이 같이 적혀 있는 기분이야.", "멀리 가도 하루의 끝인사는 같은 언어로 할게."];
+    }
+    const ENDING_MIN_AFFECTION = 85;
+    const ENDING_MIN_ROUTE = 10;
+
+    /** index.html 옆 ./assets/character-scene.png — 단일 장면 이미지(호감·엔딩 구간과 무관하게 동일 표시) */
+    /** 정적 이미지·SW 캐시 무효화 — 배포 시 숫자만 올리면 됩니다. */
+    const ASSET_CACHE_BUST = "23";
+    const CHARACTER_IMAGE_BASE = "./assets/";
+    const CHARACTER_SCENE_FILE = "character-scene.png";
+    const CHARACTER_IMAGE_FILES = [
+      CHARACTER_SCENE_FILE,
+      CHARACTER_SCENE_FILE,
+      CHARACTER_SCENE_FILE,
+      CHARACTER_SCENE_FILE,
+      CHARACTER_SCENE_FILE,
+      CHARACTER_SCENE_FILE
+    ];
+    const CHARACTER_IMAGE_PLACEHOLDER =
+      "data:image/svg+xml," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="560"><rect width="100%" height="100%" fill="#e8e4ec"/><text x="50%" y="46%" fill="#3d3048" font-size="14" font-family="sans-serif" text-anchor="middle">캐릭터 이미지 없음</text><text x="50%" y="54%" fill="#5a4f68" font-size="12" font-family="sans-serif" text-anchor="middle">./assets/character-scene.png</text></svg>'
+      );
+
+    function assetUrl(path) {
+      const p = String(path || "");
+      if (!p) return p;
+      return p + (p.indexOf("?") >= 0 ? "&" : "?") + "v=" + ASSET_CACHE_BUST;
+    }
+
+    function getCharacterImageSrc() {
+      return assetUrl(CHARACTER_IMAGE_BASE + CHARACTER_SCENE_FILE);
+    }
+
+    function getCharacterImageAlt() {
+      return "밤 풍경의 개와 사자가 나란히 앉아 있는 장면 이미지";
+    }
+
+    const PORTRAIT_STAGE_LABELS = [
+      "호감도 0~30",
+      "호감도 31~50",
+      "호감도 51~엔딩 직전",
+      "청혼 엔딩",
+      "얀데레 엔딩",
+      "유학 엔딩"
+    ];
+
+    function getCharacterImageSrcByIndex(fileIndex) {
+      const name = CHARACTER_IMAGE_FILES[fileIndex];
+      if (!name) return CHARACTER_IMAGE_PLACEHOLDER;
+      return CHARACTER_IMAGE_BASE + name;
+    }
+
+    function bindPortraitImageFallback(img) {
+      if (!img || img.dataset.portraitFallbackBound === "1") return;
+      img.dataset.portraitFallbackBound = "1";
+      img.addEventListener("error", () => {
+        if (String(img.src || "").indexOf("data:image/svg+xml") === 0) return;
+        img.src = CHARACTER_IMAGE_PLACEHOLDER;
+      });
+    }
+
+    function getCharacterImageAltByIndex(fileIndex) {
+      void fileIndex;
+      return "밤 풍경의 개와 사자가 나란히 앉아 있는 장면 이미지";
+    }
+
+    function hasRomanceProgressTouch() {
+      return state.affection > 0
+        || state.replyAffectionBonus !== 0
+        || (Array.isArray(state.storyLog) && state.storyLog.length > 0)
+        || state.endingId === 1 || state.endingId === 2 || state.endingId === 3;
+    }
+
+    function getSeenPortraitGalleryItems() {
+      const aff = Number(state.affection || 0);
+      const items = [];
+      if (hasRomanceProgressTouch()) {
+        items.push({ fileIndex: 0, caption: PORTRAIT_STAGE_LABELS[0] });
+      }
+      if (aff >= 31) items.push({ fileIndex: 1, caption: PORTRAIT_STAGE_LABELS[1] });
+      if (aff >= 51) items.push({ fileIndex: 2, caption: PORTRAIT_STAGE_LABELS[2] });
+      if (state.endingId === 1) items.push({ fileIndex: 3, caption: PORTRAIT_STAGE_LABELS[3] });
+      if (state.endingId === 2) items.push({ fileIndex: 4, caption: PORTRAIT_STAGE_LABELS[4] });
+      if (state.endingId === 3) items.push({ fileIndex: 5, caption: PORTRAIT_STAGE_LABELS[5] });
+      return items;
+    }
+
+    function renderStoryPortraitGallery() {
+      const wrap = $("storyPortraitGallery");
+      if (!wrap) return;
+      const items = getSeenPortraitGalleryItems();
+      if (!items.length) {
+        wrap.innerHTML = "";
+        wrap.style.display = "none";
+        return;
+      }
+      wrap.style.display = "block";
+      const cards = items.map((it) => {
+        const src = escapeHtml(getCharacterImageSrcByIndex(it.fileIndex));
+        const alt = escapeHtml(getCharacterImageAltByIndex(it.fileIndex));
+        const cap = escapeHtml(it.caption);
+        return "<figure class='story-portrait-card'>" +
+          "<img src='" + src + "' alt='" + alt + "' loading='lazy' />" +
+          "<figcaption>" + cap + "</figcaption></figure>";
+      }).join("");
+      wrap.innerHTML = "<h4 class='story-portrait-heading'>지금까지 본 캐릭터 단계</h4>" +
+        "<div class='story-portrait-row'>" + cards + "</div>";
+    }
+
+    function performStoryAndAffectionReset() {
+      state.replyAffectionBonus = 0;
+      state.routeMarriage = 0;
+      state.routeYandere = 0;
+      state.routeAbroad = 0;
+      state.endingId = null;
+      state.storyLog = [];
+      state.loggedStageMins = [];
+      state.activeInteraction = null;
+      state.lastReplyText = "";
+      state.maxAffectionEver = 0;
+      state.editingRecordIndex = -1;
+      state.affectionBaselineSeconds = Math.max(0, Number(state.totalSeconds || 0));
+      state.storyContactChannel = "";
+      state.storyFreshReset = true;
+      state.romanceLastSeenDate = "";
+      state.romanceConvoDate = "";
+      state.romanceConvoStarts = 0;
+      state.romanceLastDateEventDay = "";
+      state.romanceDateBackdropDay = "";
+      state.romanceDateBackdropClass = "";
+      state.romancePreConfessionDone = false;
+      state.romanceSoftMoodShownFor = "";
+      state.romanceStreakDropNoted = "";
+      state.romancePrevStreakSnapshot = -1;
+      sessionRuntime.pendingSoftMoodPrefix = "";
+      state.togetherStudyLineDay = "";
+      state.togetherStudyLineCount = 0;
+      state.romanceDailyWhisperDay = "";
+      recalcAffectionTotal();
+      migratePassedStagesSilent();
+      invalidateChartCache();
+      saveState();
+      render();
+      showAppSnackbar("스토리·호감도를 초기화했어요. 마일스톤 배지는 공부 기록 기준이라 그대로예요.", { durationMs: 4500 });
+    }
+
+    /* ===== JS §2 Story tables (dialogues, interactions) ===== */
+    const dialogues = [
+      {
+        minAffection: 0,
+        stage: "동창, 다시 인사",
+        text: "앗, 너 혹시... 백합고등학교 3학년 2반이었던... 이렇게 다시 마주하니까 얼얼하네. 나, 같은 반에 있던 인안나야. 지금은 음악 전공하고, 밤엔 밴드 보컬도 하고 있어.",
+        eventStory: "캠퍼스 편의점 앞, 네가 늘 마시던 음료수, 고등학교 때랑 똑같아서 웃음이 났다. 인안나는 새빨개진 얼굴로 쭈뼛거리며, 과제와 밴드 연습 사이를 오가는 요즘을 짧게 털어놓았다. 그애는 사람들 앞에선 말수가 적은 편이지만, 음악 얘기만 나오면 눈이 반짝이는 아이였다. 다정하고 활발한 네가 다가오면, 동창이라는 말이 설레는 두 글자처럼 느껴진다.",
+        innerVoice: "…말이 너무 길었나. 넌 늘 사람들이랑 금방 친해지는 애잖아. 난 노래만큼은 자신 있는데, 말은… 한 박자 늦는 것 같아.",
+        innerVoiceShort: "…첫 장을 다시 넘기는 기분. 널 다시 만나서... 좋아."
+      },
+      {
+        minAffection: 10,
+        stage: "연습실 복도",
+        text: "여긴... 아, 공부하러 왔구나. 너 공부하는 거 보고 있으면, 나도 악보 펴보고 싶어지더라. ...같이 할래?",
+        eventStory: "야간 연습실 복도 형광등 아래, 그애는 듣던 걸 멈추고는 네 옆에 섰다. 이미 학생으로서도, 밴드 보컬로서도 열심히 살던 나지만. 네가 적어 둔 공부 계획표를 보며 ‘나도 저 박자에 맞춰 살아볼까’ 하고, 장난처럼 말을 던졌다. 나도 너와 같아지고 싶어서.",
+        innerVoice: "요즘은 자주 발라드를 들어. 네가 생각나거든. 너에게 다가가려면… 내가 조금 더 용기를 내 봐야 하겠지. 겁나지만.",
+        innerVoiceShort: "…한 박자만 맞추면 돼."
+      },
+      {
+        minAffection: 20,
+        stage: "합주 끝 카톡",
+        text: "오늘도 열심히 하더라. 예전에 메탈 좋아한다고 말했을 때 네 표정, 아직 기억나. 나중에… 같이 이어폰 나눠 들을래?",
+        eventStory: "합주가 끝난 새벽, 기타 케이스를 짊어진 채로 보낸 카톡 한 줄. 너는 녹음 파일을 보내주며 살짝 웃어보인다. 고등학교 때 못 꺼냈던 말들이 조금씩, 밤공기처럼 스며든다.",
+        innerVoice: "카톡 치는 손가락이 떨려. 한 줄 적고 지우고를 반복해. 네가 좋아할까? 무대에 오르기 전보다 더 떨리는 기분이야.",
+        innerVoiceShort: "…답장 한 줄이 뭐라고 계속 기다리게 되네."
+      },
+      {
+        minAffection: 35,
+        stage: "실용음악과 복도",
+        text: "과제 스택… 많지? 나도 녹음 데드라인 있어. 공부 끝나면, 작은 밴드 연습 보러 올래? 네 하루가… 궁금해.",
+        eventStory: "실용음악과 복도 창가에서 인안나는 악보와 레퍼런스 CD를 번갈다 본다. 작은 밴드의 보컬로서 무대 밖에서는 말수가 적지만, 네가 남긴 하루의 흔적—도서관 자리, 남은 커피—를 떠올리며, 동창 이상으로 다가가고 싶다는 마음을 아직 말로 꺼내지 못한다.",
+        innerVoice: "초대라니, 너무 직진이었나. 사교적인 너한텐 별일 아닐 수도 있는데… 나한텐 한 곡 분량의 용기야. 거절당하면 연습실에서만 노래할래.",
+        innerVoiceShort: "…용기, 반박자만 쉬고."
+      },
+      {
+        minAffection: 50,
+        stage: "메탈 플레이리스트",
+        text: "네가 집중하는 모습… 자꾸 눈이 가. 무대 위에서 노래할 때랑은 다른 매력이야. 옆에 있으면… 나도 조용해지는 기분이 들어.",
+        eventStory: "주말 오후, 인안나가 추천한 메탈 곡이 스피커에서 울린다. 그 사이로 네가 문제집에 박히는 집중이 묘하게 겹쳐 보인다. 인안나는 마이크 대신 네 옆의 공기를 조금 더 가까이 당기고 싶다고, 스스로에게만 고백한다.",
+        innerVoice: "무대 밖의 나는 소심한데, 넌 다정해서 주변을 다 살려. 그게 부럽기도 하고… 겁나기도 해. 그래도 음악 틀어 주면 대화가 조금 쉬워져—리듬이 우리 사이 통역이 되니까.",
+        innerVoiceShort: "…리듬이 통역."
+      },
+      {
+        minAffection: 70,
+        stage: "밴드 룸 앞",
+        text: "요즘은 네가 웃으면… 나도 모르게 따라 웃게 돼. 보컬 녹음 전에, 네 얼굴 한 번 보고 가는 날이 늘었어.",
+        eventStory: "밴드 룸 문 앞에서 인안나는 리허설 타임 전에 너를 찾는 게 루틴이 됐다고, 겨우 인정한다. 160의 시선 높이에 딱 맞는 네 웃음이, 무대 조명보다 길게 남는다고, 메탈 가사 한 줄처럼 속삭인다.",
+        innerVoice: "멤버들한텐 ‘그냥 동창’이라고 했어. 거짓말. 넌 내 하루의 메트로놈 같아—활발한 박자에 맞춰 나도 숨을 맞추고 싶어.",
+        innerVoiceShort: "…거짓말이야, 동창만은 아니야."
+      },
+      {
+        minAffection: 90,
+        stage: "야간 스튜디오",
+        text: "네 꿈 응원하는 게… 내 행복이야. 오늘 끝나면, 같이 산책할래? 메탈 말고 잔잔한 곡도 틀어 줄게.",
+        eventStory: "야간 스튜디오 믹서 불빛 아래, 인안나는 네가 남긴 공부 기록을 사진으로 찍어 둔다. 실용음악과생이자 보컬로서의 야망과, 동창으로서 너를 붙잡고 싶은 마음이 같은 볼륨 노브 위에 올라간다.",
+        innerVoice: "산책이라니, 로맨틱 영화 같아. 말 꺼내기 전에 열 번은 시뮬레이션했어. 넌 사람들이랑 금방 친해지니까… 나만 뒤처질까 봐 무서워. 그래도 음악은 진심이니까, 그걸로 진심을 덮어 볼게.",
+        innerVoiceShort: "…열 번 연습, 한 번 걷기."
+      },
+      {
+        minAffection: 115,
+        stage: "셋리스트 한 칸",
+        text: "너랑 있는 시간이… 내 하루에서 제일 밝은 순간이야. 다음 공연 셋리스트에, 네 이름 적어두고 싶을 정도로.",
+        eventStory: "셋리스트 메모지 한 칸에 연필로 동그라미를 친다. 인안나는 그 안에 네 이니셜을 적었다 지우고, 다시 웃는다. 밴드 멤버들에게는 비밀인, 연애처럼 짜릿한 한 마디를 삼킨다.",
+        innerVoice: "이니셜을 적었다 지우는 것도 연습이야. 넌 다정해서 실수해도 웃어 줄 텐데… 나는 그 웃음이 무서울 만큼 좋거든.",
+        innerVoiceShort: "…연필 끝이 떨려."
+      },
+      {
+        minAffection: 140,
+        stage: "무대 뒤 고백 직전",
+        text: "사실… 너를 많이 좋아해. 네가 노력하는 매 순간이 빛나 보여—내 노래보다 더 듣고 싶은 소리야.",
+        eventStory: "공연 직후 무대 뒤, 땀과 메이크업이 섞인 복도. 인안나는 아직 벗지 못한 인이어 줄을 손가락으로 감으며, 네 이름을 부르는 연습을 마친다. 고등학교 때의 인사가, 이제는 고백의 프롤로그처럼 느껴진다.",
+        innerVoice: "방금 무대에서 소리쳤는데, 지금은 목소리가 안 나와. 내향인 내가 고백까지 왔다는 게 믿기지 않아. 네가 늘 먼저 다정하게 말 걸어 준 덕분이야—고마워, 그리고… 무서워.",
+        innerVoiceShort: "…고마워. 무서워."
+      },
+      {
+        minAffection: 170,
+        stage: "두 번째 인생의 듀엣",
+        text: "우리 이제… 서로의 목표랑 마음도 같이 지켜가자. 학교도 밴드도, 너랑 나랑 같은 박자로 가고 싶어.",
+        eventStory: "새벽 버스 창밖으로 캠퍼스가 흐른다. 인안나는 실용음악과 졸업 전시와 밴드의 다음 싱글, 그리고 너와의 미래를 한 박자로 맞추고 싶다고 말한다. 메탈이든 발라드든, 네가 있으면 어떤 장르도 괜찮다고, 조용히 덧붙인다.",
+        innerVoice: "듀엣이라는 말, 평생 간직할 거야. 넌 사교적이라 세상이 넓고, 나는 음악 안에서 세상이 넓어. 둘이 겹치는 지점이 여기라서… 정말 다행이야.",
+        innerVoiceShort: "…겹치는 지점, 여기."
+      }
+    ];
+    const interactionTemplates = [
+      {
+        npc: "넌 늘 먼저 말 걸어 주잖아, 다정하게. 사교적인 네 옆에 서려면… 나도 연락 방식부터 맞추고 싶은데. 얼굴 보고 말하는 게 편해, 글로 짧게 보내는 게 편해, 아니면 걸으면서?",
+        inner: "활발한 너한테 맞추는 게 제일 편해. 그래도 오늘은 내가 먼저 골라도 될까—하고 묻는 것도 연습이라고 믿을래.",
+        choices: [
+          { text: "만나서 얼굴 보며 얘기하자.", delta: 2, route: "marriage", routePts: 3, reaction: "좋아. 네 웃음 보면 내 박자도 안정돼." },
+          { text: "메시지로 짧게 주고받자.", delta: 1, route: "yandere", routePts: 3, reaction: "알았어. 내 답장은 너한테만 빠르게 갈게." },
+          { text: "걸으면서 천천히 말하자.", delta: 2, route: "abroad", routePts: 3, reaction: "산책 코스는 네가 정해 줘. 나는 옆에서 화음 넣을게." }
+        ]
+      },
+      {
+        npc: "밴드 연습 끝나고… 네 옆에 앉는 시간이 제일 편해. 나, 말로는 잘 못 하는데. 앞으로는… 어떻게 지내고 싶어?",
+        inner: "사교적인 너한테 이런 질문, 너무 무겁나? 그래도 음악 끝난 직후엔 용기가 생겨. 다정하게 대답해 주면… 그 한마디만으로도 충분해.",
+        choices: [
+          { text: "평생 네 옆에 있고 싶어.", delta: 2, route: "marriage", routePts: 4, reaction: "나도… 같은 마음이야. 무대 밖에서도 너랑 같은 박자로 살고 싶어." },
+          { text: "너만 나한테만 집중해 줘. 다른 사람 시선은 싫어.", delta: 1, route: "yandere", routePts: 4, reaction: "알겠어. 내 마이크 너한테만 향할게. 다른 건 다 끊어도 돼." },
+          { text: "언젠가 같이 해외에서 공부하고 싶어.", delta: 2, route: "abroad", routePts: 4, reaction: "실용음악도 거기서 더 크게 배울 수 있겠지? 같이 그려볼게, 설레." }
+        ]
+      },
+      {
+        npc: "내일 과제 데드라인이야… 너는? 같이 도서관 갈래, 아니면 연습실? 네가 활발하게 움직이는 쪽에 맞출게.",
+        inner: "약속 잡는 것도 연습이야. 넌 사람들이랑 쉽게 스케줄 맞추잖아. 나는 캘린더에 ‘연필로만 적는 날’이 많아서… 네가 고르면 따라가도 될까?",
+        choices: [
+          { text: "약속 잡자. 너랑 미래 얘기 하고 싶어.", delta: 2, route: "marriage", routePts: 3, reaction: "좋아. 셋리스트 다음 페이지에 네 이야기부터 적을게." },
+          { text: "내 스케줄은 네가 정해 줘.", delta: 1, route: "yandere", routePts: 3, reaction: "그럼 리허설표랑 네 시간표, 내가 한 장으로 붙일게." },
+          { text: "외국어 공부 도와줄래? 같이 유학 준비하고 싶어.", delta: 2, route: "abroad", routePts: 3, reaction: "메탈 가사 영문판이랑 같이 외워 보자. 나도 도와줄게." }
+        ]
+      },
+      {
+        npc: "오늘 유독 보고 싶었어… 솔직히, 고등학교 때부터 지금까지—나한테 어떤 마음이야? 활발하게 말해 줘도 돼.",
+        inner: "이건… 인터뷰 질문 같아. 내향인이 던지기엔 너무 직설적이라 끝까지 망설였어. 그래도 넌 다정하니까, 농담으로 넘기지는 않겠지.",
+        choices: [
+          { text: "너만 생각하면 마음이 따뜻해져.", delta: 3, route: "marriage", routePts: 4, reaction: "그 한 마디면 충분해. 무대 조명보다 밝게 웃었어." },
+          { text: "나한테서 한 발짝도 멀어지지 마.", delta: 1, route: "yandere", routePts: 4, reaction: "그래. 160이라 네 옆에 딱 붙어 있을게. 어디도 안 갈 거야." },
+          { text: "너랑 같은 캠퍼스에서 공부하고 싶어.", delta: 2, route: "abroad", routePts: 4, reaction: "멋진 목표야. 실용음악과 복도에서 너 기다리는 것도 이제 익숙해졌어." }
+        ]
+      },
+      {
+        npc: "스트레스 받을 때… 메탈 크게 틀고 소리 지르잖아, 나. 그때는… 나한테 기대도 돼? 넌 잘 웃어 주니까.",
+        inner: "말 놓는 것도 무서운데, 음악 얘기는 조금 나아. 네가 사교적으로 사람을 품는 것처럼… 나도 네 옆에서 한 박자만 맡고 싶어.",
+        choices: [
+          { text: "당연하지. 넌 내 가장 큰 위로야.", delta: 2, route: "marriage", routePts: 3, reaction: "나도 네게 기대고 싶어. 서로에게 그런 사람이 되자." },
+          { text: "다른 사람한테 말하면 안 돼. 나만 알아야 해.", delta: 1, route: "yandere", routePts: 4, reaction: "알았어. 네 비밀은 내 가사 노트 맨 뒤에만 적어둘게." },
+          { text: "어학연수 가면 고립될까 봐 걱정돼.", delta: 2, route: "abroad", routePts: 3, reaction: "걱정 마. 내가 옆에서 같이 준비하고, 현지 밴드 구경도 같이 가자." }
+        ]
+      },
+      {
+        npc: "너의 꿈을 위해… 내가 해 줄 수 있는 게 뭐야? 보컬 말고도 말해도 돼. 나, 들을 준비는… 오래전부터 해 왔어.",
+        inner: "활발한 너의 꿈은 항상 크게 들려. 나는 음악으로 답하고, 말로는 늦게 따라가도… 진심만큼은 지지 않게 할게.",
+        choices: [
+          { text: "옆에서 평생 응원해 줘.", delta: 2, route: "marriage", routePts: 4, reaction: "약속할게. 네 커튼콜까지 함께 서 있을게—앵콜도 내가 외칠게." },
+          { text: "내 하루를 전부 알려 줘. 빈틈 없이.", delta: 0, route: "yandere", routePts: 4, reaction: "좋아. 네 수업 시간표랑 밴드 스케줄, 내가 전부 외울게." },
+          { text: "입시랑 비자 준비 같이 해줘.", delta: 2, route: "abroad", routePts: 4, reaction: "포트폴리오랑 영어 면접, 같이 청사진 그려보자. 나도 배울 거 많아." }
+        ]
+      }
+    ];
+
+    let romanceNarrative = null;
+
+    function defaultRomanceNarrative() {
+      return {
+        version: 1,
+        _meta: {},
+        dailyWhispers: {},
+        relationshipLabels: [{ minAffection: 0, line: "오늘은 조용히 박자 맞추는 날이야." }],
+        postEndingRelationshipLines: { "1": [], "2": [], "3": [] },
+        choiceRouteHints: { even: [], marriage: [], yandere: [], abroad: [] },
+        dateCutscenes: [],
+        softMood: {
+          absence: ["…오랜만이야. 천천히 얘기해 줘, 듣는 건 내가 제일 잘하니까."],
+          streakPause: ["오늘은 쉼표 밑에서 숨 쉬자. 다음 장은 천천히."]
+        },
+        choiceEchoes: { marriage: [], yandere: [], abroad: [] },
+        preConfessionScene: null,
+        postEndingDaily: { "1": [], "2": [], "3": [] },
+        weeklyStoryWovenLines: [],
+        togetherLineTemplates: ["오늘 {min}분은 네 옆이었어. 고마워."],
+        weeklyInannaLines: ["인안나 한 줄: 이번 주도 수고했어."]
+      };
+    }
+
+    function mergeRomanceNarrativePatch(raw) {
+      const d = defaultRomanceNarrative();
+      if (!raw || typeof raw !== "object") return d;
+      const out = Object.assign({}, d, raw);
+      if (!out._meta || typeof out._meta !== "object") out._meta = d._meta;
+      if (!out.dailyWhispers || typeof out.dailyWhispers !== "object") out.dailyWhispers = d.dailyWhispers;
+      if (!out.postEndingRelationshipLines || typeof out.postEndingRelationshipLines !== "object") {
+        out.postEndingRelationshipLines = d.postEndingRelationshipLines;
+      }
+      if (!out.choiceRouteHints || typeof out.choiceRouteHints !== "object") out.choiceRouteHints = d.choiceRouteHints;
+      if (!Array.isArray(out.weeklyStoryWovenLines)) out.weeklyStoryWovenLines = d.weeklyStoryWovenLines;
+      const dateScenes = Array.isArray(out.dateScenes) ? out.dateScenes : null;
+      if (dateScenes && dateScenes.length) out.dateCutscenes = dateScenes;
+      else if (!Array.isArray(out.dateCutscenes)) out.dateCutscenes = d.dateCutscenes;
+      if (!Array.isArray(out.relationshipLabels) || !out.relationshipLabels.length) out.relationshipLabels = d.relationshipLabels;
+      if (!Array.isArray(out.dateCutscenes)) out.dateCutscenes = d.dateCutscenes;
+      if (!out.softMood || typeof out.softMood !== "object") out.softMood = d.softMood;
+      if (!Array.isArray(out.softMood.absence)) out.softMood.absence = d.softMood.absence;
+      if (!Array.isArray(out.softMood.streakPause)) out.softMood.streakPause = d.softMood.streakPause;
+      if (!out.choiceEchoes || typeof out.choiceEchoes !== "object") out.choiceEchoes = d.choiceEchoes;
+      const ped = out.postEnding && typeof out.postEnding === "object" ? out.postEnding : null;
+      const baseDaily = d.postEndingDaily && typeof d.postEndingDaily === "object" ? Object.assign({}, d.postEndingDaily) : {};
+      const mergedDaily = Object.assign({}, baseDaily, out.postEndingDaily || {});
+      if (ped) {
+        ["1", "2", "3"].forEach((k) => {
+          if (Array.isArray(ped[k]) && ped[k].length) mergedDaily[k] = ped[k];
+        });
+      }
+      out.postEndingDaily = mergedDaily;
+      if (!Array.isArray(out.togetherLineTemplates) || !out.togetherLineTemplates.length) out.togetherLineTemplates = d.togetherLineTemplates;
+      if (!Array.isArray(out.weeklyInannaLines) || !out.weeklyInannaLines.length) out.weeklyInannaLines = d.weeklyInannaLines;
+      if (!out.preConfessionScene || typeof out.preConfessionScene !== "object") out.preConfessionScene = d.preConfessionScene;
+      return out;
+    }
+
+    romanceNarrative = mergeRomanceNarrativePatch(null);
+
+    function loadRomanceNarrativeRemote() {
+      return fetch("./assets/romance-narrative.json", { cache: "no-cache" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j) romanceNarrative = mergeRomanceNarrativePatch(j);
+        })
+        .catch(() => {});
+    }
+
+    function daysBetweenDateKeys(a, b) {
+      if (!a || !b) return 0;
+      const da = new Date(a + "T12:00:00").getTime();
+      const db = new Date(b + "T12:00:00").getTime();
+      if (Number.isNaN(da) || Number.isNaN(db)) return 0;
+      return Math.round((db - da) / 86400000);
+    }
+
+    function pickFromArr(arr, seedStr) {
+      const a = Array.isArray(arr) ? arr.filter((x) => x && String(x).trim()) : [];
+      if (!a.length) return "";
+      let h = 0;
+      const s = seedStr || "0";
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return String(a[h % a.length]);
+    }
+
+    function getRelationshipMetaLine() {
+      if (state.endingId) {
+        const pool = (romanceNarrative.postEndingRelationshipLines &&
+          romanceNarrative.postEndingRelationshipLines[String(state.endingId)]) || [];
+        const line = pickFromArr(pool, dateKey(new Date()) + "_relend_" + String(state.endingId));
+        if (line) return String(line);
+        return state.endingId === 1 ? "오늘은 약속 모드 같은 날." : state.endingId === 2 ? "오늘은 시선 한 박자 더 붙은 날." : "오늘은 지도에 연필로 선을 긋는 날.";
+      }
+      const arr = romanceNarrative.relationshipLabels || [];
+      let line = "오늘은 네 옆 박자에 맞추는 날이야.";
+      const a = state.affection;
+      for (let i = 0; i < arr.length; i++) {
+        const row = arr[i];
+        if (row && typeof row.minAffection === "number" && a >= row.minAffection && row.line) line = String(row.line);
+      }
+      return line;
+    }
+
+    function getDailyWhisperLineForToday() {
+      const todayKey = dateKey(new Date());
+      const dw = romanceNarrative.dailyWhispers || {};
+      const dow = String(new Date().getDay());
+      const pool = dw[dow] || [];
+      return pickFromArr(pool, todayKey + "_whisperui") || "오늘도 옆에 있어 줄래? 한 박자만 맞추자.";
+    }
+
+    function tryDailyWhisperLog(todayKey) {
+      if (state.endingId) return;
+      if (state.romanceDailyWhisperDay === todayKey) return;
+      const dw = romanceNarrative.dailyWhispers || {};
+      const dow = String(new Date().getDay());
+      const pool = dw[dow] || [];
+      const line = pickFromArr(pool, todayKey + "_whisperlog");
+      if (!line) return;
+      appendStoryLog({
+        type: "dailyWhisper",
+        title: "오늘의 한 컷",
+        body: String(line)
+      });
+      state.romanceDailyWhisperDay = todayKey;
+      saveState();
+    }
+
+    function dampConversationBonusNearEnd(delta, routePts) {
+      let d = Math.round(Number(delta || 0));
+      let r = Math.round(Number(routePts || 0));
+      if (!Number.isFinite(d)) d = 0;
+      if (!Number.isFinite(r) || r < 0) r = 0;
+      if (state.endingId) return { delta: d, routePts: Math.max(1, r || 1) };
+      const aff = state.affection;
+      const mr = Math.max(state.routeMarriage || 0, state.routeYandere || 0, state.routeAbroad || 0);
+      let factor = 1;
+      if (aff >= 70 && aff < ENDING_MIN_AFFECTION) factor *= 0.88;
+      if (aff >= 78 && aff < ENDING_MIN_AFFECTION) factor *= 0.9;
+      if (mr >= 7 && mr < ENDING_MIN_ROUTE) factor *= 0.9;
+      if (mr >= 9 && mr < ENDING_MIN_ROUTE) factor *= 0.92;
+      d = Math.round(d * factor);
+      r = Math.max(1, Math.round(r * factor));
+      return { delta: d, routePts: r };
+    }
+
+    function maybeAppendRouteHintLog() {
+      if (state.endingId) return;
+      if (Math.random() > 0.36) return;
+      const m = Number(state.routeMarriage || 0);
+      const y = Number(state.routeYandere || 0);
+      const ab = Number(state.routeAbroad || 0);
+      const hints = romanceNarrative.choiceRouteHints || {};
+      let pool = hints.even || hints.neutral || [];
+      if (m > y + 1 && m > ab + 1) pool = hints.marriage || pool;
+      else if (y > m + 1 && y > ab + 1) pool = hints.yandere || pool;
+      else if (ab > m + 1 && ab > y + 1) pool = hints.abroad || pool;
+      const line = pickFromArr(pool, dateKey(new Date()) + "_rh_" + m + "_" + y + "_" + ab);
+      if (!String(line || "").trim()) return;
+      appendStoryLog({
+        type: "routeHint",
+        title: "작은 메모 · 다음 색",
+        body: String(line).trim()
+      });
+    }
+
+    function evalDateSceneWhen(sc, todayKey) {
+      if (!sc || typeof sc !== "object") return false;
+      const v = Number(sc.value);
+      const op = sc.op || ">=";
+      let cur = 0;
+      if (sc.when === "todayMin") cur = Math.round(sumSecondsByDate(todayKey) / 60);
+      else return false;
+      if (op === ">=") return cur >= v;
+      if (op === ">") return cur > v;
+      if (op === "<=") return cur <= v;
+      if (op === "<") return cur < v;
+      return false;
+    }
+
+    function tryRomanceDateCutscene(todayKey) {
+      if (state.endingId) return;
+      if (state.romanceLastDateEventDay === todayKey) return;
+      const scenes = romanceNarrative.dateCutscenes || [];
+      for (let i = 0; i < scenes.length; i++) {
+        const sc = scenes[i];
+        if (evalDateSceneWhen(sc, todayKey)) {
+          appendStoryLog({
+            type: "dateScene",
+            title: sc.title || "짧은 데이트",
+            body: String(sc.body || "").trim()
+          });
+          state.romanceLastDateEventDay = todayKey;
+          const cls = sc.backdrop ? String(sc.backdrop).replace(/[^a-z-]/gi, "") : "date";
+          state.romanceDateBackdropDay = todayKey;
+          state.romanceDateBackdropClass = "vn-backdrop--" + (cls || "date");
+          saveState();
+          return;
+        }
+      }
+    }
+
+    function updateRomanceVisitSoftMood(todayKey) {
+      const last = state.romanceLastSeenDate || "";
+      if (!last) {
+        state.romanceLastSeenDate = todayKey;
+        return;
+      }
+      if (last === todayKey) return;
+      const gap = daysBetweenDateKeys(last, todayKey);
+      if (gap >= 4 && state.romanceSoftMoodShownFor !== todayKey) {
+        const pool = (romanceNarrative.softMood && romanceNarrative.softMood.absence) || [];
+        sessionRuntime.pendingSoftMoodPrefix = pickFromArr(pool, todayKey + "_" + last);
+        state.romanceSoftMoodShownFor = todayKey;
+      }
+      state.romanceLastSeenDate = todayKey;
+    }
+
+    function maybeNoteStreakSoftMood(todayKey) {
+      const cur = computeStudyStreakDays();
+      const prev = Number(state.romancePrevStreakSnapshot);
+      if (prev >= 2 && cur === 0 && state.romanceStreakDropNoted !== todayKey && Number(state.totalSeconds || 0) >= 120) {
+        if (!sessionRuntime.pendingSoftMoodPrefix) {
+          const pool = (romanceNarrative.softMood && romanceNarrative.softMood.streakPause) || [];
+          sessionRuntime.pendingSoftMoodPrefix = pickFromArr(pool, todayKey + "_streak");
+        }
+        state.romanceStreakDropNoted = todayKey;
+        saveState();
+      }
+      state.romancePrevStreakSnapshot = cur;
+    }
+
+    function maybeChoiceEchoSuffix() {
+      const echoes = romanceNarrative.choiceEchoes || {};
+      if (Math.random() > 0.34) return "";
+      const m = Number(state.routeMarriage || 0);
+      const y = Number(state.routeYandere || 0);
+      const ab = Number(state.routeAbroad || 0);
+      const lead = Math.max(m, y, ab);
+      if (lead < 5) return "";
+      let pool = [];
+      if (m >= y && m >= ab && m >= 5) pool = echoes.marriage || [];
+      else if (y >= m && y >= ab && y >= 5) pool = echoes.yandere || [];
+      else if (ab >= 5) pool = echoes.abroad || [];
+      if (!pool.length) return "";
+      return pickFromArr(pool, dateKey(new Date()) + "_" + lead);
+    }
+
+    function buildMainDialogueLine(displayName, voc, baseText) {
+      let t = "인안나: " + displayName + voc + ", " + baseText;
+      const echo = maybeChoiceEchoSuffix();
+      if (echo) t += echo;
+      return t;
+    }
+
+    function getEndingMainDialogue(displayName, voc) {
+      const pool = (romanceNarrative.postEndingDaily && romanceNarrative.postEndingDaily[String(state.endingId)]) || [];
+      const raw = pickFromArr(pool, dateKey(new Date()) + "_main_" + String(state.endingId) + "_" + String(state.totalSeconds || 0));
+      if (raw && String(raw).trim()) {
+        const t = String(raw).trim();
+        if (/^인안나:/.test(t)) return t;
+        return "인안나: " + t;
+      }
+      return "인안나: " + displayName + voc + ", 우리 이야기가 한 장 끝까지 닿았어. 아래 엔딩을 읽어 줘.";
+    }
+
+    function buildTogetherStudyLineForRecord(rec) {
+      const all = romanceNarrative.togetherLineTemplates || [];
+      const tag = (rec.tag && String(rec.tag).trim()) ? String(rec.tag).trim() : "";
+      const withTag = all.filter((tpl) => tpl && String(tpl).indexOf("{tag}") >= 0);
+      const tpls = tag && withTag.length ? withTag : all;
+      const t = pickFromArr(tpls, (rec.date || "") + "_" + rec.seconds + "_" + (rec.tag || ""));
+      const min = Math.max(1, Math.round(Number(rec.seconds || 0) / 60));
+      const tagOut = tag || "공부";
+      return String(t || "").replace(/\{min\}/g, String(min)).replace(/\{tag\}/g, tagOut);
+    }
+
+    function ensureRomanceDailyRollover() {
+      const today = dateKey(new Date());
+      if (state.romanceConvoDate !== today) {
+        state.romanceConvoDate = today;
+        state.romanceConvoStarts = 0;
+      }
+    }
+
+    function applyVnBackdropClassForToday(todayKey) {
+      const bd = document.querySelector(".vn-backdrop");
+      if (!bd) return;
+      [...bd.classList].forEach((c) => {
+        if (c.indexOf("vn-backdrop--") === 0) bd.classList.remove(c);
+      });
+      if (state.romanceDateBackdropDay === todayKey && state.romanceDateBackdropClass) {
+        bd.classList.add(state.romanceDateBackdropClass);
+      }
+    }
+
+    function clearRomanceBackdropIfStale(todayKey) {
+      if (state.romanceDateBackdropDay && state.romanceDateBackdropDay !== todayKey) {
+        state.romanceDateBackdropDay = "";
+        state.romanceDateBackdropClass = "";
+      }
+    }
+
+    /* ===== JS §3 DOM utils, dates, story log & affection rules ===== */
+    const $ = (id) => document.getElementById(id);
+    function safeSetText(id, value) {
+      const el = $(id);
+      if (el) el.textContent = value;
+    }
+    function safeStyle(id, prop, value) {
+      const el = $(id);
+      if (el) el.style[prop] = value;
+    }
+    const fmtTime = (sec) => {
+      const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+      const s = String(sec % 60).padStart(2, "0");
+      return h + ":" + m + ":" + s;
+    };
+    const fmtHourMin = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      return h + "시간 " + m + "분";
+    };
+    const fmtCompactStudy = (totalMin) => {
+      const m = Math.max(0, Math.round(Number(totalMin) || 0));
+      if (m < 60) return m + "m";
+      const h = Math.floor(m / 60);
+      const r = m % 60;
+      return r > 0 ? h + "h " + r + "m" : h + "h";
+    };
+    const dateKey = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    };
+    const dateLabel = (key) => key.slice(5).replace("-", "/");
+
+    function compareDateKeys(a, b) {
+      if (a === b) return 0;
+      return a < b ? -1 : 1;
+    }
+
+    function touchDeviceClockAnchor() {
+      state.deviceLastSeenDateKey = dateKey(new Date());
+      state.deviceLastSeenAtMs = Date.now();
+    }
+
+    function sanitizeBannerDismissKeys(today) {
+      let changed = false;
+      ["bannerDismissedGoal", "bannerDismissedStreak"].forEach((k) => {
+        const v = state[k];
+        if (v && compareDateKeys(v, today) > 0) {
+          state[k] = "";
+          changed = true;
+        }
+      });
+      const wmk = mondayKeyOfWeekContaining(new Date());
+      if (state.bannerDismissedWeekly && compareDateKeys(state.bannerDismissedWeekly, wmk) > 0) {
+        state.bannerDismissedWeekly = "";
+        changed = true;
+      }
+      return changed;
+    }
+
+    function noteClockSkewIfNeeded() {
+      const today = dateKey(new Date());
+      const prevKey = state.deviceLastSeenDateKey;
+      const prevMs = Number(state.deviceLastSeenAtMs || 0);
+      if (!prevKey || !prevMs) return;
+      let skew = null;
+      if (compareDateKeys(today, prevKey) < 0) {
+        skew = "backward";
+      } else {
+        const elapsed = Date.now() - prevMs;
+        const dayDiff = daysBetweenDateKeys(prevKey, today);
+        if (dayDiff > 2 && elapsed < 48 * 3600000) skew = "forward";
+      }
+      if (sanitizeBannerDismissKeys(today)) saveState();
+      if (!skew || sessionRuntime.clockSkewNotified) return;
+      sessionRuntime.clockSkewNotified = true;
+      const msg = skew === "backward"
+        ? "시스템 날짜가 이전으로 바뀌었어요. 연속·오늘 목표·배너는 참고만 해 주세요."
+        : "시스템 날짜가 크게 앞으로 갔어요. 기록·연속 표시를 한번 확인해 주세요.";
+      showAppSnackbar(msg, { durationMs: 5200 });
+    }
+
+    function getTimerRecordDateKey() {
+      const k = sessionRuntime.timerSessionDateKey;
+      if (k && /^\d{4}-\d{2}-\d{2}$/.test(k)) return k;
+      return dateKey(new Date());
+    }
+
+    function handleCalendarDayChange(prevKey, newKey) {
+      void prevKey;
+      clearRomanceBackdropIfStale(newKey);
+      ensureRomanceDailyRollover();
+      invalidateChartCache();
+      if (sanitizeBannerDismissKeys(newKey)) saveState();
+      const recDate = getTimerRecordDateKey();
+      if (state.timerSeconds > 0 && recDate !== newKey && !sessionRuntime.dayRolloverNotified) {
+        sessionRuntime.dayRolloverNotified = true;
+        showAppSnackbar(
+          "날짜가 바뀌었어요. 저장하면 " + dateLabel(recDate) + "에 기록돼요.",
+          { durationMs: 4800 }
+        );
+      }
+      renderRecordChrome(newKey);
+      updateTodayInannaStrip();
+    }
+
+    function maybeRefreshCalendarDay() {
+      const today = dateKey(new Date());
+      if (!sessionRuntime.appDateKey) {
+        sessionRuntime.appDateKey = today;
+        return false;
+      }
+      if (sessionRuntime.appDateKey === today) return false;
+      const prev = sessionRuntime.appDateKey;
+      sessionRuntime.appDateKey = today;
+      sessionRuntime.dayRolloverNotified = false;
+      handleCalendarDayChange(prev, today);
+      return true;
+    }
+
+    function initDeviceClockGuard() {
+      const today = dateKey(new Date());
+      noteClockSkewIfNeeded();
+      if (sanitizeBannerDismissKeys(today)) saveState();
+      touchDeviceClockAnchor();
+      sessionRuntime.appDateKey = today;
+    }
+
+    function mondayKeyOfWeekContaining(d) {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dow = x.getDay();
+      const diff = dow === 0 ? -6 : 1 - dow;
+      x.setDate(x.getDate() + diff);
+      return dateKey(x);
+    }
+
+    function sumSecondsWeekMonSun(now) {
+      const mk = mondayKeyOfWeekContaining(now);
+      const sd = new Date(mk + "T12:00:00");
+      let sum = 0;
+      for (let i = 0; i < 7; i++) {
+        const dd = new Date(sd);
+        dd.setDate(sd.getDate() + i);
+        sum += sumSecondsByDate(dateKey(dd));
+      }
+      return sum;
+    }
+
+    function aggregateSecondsByTag() {
+      const map = {};
+      state.records.forEach((r) => {
+        const t = (r.tag && String(r.tag).trim()) ? String(r.tag).trim() : "(태그 없음)";
+        map[t] = (map[t] || 0) + Number(r.seconds || 0);
+      });
+      return map;
+    }
+
+    function weekDateRangeKeys(now) {
+      const mk = mondayKeyOfWeekContaining(now);
+      const sd = new Date(mk + "T12:00:00");
+      const keys = [];
+      for (let i = 0; i < 7; i++) {
+        const dd = new Date(sd);
+        dd.setDate(sd.getDate() + i);
+        keys.push(dateKey(dd));
+      }
+      return { mondayKey: mk, keys: keys };
+    }
+
+    function drawRhythmHeatmap(now) {
+      const canvas = $("rhythmHeatmap");
+      if (!canvas || !canvas.getContext) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const cellEmpty = "rgba(197, 184, 232, 0.18)";
+      const cellMid = "rgba(216, 196, 232, 0.48)";
+      const cellHi = "rgba(232, 166, 200, 0.82)";
+      const grid = "rgba(45, 38, 72, 0.1)";
+      const label = "#2d2648";
+      const pad = { l: 34, t: 10, r: 8, b: 22 };
+      const gridW = w - pad.l - pad.r;
+      const gridH = h - pad.t - pad.b;
+      const cols = 24;
+      const rows = 7;
+      const cw = gridW / cols;
+      const ch = gridH / rows;
+      const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      cutoff.setDate(cutoff.getDate() - 27);
+      const cutKey = dateKey(cutoff);
+      const bins = [];
+      for (let i = 0; i < rows * cols; i++) bins.push(0);
+      let withHour = 0;
+      state.records.forEach((r) => {
+        if (!r.date || r.date < cutKey) return;
+        if (typeof r.startHour !== "number" || r.startHour < 0 || r.startHour > 23) return;
+        withHour += 1;
+        const d = new Date(r.date + "T12:00:00");
+        const jsDow = d.getDay();
+        const row = jsDow === 0 ? 6 : jsDow - 1;
+        const col = r.startHour;
+        bins[row * cols + col] += Number(r.seconds || 0) / 60;
+      });
+      let vmax = 0;
+      bins.forEach((v) => {
+        if (v > vmax) vmax = v;
+      });
+      if (vmax < 1) vmax = 1;
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const v = bins[row * cols + col];
+          const t = vmax ? Math.min(1, v / vmax) : 0;
+          ctx.fillStyle = t <= 0.08 ? cellEmpty : t < 0.55 ? cellMid : cellHi;
+          ctx.globalAlpha = 1;
+          ctx.fillRect(pad.l + col * cw + 0.5, pad.t + row * ch + 0.5, cw - 1, ch - 1);
+        }
+      }
+      ctx.strokeStyle = grid;
+      ctx.lineWidth = 1;
+      for (let c = 0; c <= cols; c++) {
+        const x = pad.l + c * cw;
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, pad.t + gridH);
+        ctx.stroke();
+      }
+      for (let r = 0; r <= rows; r++) {
+        const y = pad.t + r * ch;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, y);
+        ctx.lineTo(pad.l + gridW, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = label;
+      ctx.font = "10px Noto Sans KR, Segoe UI, sans-serif";
+      ctx.textAlign = "right";
+      const rowLabels = ["월", "화", "수", "목", "금", "토", "일"];
+      for (let row = 0; row < rows; row++) {
+        ctx.fillText(rowLabels[row], pad.l - 4, pad.t + row * ch + ch * 0.72);
+      }
+      ctx.textAlign = "center";
+      [0, 6, 12, 18].forEach((col) => {
+        if (col < cols) ctx.fillText(String(col) + "시", pad.l + col * cw + cw / 2, h - 6);
+      });
+      const hintEl = $("rhythmHeatmapHint");
+      if (hintEl) {
+        if (!withHour) {
+          hintEl.textContent = "시간대가 있는 기록이 쌓이면 히트맵이 채워져요.";
+        } else {
+          let bestI = 0;
+          let bestV = -1;
+          for (let i = 0; i < bins.length; i++) {
+            if (bins[i] > bestV) {
+              bestV = bins[i];
+              bestI = i;
+            }
+          }
+          const br = Math.floor(bestI / cols);
+          const bc = bestI % cols;
+          hintEl.textContent = "내 리듬: 최근 28일 중 " + rowLabels[br] + "요일 " + bc + "시대에 분 단위 합이 가장 모여 있어요. (시간대가 있는 행 " + withHour + "건)";
+        }
+      }
+    }
+
+    function getTodayInannaPushLine() {
+      const today = dateKey(new Date());
+      const todayMin = Math.round(sumSecondsByDate(today) / 60);
+      const a = Math.max(0, Number(state.affection || 0));
+      const d = getDialogueByAffection();
+      const stage = d && d.stage ? d.stage : "";
+      const pools = [];
+      if (a < 25) {
+        pools.push("오늘 " + todayMin + "분 — " + stage + " 구간이야. 천천히만 가도 돼.");
+        pools.push("짧게라도 앉은 자리가 쌓이면, 나중에 큰 후렴이 돼.");
+      } else if (a < 70) {
+        pools.push("오늘 " + todayMin + "분. " + stage + " 박자, 나쁘지 않아.");
+        pools.push("너무 무리하지 말고… 한 곡 듣고 다시 악보 펴도 돼.");
+      } else {
+        pools.push("오늘 " + todayMin + "분 — " + stage + " 끝까지 와 있네. 멋져.");
+        pools.push("일상 모드에서도… 네 집중은 내가 가장 듣고 싶은 라이브야.");
+      }
+      const seed = today + "_" + String(todayMin) + "_" + String(a) + "_" + stage;
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+      return pools[h % pools.length];
+    }
+
+    function updateTodayInannaStrip() {
+      const wrap = $("todayInannaStrip");
+      const line = $("todayInannaLine");
+      if (!wrap || !line) return;
+      const img = wrap.querySelector(".today-inanna-img");
+      if (img instanceof HTMLImageElement) {
+        img.src = assetUrl("./assets/today-inanna.png");
+      }
+      const t = getTodayInannaPushLine();
+      line.textContent = t;
+      wrap.hidden = false;
+    }
+
+    const MILESTONE_BADGE_DEFS = [
+      { id: "m1", title: "첫 스텝", desc: "기록 1건", ok: () => state.records.length >= 1 },
+      { id: "m2", title: "기록 10", desc: "공부 기록 10건", ok: () => state.records.length >= 10 },
+      { id: "m3", title: "기록 50", desc: "공부 기록 50건", ok: () => state.records.length >= 50 },
+      { id: "m4", title: "7일 연속", desc: "목표 달성 연속 7일+", ok: () => computeStudyStreakDays() >= 7 },
+      { id: "m5", title: "30일 연속", desc: "목표 달성 연속 30일+", ok: () => computeStudyStreakDays() >= 30 },
+      { id: "m6", title: "태그 탐험", desc: "태그 5종+", ok: () => {
+        const s = new Set();
+        state.records.forEach((r) => {
+          if (r.tag && String(r.tag).trim()) s.add(String(r.tag).trim());
+        });
+        return s.size >= 5;
+      } },
+      { id: "m7", title: "주간 15h", desc: "한 주 15시간+", ok: () => sumSecondsWeekMonSun(new Date()) >= 15 * 3600 },
+      { id: "m8", title: "누적 42h", desc: "총 42시간+", ok: () => Number(state.totalSeconds || 0) >= 42 * 3600 },
+      { id: "m9", title: "누적 100h", desc: "총 100시간+", ok: () => Number(state.totalSeconds || 0) >= 100 * 3600 }
+    ];
+
+    function updateMilestoneBadgeNote() {
+      const note = $("milestoneBadgeNote");
+      if (!note) return;
+      const anyStudyBadge = MILESTONE_BADGE_DEFS.some((def) => def.ok());
+      const show = anyStudyBadge && state.affection === 0 && state.records.length > 0;
+      note.hidden = !show;
+      note.textContent = show
+        ? "배지는 공부·목표 기준이에요. 호감도·스토리 초기화와는 따로 계산돼요."
+        : "";
+    }
+
+    function renderMilestoneBadgesStory() {
+      const grid = $("milestoneBadgeGrid");
+      if (!grid) return;
+      updateMilestoneBadgeNote();
+      grid.innerHTML = MILESTONE_BADGE_DEFS.map((def) => {
+        const on = def.ok();
+        const ic = milestoneBadgeIconHtml(def.id);
+        return "<div class='milestone-badge " + (on ? "milestone-badge--unlocked" : "milestone-badge--locked") + "'>" +
+          "<div class='milestone-badge-circle' aria-hidden='true'><span class='milestone-badge-icon'>" + ic + "</span></div>" +
+          "<div class='milestone-badge-title'>" + escapeHtml(def.title) + "</div>" +
+          "<div class='milestone-badge-desc'>" + escapeHtml(def.desc) + "</div></div>";
+      }).join("");
+    }
+
+    function formatVnHudDate() {
+      const d = new Date();
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      return "오늘 · " + d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일 (" + days[d.getDay()] + ")";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function appendStoryLog(entry) {
+      const ts = new Date().toISOString();
+      state.storyLog.push({
+        ts,
+        type: entry.type || "note",
+        title: entry.title || "",
+        body: entry.body || ""
+      });
+      while (state.storyLog.length > 200) state.storyLog.shift();
+    }
+
+    function storyLogLocalDayFromTs(ts) {
+      if (!ts) return "";
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return "";
+      return dateKey(d);
+    }
+
+    /** 같은 현지일의 관계 진전 로그는 한 카드에 이어 붙여 길이 폭주를 줄입니다. */
+    function mergeOrPushMilestoneLog(title, body) {
+      const todayKey = dateKey(new Date());
+      const last = state.storyLog.length ? state.storyLog[state.storyLog.length - 1] : null;
+      if (
+        last
+        && last.type === "milestone"
+        && storyLogLocalDayFromTs(last.ts) === todayKey
+      ) {
+        last.body = (last.body || "") + "\n\n════════\n\n" + body;
+        last.title = "연애 이벤트 · 진전 요약 (같은 날 묶음)";
+        return;
+      }
+      appendStoryLog({ type: "milestone", title: title, body: body });
+    }
+
+    function migratePassedStagesSilent() {
+      if (!Array.isArray(state.loggedStageMins)) state.loggedStageMins = [];
+      dialogues.forEach((d) => {
+        if (d.minAffection === 0) return;
+        if (state.affection >= d.minAffection && !state.loggedStageMins.includes(d.minAffection)) {
+          state.loggedStageMins.push(d.minAffection);
+        }
+      });
+    }
+
+    function shouldUnlockMilestoneStory(d, prevAff, newAff) {
+      if (newAff < d.minAffection) return false;
+      if (state.loggedStageMins.includes(d.minAffection)) return false;
+      if (d.minAffection === 0) return newAff > 0 && prevAff === 0;
+      return prevAff < d.minAffection;
+    }
+
+    function logRelationshipMilestones(prevAff, newAff) {
+      if (newAff <= prevAff || state.endingId) return;
+      const name = getDisplayName();
+      const voc = getVocative(name);
+      const sorted = [...dialogues].sort((a, b) => a.minAffection - b.minAffection);
+      const unlocked = [];
+      sorted.forEach((d) => {
+        if (!shouldUnlockMilestoneStory(d, prevAff, newAff)) return;
+        const story = d.eventStory || "";
+        const line = "인안나: " + name + voc + ", " + d.text;
+        const body = story ? story + "\n\n「대사」\n" + line : line;
+        unlocked.push({ stage: d.stage, body: body });
+        state.loggedStageMins.push(d.minAffection);
+      });
+      if (!unlocked.length) return;
+      const bundleBody = unlocked.map((u) => u.body).join("\n\n────────\n\n");
+      const bundleTitle = unlocked.length === 1
+        ? "연애 이벤트 · " + unlocked[0].stage
+        : "연애 이벤트 · 진전 요약 (" + unlocked.length + "단계)";
+      mergeOrPushMilestoneLog(bundleTitle, bundleBody);
+      if (unlocked.length) {
+        sessionRuntime.vnDialogueFlashOneShot = true;
+      }
+    }
+
+    function renderStorySummary() {
+      const el = $("storySummaryPanel");
+      if (!el) return;
+      el.innerHTML = buildStorySummaryHtml();
+    }
+
+    function buildStorySummaryHtml() {
+      const d = getDialogueByAffection();
+      const log = Array.isArray(state.storyLog) ? state.storyLog : [];
+      let top = buildStoryChaptersHtml();
+      if (state.storyFreshReset && state.records.length > 0 && state.affection === 0) {
+        top = "<p class='muted text-caption lede-tight' style='margin:0 0 12px;'>스토리·호감도는 초기화됐어요. 공부 기록과 마일스톤 배지는 그대로예요.</p>" + top;
+      }
+      const cnt = { milestone: 0, interaction: 0, choice: 0, ending: 0, branch: 0, dateScene: 0, studyTogether: 0, dailyWhisper: 0, routeHint: 0, other: 0 };
+      log.forEach((e) => {
+        const t = e.type;
+        if (t === "userReaction") return;
+        if (t === "milestone") cnt.milestone += 1;
+        else if (t === "interaction") cnt.interaction += 1;
+        else if (t === "choice") cnt.choice += 1;
+        else if (t === "ending") cnt.ending += 1;
+        else if (t === "branch") cnt.branch += 1;
+        else if (t === "dateScene") cnt.dateScene += 1;
+        else if (t === "studyTogether") cnt.studyTogether += 1;
+        else if (t === "dailyWhisper") cnt.dailyWhisper += 1;
+        else if (t === "routeHint") cnt.routeHint += 1;
+        else cnt.other += 1;
+      });
+      const bullets = [];
+      bullets.push("호감도 <strong>" + escapeHtml(String(state.affection)) + "</strong> · 지금 단계: " + escapeHtml(d.stage));
+      if (state.endingId) {
+        bullets.push("엔딩: " + escapeHtml(getEndingTitle(state.endingId)));
+      } else {
+        bullets.push("엔딩: 아직 도달 전 (호감도 " + ENDING_MIN_AFFECTION + "+ 및 주력 루트 " + ENDING_MIN_ROUTE + "+ 필요)");
+      }
+      bullets.push("루트 누적 — 청혼 " + state.routeMarriage + " · 얀데레 " + state.routeYandere + " · 유학 " + state.routeAbroad + " (이야기 탭에서 주력 루트가 강조됩니다)");
+      bullets.push("기록된 이벤트 — 관계 진전 " + cnt.milestone + " · 말 걸기 " + cnt.interaction + " · 대화 " + cnt.choice + " · 엔딩 로그 " + cnt.ending
+        + (cnt.branch ? " · 짧은 분기 " + cnt.branch : "")
+        + (cnt.dateScene ? " · 짧은 데이트 " + cnt.dateScene : "")
+        + (cnt.studyTogether ? " · 함께한 시간 " + cnt.studyTogether : "")
+        + (cnt.dailyWhisper ? " · 오늘의 한 컷 " + cnt.dailyWhisper : "")
+        + (cnt.routeHint ? " · 작은 메모 " + cnt.routeHint : "")
+        + (cnt.other ? " · 기타 " + cnt.other : ""));
+      const mls = log.filter((e) => e.type === "milestone");
+      if (mls.length) {
+        const titles = mls.slice(-4).map((e) => escapeHtml((e.title || "").replace(/^연애 이벤트 · /, "")));
+        bullets.push("최근 관계 진전 흐름: " + titles.join(" → "));
+      } else if (log.length === 0) {
+        bullets.push(UI_EMPTY_STORY);
+      }
+      const items = bullets.map((b) => "<li>" + b + "</li>").join("");
+      return top + "<h4 class='story-subheading'>지금까지의 스토리 요약</h4><ul class='story-summary-list'>" + items + "</ul>";
+    }
+
+    function storyLogDayKey(ts) {
+      if (!ts || typeof ts !== "string") return "";
+      return ts.slice(0, 10);
+    }
+
+    function formatStoryLogDayHeader(dayKey) {
+      if (!dayKey || !/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) return "날짜 없음";
+      const d = new Date(dayKey + "T12:00:00");
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      return dayKey.replace(/-/g, ".") + " (" + days[d.getDay()] + ")";
+    }
+
+    function renderStoryLogList() {
+      const list = $("storyLogList");
+      if (!list) return;
+      renderStoryPortraitGallery();
+      renderStorySummary();
+      renderMilestoneBadgesStory();
+      const visibleLog = state.storyLog.filter((e) => e.type !== "userReaction");
+      if (!visibleLog.length) {
+        list.innerHTML = "<p class='muted'>" + escapeHtml(UI_EMPTY_STORY) + "</p>";
+        return;
+      }
+      const typeLabel = (t) => {
+        if (t === "milestone") return "관계 진전";
+        if (t === "interaction") return "말 걸기";
+        if (t === "choice") return "대화";
+        if (t === "ending") return "엔딩";
+        if (t === "branch") return "짧은 분기";
+        if (t === "dateScene") return "짧은 데이트";
+        if (t === "studyTogether") return "함께한 시간";
+        if (t === "dailyWhisper") return "오늘의 한 컷";
+        if (t === "routeHint") return "작은 메모";
+        return t || "";
+      };
+      let html = "";
+      let lastDay = "";
+      [...visibleLog].reverse().forEach((e) => {
+        const dk = storyLogDayKey(e.ts);
+        if (dk !== lastDay) {
+          lastDay = dk;
+          html += "<div class='story-log-day'>" + escapeHtml(formatStoryLogDayHeader(dk)) + "</div>";
+        }
+        const when = e.ts ? e.ts.slice(11, 16) : "";
+        html += "<div class='story-entry'>" +
+          "<div class='story-meta'>" + escapeHtml(when ? when + " · " : "") + escapeHtml(typeLabel(e.type)) + "</div>" +
+          "<h4>" + escapeHtml(e.title || "") + "</h4>" +
+          "<div class='story-body'>" + escapeHtml(e.body || "").replace(/\n/g, "<br>") + "</div>" +
+          "</div>";
+      });
+      list.innerHTML = html;
+    }
+
+    function syncViewSubPanels() {
+      const sub = state.viewSubPanel === "story" ? "story" : "character";
+      state.viewSubPanel = sub;
+      document.querySelectorAll(".view-sub-tabs [data-view-sub]").forEach((b) => {
+        const active = b.getAttribute("data-view-sub") === sub;
+        b.classList.toggle("active", active);
+        b.setAttribute("aria-pressed", active ? "true" : "false");
+        b.setAttribute("aria-selected", active ? "true" : "false");
+        b.setAttribute("tabindex", active ? "0" : "-1");
+      });
+      const ch = $("viewPanelCharacter");
+      const st = $("viewPanelStory");
+      if (ch) {
+        ch.style.display = sub === "character" ? "block" : "none";
+        ch.setAttribute("aria-hidden", sub === "character" ? "false" : "true");
+      }
+      if (st) {
+        st.style.display = sub === "story" ? "block" : "none";
+        st.setAttribute("aria-hidden", sub === "story" ? "false" : "true");
+      }
+    }
+
+    function gatherPersistedState() {
+      return {
+        schemaVersion: PERSIST_SCHEMA_VERSION,
+        userName: state.userName,
+        goalHours: state.goalHours,
+        affection: state.affection,
+        totalSeconds: state.totalSeconds,
+        records: state.records,
+        soundEnabled: state.soundEnabled,
+        replyAffectionBonus: state.replyAffectionBonus,
+        routeMarriage: state.routeMarriage,
+        routeYandere: state.routeYandere,
+        routeAbroad: state.routeAbroad,
+        endingId: state.endingId,
+        storyLog: state.storyLog,
+        loggedStageMins: state.loggedStageMins,
+        viewSubPanel: state.viewSubPanel,
+        uiMainTab:
+          state.uiMainTab === "view" ? "view" : state.uiMainTab === "stats" ? "stats" : "record",
+        maxAffectionEver: state.maxAffectionEver,
+        affectionBaselineSeconds: state.affectionBaselineSeconds,
+        a11yPreset: state.a11yPreset,
+        showInnerMonologue: state.showInnerMonologue !== false,
+        weeklyGoalHours: Number(state.weeklyGoalHours || 0),
+        defaultSessionTag: state.defaultSessionTag || "",
+        bannerDismissedGoal: state.bannerDismissedGoal || "",
+        bannerDismissedStreak: state.bannerDismissedStreak || "",
+        storyContactChannel: state.storyContactChannel || "",
+        storyFreshReset: state.storyFreshReset === true,
+        storySummaryFullView: state.storySummaryFullView === true,
+        bannerDismissedWeekly: state.bannerDismissedWeekly || "",
+        romanceLastSeenDate: state.romanceLastSeenDate || "",
+        romanceConvoDate: state.romanceConvoDate || "",
+        romanceConvoStarts: Number(state.romanceConvoStarts || 0),
+        romanceLastDateEventDay: state.romanceLastDateEventDay || "",
+        romanceDateBackdropDay: state.romanceDateBackdropDay || "",
+        romanceDateBackdropClass: state.romanceDateBackdropClass || "",
+        romancePreConfessionDone: state.romancePreConfessionDone === true,
+        romanceSoftMoodShownFor: state.romanceSoftMoodShownFor || "",
+        romanceStreakDropNoted: state.romanceStreakDropNoted || "",
+        romancePrevStreakSnapshot: Number(state.romancePrevStreakSnapshot),
+        onboardingCompleted: state.onboardingCompleted === true,
+        togetherLinesMaxPerDay: Math.max(0, Math.min(24, Math.round(Number(state.togetherLinesMaxPerDay || 8)))),
+        togetherStudyLineDay: state.togetherStudyLineDay || "",
+        togetherStudyLineCount: Math.max(0, Math.round(Number(state.togetherStudyLineCount || 0))),
+        romanceDailyWhisperDay: state.romanceDailyWhisperDay || "",
+        deviceLastSeenDateKey: state.deviceLastSeenDateKey || "",
+        deviceLastSeenAtMs: Math.max(0, Number(state.deviceLastSeenAtMs || 0))
+      };
+    }
+
+    function saveState() {
+      touchDeviceClockAnchor();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(gatherPersistedState()));
+    }
+
+    function hydrateStateFromPlainObject(src) {
+      if (!src || typeof src !== "object") return;
+      const data = migratePersistedPayload({ ...src });
+      state.userName = data.userName || "";
+      state.goalHours = Number(data.goalHours || 0);
+      state.affection = Number(data.affection || 0);
+      state.totalSeconds = Number(data.totalSeconds || 0);
+      state.records = Array.isArray(data.records) ? data.records : [];
+      state.records = state.records.map(sanitizeRecordRow).filter(Boolean);
+      state.soundEnabled = data.soundEnabled !== false;
+      state.replyAffectionBonus = Number(data.replyAffectionBonus || 0);
+      state.routeMarriage = Number(data.routeMarriage || 0);
+      state.routeYandere = Number(data.routeYandere || 0);
+      state.routeAbroad = Number(data.routeAbroad || 0);
+      state.endingId = data.endingId === 1 || data.endingId === 2 || data.endingId === 3 ? data.endingId : null;
+      state.storyLog = Array.isArray(data.storyLog) ? data.storyLog : [];
+      state.loggedStageMins = Array.isArray(data.loggedStageMins)
+        ? data.loggedStageMins.filter((n) => typeof n === "number" && n >= 0 && n <= 999)
+        : [];
+      state.viewSubPanel = data.viewSubPanel === "story" ? "story" : "character";
+      const tabRaw = String(data.uiMainTab || "").toLowerCase();
+      state.uiMainTab = tabRaw === "view" ? "view" : tabRaw === "stats" ? "stats" : "record";
+      const affHydrate = Math.max(0, Number(state.affection || 0));
+      const storedMaxAff = Math.max(0, Number(data.maxAffectionEver || 0));
+      state.maxAffectionEver = Math.max(affHydrate, Math.min(storedMaxAff, affHydrate));
+      state.affectionBaselineSeconds = Math.max(0, Number(data.affectionBaselineSeconds || 0));
+      state.a11yPreset = "romance";
+      state.showInnerMonologue = data.showInnerMonologue !== false;
+      state.weeklyGoalHours = Math.max(0, Number(data.weeklyGoalHours || 0));
+      state.defaultSessionTag = typeof data.defaultSessionTag === "string" ? data.defaultSessionTag.slice(0, 24) : "";
+      state.bannerDismissedGoal = typeof data.bannerDismissedGoal === "string" ? data.bannerDismissedGoal : "";
+      state.bannerDismissedStreak = typeof data.bannerDismissedStreak === "string" ? data.bannerDismissedStreak : "";
+      state.storyContactChannel = data.storyContactChannel === "face" || data.storyContactChannel === "text" || data.storyContactChannel === "walk"
+        ? data.storyContactChannel
+        : "";
+      state.storyFreshReset = data.storyFreshReset === true;
+      state.storySummaryFullView = data.storySummaryFullView === true;
+      state.bannerDismissedWeekly = typeof data.bannerDismissedWeekly === "string" ? data.bannerDismissedWeekly : "";
+      state.romanceLastSeenDate = typeof data.romanceLastSeenDate === "string" ? data.romanceLastSeenDate : "";
+      state.romanceConvoDate = typeof data.romanceConvoDate === "string" ? data.romanceConvoDate : "";
+      state.romanceConvoStarts = Math.max(0, Math.round(Number(data.romanceConvoStarts || 0)));
+      state.romanceLastDateEventDay = typeof data.romanceLastDateEventDay === "string" ? data.romanceLastDateEventDay : "";
+      state.romanceDateBackdropDay = typeof data.romanceDateBackdropDay === "string" ? data.romanceDateBackdropDay : "";
+      state.romanceDateBackdropClass = typeof data.romanceDateBackdropClass === "string" ? data.romanceDateBackdropClass : "";
+      state.romancePreConfessionDone = data.romancePreConfessionDone === true;
+      state.romanceSoftMoodShownFor = typeof data.romanceSoftMoodShownFor === "string" ? data.romanceSoftMoodShownFor : "";
+      state.romanceStreakDropNoted = typeof data.romanceStreakDropNoted === "string" ? data.romanceStreakDropNoted : "";
+      const rps = data.romancePrevStreakSnapshot;
+      state.romancePrevStreakSnapshot = rps === undefined || rps === null || rps === "" ? -1 : Math.round(Number(rps));
+      if (!Number.isFinite(state.romancePrevStreakSnapshot)) state.romancePrevStreakSnapshot = -1;
+      state.onboardingCompleted = data.onboardingCompleted === true;
+      state.togetherLinesMaxPerDay = Math.max(0, Math.min(24, Math.round(Number(data.togetherLinesMaxPerDay != null ? data.togetherLinesMaxPerDay : 8))));
+      state.togetherStudyLineDay = typeof data.togetherStudyLineDay === "string" ? data.togetherStudyLineDay : "";
+      const tsc = Number(data.togetherStudyLineCount);
+      state.togetherStudyLineCount = Number.isFinite(tsc) && tsc >= 0 ? Math.round(tsc) : 0;
+      state.romanceDailyWhisperDay = typeof data.romanceDailyWhisperDay === "string" ? data.romanceDailyWhisperDay : "";
+      state.deviceLastSeenDateKey = typeof data.deviceLastSeenDateKey === "string" ? data.deviceLastSeenDateKey : "";
+      state.deviceLastSeenAtMs = Math.max(0, Number(data.deviceLastSeenAtMs || 0));
+      state.schemaVersion = PERSIST_SCHEMA_VERSION;
+      migratePassedStagesSilent();
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        hydrateStateFromPlainObject(JSON.parse(raw));
+      } catch (_) {}
+    }
+
+    function resetRuntimeTimersAfterHydrate() {
+      if (state.timerId) clearInterval(state.timerId);
+      state.timerId = null;
+      state.timerRunning = false;
+      state.timerSeconds = 0;
+      state.editingRecordIndex = -1;
+      sessionRuntime.timerWallStartMs = null;
+      sessionRuntime.timerSessionDateKey = "";
+      clearUndoDelete();
+    }
+
+    function getDisplayName() {
+      return (state.userName || "").trim() || "메이트";
+    }
+
+    function getVocative(name) {
+      if (!name) return "야";
+      const lastChar = name[name.length - 1];
+      const code = lastChar.charCodeAt(0);
+      const HANGUL_START = 0xac00;
+      const HANGUL_END = 0xd7a3;
+      if (code >= HANGUL_START && code <= HANGUL_END) {
+        const hasBatchim = ((code - HANGUL_START) % 28) !== 0;
+        return hasBatchim ? "아" : "야";
+      }
+      return "야";
+    }
+
+    function getDialogueByAffection() {
+      let current = dialogues[0];
+      for (const d of dialogues) {
+        if (state.affection >= d.minAffection) current = d;
+      }
+      return current;
+    }
+
+    function pickRhythmInnerVoice(d) {
+      if (!d || !d.innerVoice) return "";
+      const shortv = d.innerVoiceShort;
+      if (!shortv) return d.innerVoice;
+      const study = Math.max(0, Number(state.totalSeconds || 0) - Number(state.affectionBaselineSeconds || 0));
+      const seed = dateKey(new Date()) + "_" + study + "_" + state.affection + "_" + (d.minAffection || 0);
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+      return (h % 5 === 0) ? shortv : d.innerVoice;
+    }
+
+    function endingEpilogueLine(endingId) {
+      const base = ENDING_EPILOGUES[endingId] || [];
+      const sk = endingSeasonKey();
+      const sea = (ENDING_EPILOGUE_SEASON[sk] && ENDING_EPILOGUE_SEASON[sk][endingId]) || [];
+      const aff = endingEpilogueAffLines(endingId);
+      const arr = base.concat(sea).concat(aff);
+      if (!arr.length) return "";
+      const seed = dateKey(new Date()) + "_" + String(state.totalSeconds || 0) + "_" + sk + "_" + String(state.affection || 0);
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+      return arr[h % arr.length];
+    }
+
+    function getInnerMonologueText() {
+      let prefix = "";
+      if (sessionRuntime.pendingSoftMoodPrefix) {
+        prefix = String(sessionRuntime.pendingSoftMoodPrefix).trim();
+        sessionRuntime.pendingSoftMoodPrefix = "";
+      }
+      function wrap(s) {
+        const t = String(s || "").trim();
+        if (!t) return t;
+        return prefix ? (prefix + "\n\n" + t) : t;
+      }
+      if (state.storyFreshReset && !state.endingId && !state.activeInteraction) {
+        return wrap("스토리를 초기화했어.…다시 첫 페이지를 넘기는 기분이야. 이번엔 네 다정한 호흡에 맞춰 천천히 걸어갈게.");
+      }
+      if (state.endingId && !state.activeInteraction) {
+        const pool = (romanceNarrative.postEndingDaily && romanceNarrative.postEndingDaily[String(state.endingId)]) || [];
+        let line = "";
+        if (pool.length) {
+          const raw = pickFromArr(pool, dateKey(new Date()) + "_inner_" + String(state.endingId) + "_" + String(state.totalSeconds || 0));
+          line = String(raw || "").replace(/^인안나:\s*/, "").trim();
+        }
+        if (!line) line = endingEpilogueLine(state.endingId);
+        return wrap(line);
+      }
+      if (state.activeInteraction) {
+        if (state.activeInteraction.innerVoice) {
+          return wrap(state.activeInteraction.innerVoice);
+        }
+        if (state.activeInteraction.choices && state.activeInteraction.choices.length) {
+          return wrap("…말 걸었다. 넌 늘 먼저 다정하게 웃어 주잖아. 사교적인 너 옆에 서려면, 나도 한 마디씩 연습해야 해.");
+        }
+        return wrap("…대답이 좋았어. 넌 활발해서 다음 한 마디도 금방 떠오를 텐데, 나는 한 박자 쉬고 싶은 기분이야.");
+      }
+      const d = getDialogueByAffection();
+      return wrap(pickRhythmInnerVoice(d));
+    }
+
+    function getNextDialogueInfo() {
+      for (const d of dialogues) {
+        if (state.affection < d.minAffection) {
+          return {
+            targetStage: d.stage,
+            need: d.minAffection - state.affection
+          };
+        }
+      }
+      return null;
+    }
+
+    function getPanelViewSection() {
+      return document.getElementById("panelView") || document.getElementById("view");
+    }
+
+    function applyA11yPresetToDocument() {
+      state.a11yPreset = "romance";
+      const root = document.documentElement;
+      root.setAttribute("data-theme", "romance");
+      root.removeAttribute("data-a11y");
+      if (document.body) {
+        document.body.setAttribute("data-theme", "romance");
+        document.body.removeAttribute("data-a11y");
+      }
+      root.style.colorScheme = "light";
+    }
+
+    function buildRouteMeterHtml() {
+      const m = state.routeMarriage;
+      const y = state.routeYandere;
+      const a = state.routeAbroad;
+      const foot = "(엔딩: 호감도 " + ENDING_MIN_AFFECTION + "+ &amp; 최고 루트 " + ENDING_MIN_ROUTE + "+)";
+      if (state.endingId) {
+        return "<div class='route-meter-line'><span class='route-chip'>청혼 " + m + "</span> · "
+          + "<span class='route-chip'>얀데레 " + y + "</span> · "
+          + "<span class='route-chip'>유학 " + a + "</span></div>"
+          + "<div class='route-meter-foot muted'>" + foot + "</div>";
+      }
+      const max = Math.max(m, y, a);
+      const chip = (label, v) => {
+        const lead = max > 0 && v === max ? " route-chip--lead" : "";
+        return "<span class='route-chip" + lead + "'>" + label + " " + v + "</span>";
+      };
+      return "<div class='route-meter-line'>" + chip("청혼", m) + " · " + chip("얀데레", y) + " · " + chip("유학", a) + "</div>"
+        + "<div class='route-meter-foot muted'>숫자가 가장 큰 루트가 살짝 강조됩니다. " + foot + "</div>";
+    }
+
+    function chapterSnippetLine(d, reached) {
+      if (!reached) {
+        return "이 호감 구간에 도달하면 짧은 에피소드가 스토리 로그에 남습니다.";
+      }
+      const raw = (d.eventStory || d.text || "").replace(/\s+/g, " ").trim();
+      if (!raw) return escapeHtml(d.stage) + " 구간을 지나는 중입니다.";
+      if (raw.length <= 72) return escapeHtml(raw);
+      return escapeHtml(raw.slice(0, 72)) + "…";
+    }
+
+    function chapterFullBodyHtml(d) {
+      const es = (d.eventStory || "").trim();
+      const tx = (d.text || "").trim();
+      let html = "";
+      if (es) {
+        html += "<div class='story-chapter-block'><strong class='muted'>에피소드</strong>"
+          + "<div class='story-chapter-fulltext'>" + escapeHtml(es).replace(/\n/g, "<br>") + "</div></div>";
+      }
+      if (tx) {
+        html += "<div class='story-chapter-block'><strong class='muted'>대사 (게임 속)</strong>"
+          + "<div class='story-chapter-fulltext'>" + escapeHtml(tx).replace(/\n/g, "<br>") + "</div></div>";
+      }
+      if (!html) {
+        html = "<p class='muted story-chapter-line'>이 장에 등록된 본문이 없습니다.</p>";
+      }
+      return html;
+    }
+
+    function buildStoryChaptersHtml() {
+      const sorted = [...dialogues].sort((a, b) => a.minAffection - b.minAffection);
+      const full = state.storySummaryFullView === true;
+      let html = "<h4 class='story-subheading'>스토리 장 요약</h4><div class='story-chapters'>";
+      sorted.forEach((d, idx) => {
+        const reached = state.affection >= d.minAffection;
+        const cls = reached ? "story-chapter story-chapter--done" : "story-chapter story-chapter--pending";
+        html += "<div class='" + cls + "'>";
+        html += "<div class='story-chapter-kicker'>제 " + (idx + 1) + "장 · 호감 " + d.minAffection + "+</div>";
+        html += "<div class='story-chapter-title'>" + escapeHtml(d.stage) + "</div>";
+        if (full) {
+          html += chapterFullBodyHtml(d);
+        } else {
+          html += "<p class='story-chapter-line muted'>" + chapterSnippetLine(d, reached) + "</p>";
+        }
+        html += "</div>";
+      });
+      html += "</div>";
+      html += "<div class='story-chapter-actions'><button type='button' class='btn secondary' data-story-full-toggle>"
+        + (full ? "요약으로 보기" : "스토리 더 보기")
+        + "</button></div>";
+      return html;
+    }
+
+    function buildHeartText() {
+      const maxHearts = 10;
+      const filled = Math.max(0, Math.min(maxHearts, Math.floor(state.affection / 10)));
+      return "♥".repeat(filled) + "♡".repeat(maxHearts - filled);
+    }
+
+    function applyRoutePoints(choice) {
+      const pts = Number(choice.routePts || 3);
+      if (choice.route === "marriage") state.routeMarriage += pts;
+      else if (choice.route === "yandere") state.routeYandere += pts;
+      else if (choice.route === "abroad") state.routeAbroad += pts;
+    }
+
+    function resolveEndingId() {
+      const entries = [
+        { id: 1, score: state.routeMarriage },
+        { id: 2, score: state.routeYandere },
+        { id: 3, score: state.routeAbroad }
+      ];
+      entries.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        const priority = [1, 3, 2];
+        return priority.indexOf(a.id) - priority.indexOf(b.id);
+      });
+      return entries[0].id;
+    }
+
+    function tryUnlockEnding() {
+      if (state.endingId) return false;
+      const maxRoute = Math.max(state.routeMarriage, state.routeYandere, state.routeAbroad);
+      if (state.affection < ENDING_MIN_AFFECTION || maxRoute < ENDING_MIN_ROUTE) return false;
+      state.endingId = resolveEndingId();
+      state.activeInteraction = null;
+      state.lastReplyText = "";
+      const name = getDisplayName();
+      const voc = getVocative(name);
+      appendStoryLog({
+        type: "ending",
+        title: getEndingTitle(state.endingId),
+        body: getEndingBody(state.endingId, name, voc)
+      });
+      return true;
+    }
+
+    function getEndingTitle(id) {
+      if (id === 1) return "엔딩 1 · 인안나의 청혼";
+      if (id === 2) return "엔딩 2 · 마이크 뒤의 집착";
+      if (id === 3) return "엔딩 3 · 해외 스테이지로";
+      return "";
+    }
+
+    function getEndingBody(id, name, voc) {
+      if (id === 1) {
+        return "인안나: " + name + voc + ", 나와 결혼해 줄래?\n\n"
+          + "고등학교 때는 말 못 했던 말이야. 지금은 실용음악과도 밴드도 있지만, 평생 네 옆에서 네 꿈 응원하고 싶어.\n"
+          + "반지는 내가 준비했어… 무대 위에서 노래하듯 진심이야. 잊지 말아 줘.";
+      }
+      if (id === 2) {
+        return "인안나: " + name + voc + ", 도망치면 안 돼.\n\n"
+          + "너는 내가 제일 먼저 찾은 동창이야. 연습실에서도 캠퍼스에서도—네 시선, 시간, 플레이리스트 전부 내 쪽으로만 와.\n"
+          + "다른 사람에게 넘길 생각은 없어. 내 곁에만 있어. 메탈보다 더 크게 너만 부를게.";
+      }
+      if (id === 3) {
+        return "인안나: " + name + voc + ", 같이 해외로 유학 가자.\n\n"
+          + "실용음악을 더 깊이 배우고, 거기서 밴드도 이어가고 싶어. 어학·비자·오디션 준비, 전부 같이 하자.\n"
+          + "낯선 도시 캠퍼스도, 현지 클럽 무대도—네 이름을 내 셋리스트 옆에 계속 적고 싶어.";
+      }
+      return "";
+    }
+
+    /**
+     * 공부로 오르는 호감도는 기준선 이후 누적 초(studyOnly)만 비선형 곡선에 넣습니다.
+     * (예전: calc(total)-calc(baseline) → 한 순간의 증가율이 누적 총공부 구간에 묶임)
+     * 초기화 후에는 다시 “곡선의 앞부분” 증가율을 따릅니다. 대화 보너스는 replyAffectionBonus로 합산.
+     */
+    function recalcAffectionTotal() {
+      const total = Math.max(0, Number(state.totalSeconds || 0));
+      let baseline = Math.max(0, Number(state.affectionBaselineSeconds || 0));
+      if (baseline > total) {
+        baseline = total;
+        state.affectionBaselineSeconds = total;
+      }
+      const studyOnly = Math.max(0, total - baseline);
+      const baseFromStudy = calcAffectionBySeconds(studyOnly);
+      state.affection = Math.max(0, baseFromStudy + Number(state.replyAffectionBonus || 0));
+      state.maxAffectionEver = Math.max(Number(state.maxAffectionEver || 0), state.affection);
+      if (!hasRomanceProgressTouch()) {
+        state.maxAffectionEver = state.affection;
+      }
+    }
+
+    function createAffectionInteraction() {
+      if (state.endingId) return;
+      ensureRomanceDailyRollover();
+      state.romanceConvoStarts += 1;
+      const displayName = getDisplayName();
+      const voc = getVocative(displayName);
+      const scene = romanceNarrative.preConfessionScene;
+      let npcFragment = "";
+      let choices = [];
+      let innerVoice = "";
+      let logTitle = "연애 이벤트 · 인안나가 말을 걸어 왔다";
+      let logType = "interaction";
+      let usePre = false;
+      if (scene && typeof scene === "object" && !state.romancePreConfessionDone) {
+        const minAff = Number(scene.minAffection != null ? scene.minAffection : 72);
+        const minConv = Number(scene.minTotalConversations != null ? scene.minTotalConversations : 5);
+        const minSame = Number(scene.sameDayStarts != null ? scene.sameDayStarts : 2);
+        const convs = state.storyLog.filter((e) => e.type === "interaction" || e.type === "choice").length;
+        if (state.affection >= minAff && state.affection < ENDING_MIN_AFFECTION
+            && convs >= minConv && state.romanceConvoStarts >= minSame) {
+          state.romancePreConfessionDone = true;
+          usePre = true;
+          npcFragment = String(scene.npc || "").trim();
+          choices = Array.isArray(scene.choices) ? scene.choices.slice(0, 3) : [];
+          innerVoice = String(scene.inner || scene.innerVoice || "").trim();
+          logTitle = String(scene.title || "짧은 분기").trim() || "짧은 분기";
+          logType = "branch";
+          if (!choices.length) {
+            state.romancePreConfessionDone = false;
+            usePre = false;
+          }
+        }
+      }
+      if (!usePre) {
+        const pick = interactionTemplates[Math.floor(Math.random() * interactionTemplates.length)];
+        npcFragment = pick.npc;
+        choices = pick.choices.slice(0, 3);
+        innerVoice = pick.inner || "";
+      }
+      state.activeInteraction = {
+        npc: displayName + voc + ", " + npcFragment,
+        choices: choices,
+        innerVoice: innerVoice
+      };
+      state.lastReplyText = "";
+      appendStoryLog({
+        type: logType,
+        title: logType === "branch" ? logTitle : "연애 이벤트 · 인안나가 말을 걸어 왔다",
+        body: "인안나: " + state.activeInteraction.npc
+      });
+    }
+
+    function sumSecondsByDate(targetKey) {
+      return state.records
+        .filter((r) => r.date === targetKey)
+        .reduce((sum, r) => sum + Number(r.seconds || 0), 0);
+    }
+
+    function isDailyGoalMet(dayKey) {
+      const goalMin = Math.max(0, Number(state.goalHours || 0)) * 60;
+      if (goalMin <= 0) return false;
+      return Math.round(sumSecondsByDate(dayKey) / 60) >= goalMin;
+    }
+
+    function computeStudyStreakDays() {
+      const goalMin = Math.max(0, Number(state.goalHours || 0)) * 60;
+      if (goalMin <= 0) return 0;
+      const now = new Date();
+      const todayKey = dateKey(now);
+      const cursor = new Date(now);
+      if (!isDailyGoalMet(todayKey)) {
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      let streak = 0;
+      while (true) {
+        const key = dateKey(cursor);
+        if (isDailyGoalMet(key)) {
+          streak += 1;
+          cursor.setDate(cursor.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    function getSeries(days) {
+      const arr = [];
+      const now = new Date();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const key = dateKey(d);
+        arr.push({ label: dateLabel(key), minutes: Math.round(sumSecondsByDate(key) / 60) });
+      }
+      return arr;
+    }
+
+    function getSeriesLastMonths(monthCount) {
+      const arr = [];
+      const now = new Date();
+      for (let i = monthCount - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const prefix = y + "-" + String(m + 1).padStart(2, "0") + "-";
+        let sec = 0;
+        state.records.forEach((r) => {
+          if (r.date && r.date.startsWith(prefix)) sec += Number(r.seconds || 0);
+        });
+        const label = String(y).slice(-2) + "." + String(m + 1).padStart(2, "0");
+        arr.push({ label: label, minutes: Math.round(sec / 60) });
+      }
+      return arr;
+    }
+
+    function drawBarChart(canvasId, series, colorA, colorB) {
+      void colorA;
+      void colorB;
+      const canvas = $(canvasId);
+      if (!canvas || !canvas.getContext) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const barA = "#e8a6c8";
+      const barB = "#c5b8e8";
+      const gridStroke = "rgba(45, 38, 58, 0.12)";
+      const labelFill = "#2d2640";
+
+      const pad = { l: 32, r: 12, t: 16, b: 30 };
+      const graphW = w - pad.l - pad.r;
+      const graphH = h - pad.t - pad.b;
+      const totalMin = series.reduce((sum, s) => sum + Number(s.minutes || 0), 0);
+      if (totalMin <= 0) {
+        ctx.strokeStyle = gridStroke;
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = pad.t + (graphH / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(pad.l, y);
+          ctx.lineTo(w - pad.r, y);
+          ctx.stroke();
+        }
+        ctx.fillStyle = labelFill;
+        ctx.font = "11px Noto Sans KR, Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        const dot = UI_EMPTY_CHART.indexOf(".");
+        const line1 = dot > 0 ? UI_EMPTY_CHART.slice(0, dot + 1) : UI_EMPTY_CHART;
+        const line2 = dot > 0 ? UI_EMPTY_CHART.slice(dot + 1).trim() : "";
+        const midY = pad.t + graphH / 2;
+        ctx.fillText(line1, w / 2, midY - 4);
+        if (line2) ctx.fillText(line2, w / 2, midY + 12);
+        return;
+      }
+
+      const maxVal = Math.max(10, ...series.map((s) => s.minutes));
+      const barW = graphW / series.length * 0.7;
+      const gap = graphW / series.length * 0.3;
+      const peakMin = Math.max(...series.map((s) => s.minutes));
+
+      ctx.strokeStyle = gridStroke;
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.t + (graphH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, y);
+        ctx.lineTo(w - pad.r, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = labelFill;
+      ctx.font = "10px Noto Sans KR, Segoe UI, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      [maxVal, Math.round(maxVal / 2), 0].forEach((v, i) => {
+        const y = pad.t + (graphH / 2) * i;
+        ctx.fillText(String(v) + "분", pad.l - 4, y);
+      });
+      ctx.textBaseline = "alphabetic";
+
+      series.forEach((item, i) => {
+        const x = pad.l + i * (barW + gap) + gap / 2;
+        const bh = (item.minutes / maxVal) * graphH;
+        const y = pad.t + graphH - bh;
+        const isPeak = item.minutes === peakMin && peakMin > 0;
+        ctx.fillStyle = isPeak ? barA : barB;
+        ctx.fillRect(x, y, barW, bh);
+
+        ctx.fillStyle = labelFill;
+        ctx.font = "10px Noto Sans KR, Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(item.label, x + barW / 2, h - 8);
+      });
+    }
+
+    function readHistoryFiltersFromDom() {
+      const out = { from: "", to: "", tag: "", weekOnly: false, sort: "date-desc" };
+      const f = $("historyFilterDateFrom");
+      const t = $("historyFilterDateTo");
+      const tg = $("historyFilterTagContains");
+      const s = $("historyFilterSort");
+      const weekPill = document.querySelector(".filter-pill[data-filter-pill='week']");
+      if (f instanceof HTMLInputElement) out.from = f.value.trim();
+      if (t instanceof HTMLInputElement) out.to = t.value.trim();
+      const tagPill = document.querySelector(".filter-pill[data-filter-pill='tag']");
+      if (tg instanceof HTMLInputElement && tagPill && tagPill.getAttribute("aria-pressed") === "true") {
+        out.tag = tg.value.trim().toLowerCase();
+      }
+      if (weekPill instanceof HTMLElement) out.weekOnly = weekPill.getAttribute("aria-pressed") === "true";
+      const wk = $("historyFilterWeekOnly");
+      if (wk instanceof HTMLInputElement) wk.checked = out.weekOnly;
+      if (s instanceof HTMLSelectElement && (s.value === "date-desc" || s.value === "date-asc")) out.sort = s.value;
+      return out;
+    }
+
+    function invalidateChartCache() {
+      sessionRuntime.chartDrawSig = "";
+    }
+
+    function updateGoalQuestStatusEl() {
+      const goalQuestStatusEl = $("goalQuestStatus");
+      if (!goalQuestStatusEl) return;
+      const parts = [];
+      if (state.goalHours) parts.push("하루 " + state.goalHours + "h");
+      if (state.weeklyGoalHours) parts.push("주간 " + state.weeklyGoalHours + "h");
+      goalQuestStatusEl.textContent = parts.length ? parts.join(" · ") + " · 저장됨" : "입력 후 자동 저장돼요.";
+    }
+
+    function renderRecordChrome(today) {
+      const streakVal = $("studyStreakValue");
+      const streakHint = $("studyStreakHint");
+      const goalMinForStreak = Math.max(0, Number(state.goalHours || 0)) * 60;
+      const streakDays = computeStudyStreakDays();
+      if (streakVal) streakVal.textContent = String(streakDays);
+      if (streakHint) {
+        const todayMinStreak = Math.round(sumSecondsByDate(today) / 60);
+        if (!goalMinForStreak) {
+          streakHint.textContent = "하루 목표를 저장하면 연속일이 표시돼요.";
+        } else {
+          streakHint.textContent = "목표 " + state.goalHours + "h · 오늘 " + fmtCompactStudy(todayMinStreak) + " · 연속 " + streakDays + "일";
+        }
+      }
+      updateGoalQuestStatusEl();
+      updateInsightBanners(today);
+      updateTodayInannaStrip();
+      const dToday = $("dockTodayShort");
+      if (dToday) dToday.textContent = Math.round(sumSecondsByDate(today) / 60) + "분";
+      renderStatsKpiRow(today, new Date());
+    }
+
+    function renderStatsChartsIfNeeded(nowDate) {
+      if (state.uiMainTab !== "stats") return;
+      const sig = state.records.length + "|" + state.totalSeconds + "|" + dateKey(nowDate);
+      if (sessionRuntime.chartDrawSig === sig) return;
+      sessionRuntime.chartDrawSig = sig;
+      drawBarChart("weeklyChart", getSeries(7), "#e8a6c8", "#c5b8e8");
+      drawBarChart("monthlyChart", getSeriesLastMonths(6), "#d4a8c8", "#a89bcf");
+      drawRhythmHeatmap(nowDate);
+    }
+
+    function renderVnPanelPartial(today) {
+      const charImg = $("characterImage");
+      const thumb = $("characterImageThumb");
+      if (charImg) {
+        const src = getCharacterImageSrc();
+        const alt = getCharacterImageAlt();
+        charImg.src = src;
+        charImg.alt = alt;
+        if (thumb) {
+          thumb.src = src;
+          thumb.alt = alt;
+        }
+      }
+      const vnDateEl = $("vnDateLine");
+      if (vnDateEl) vnDateEl.textContent = formatVnHudDate();
+      const vnAff = $("vnHudAffection");
+      if (vnAff) vnAff.textContent = String(state.affection);
+      const nowDialogue = getDialogueByAffection();
+      const displayName = getDisplayName();
+      const voc = getVocative(displayName);
+      const vnStageEl = $("vnRomanceStage");
+      const dlg = $("dialogueBox");
+      if (state.endingId) {
+        const st = state.endingId === 1 ? "엔딩 · 청혼" : state.endingId === 2 ? "엔딩 · 얀데레" : "엔딩 · 유학 제안";
+        if (vnStageEl) vnStageEl.textContent = st;
+        if (dlg) dlg.textContent = getEndingMainDialogue(displayName, voc);
+      } else {
+        if (vnStageEl) vnStageEl.textContent = nowDialogue.stage;
+        if (dlg) dlg.textContent = buildMainDialogueLine(displayName, voc, nowDialogue.text);
+      }
+      if (dlg && sessionRuntime.vnDialogueFlashOneShot) {
+        sessionRuntime.vnDialogueFlashOneShot = false;
+        dlg.classList.remove("vn-dialogue--flash");
+        void dlg.offsetWidth;
+        dlg.classList.add("vn-dialogue--flash");
+        setTimeout(() => dlg.classList.remove("vn-dialogue--flash"), 580);
+      }
+      const relMeta = $("relationshipMetaLine");
+      if (relMeta) relMeta.textContent = getRelationshipMetaLine();
+      const dwLine = $("dailyWhisperLine");
+      if (dwLine) dwLine.textContent = state.endingId ? "" : getDailyWhisperLineForToday();
+      applyVnBackdropClassForToday(today);
+      const innerToggle = $("innerMonologueToggle");
+      const innerBox = $("innerMonologueBox");
+      if (innerToggle && innerBox) {
+        const show = state.showInnerMonologue !== false;
+        innerToggle.checked = show;
+        innerBox.hidden = !show;
+        innerBox.textContent = getInnerMonologueText();
+        innerBox.setAttribute("aria-hidden", show ? "false" : "true");
+      }
+      safeSetText("heartMeter", buildHeartText());
+      const routeEl = $("routeMeter");
+      if (routeEl) routeEl.innerHTML = buildRouteMeterHtml();
+      safeSetText("affectionSummary", displayName + " · 호감 " + state.affection + " · "
+        + (state.endingId
+          ? (state.endingId === 1 ? "엔딩 · 청혼" : state.endingId === 2 ? "엔딩 · 얀데레" : "엔딩 · 유학")
+          : nowDialogue.stage));
+      if (state.endingId) {
+        safeStyle("endingPanel", "display", "block");
+        safeSetText("endingTitle", getEndingTitle(state.endingId));
+        safeSetText("endingBody", getEndingBody(state.endingId, displayName, voc));
+      } else {
+        safeStyle("endingPanel", "display", "none");
+      }
+      const cpw = $("storyContactPickWrap");
+      if (cpw) {
+        const eligible = !state.storyContactChannel && !state.endingId && state.affection >= 12 && state.affection < 72;
+        cpw.hidden = !eligible;
+      }
+      if (state.activeInteraction && !state.endingId) {
+        safeStyle("talkBox", "display", "block");
+        safeSetText("npcTalkLine", "인안나: " + state.activeInteraction.npc);
+        const rc = $("replyChoices");
+        if (rc) {
+          rc.setAttribute("role", "radiogroup");
+          rc.setAttribute("aria-label", "인안나에게 답하는 선택지");
+          rc.innerHTML = state.activeInteraction.choices
+            .map((choice, idx) => "<button type='button' class='vn-choice-item' data-reply-index='" + idx + "'>" +
+              "<span class='vn-choice-check' aria-hidden='true'></span>" +
+              "<span class='vn-choice-label'>" + escapeHtml(choice.text) + "</span></button>")
+            .join("");
+        }
+        safeSetText("replyResult", state.lastReplyText);
+      } else {
+        safeStyle("talkBox", "display", "none");
+        const rc = $("replyChoices");
+        if (rc) {
+          rc.removeAttribute("role");
+          rc.removeAttribute("aria-label");
+          rc.innerHTML = "";
+        }
+        safeSetText("replyResult", "");
+      }
+    }
+
+    function persistGoalsFromDom() {
+      const ghEl = $("goalHours");
+      const wghEl = $("weeklyGoalHours");
+      state.goalHours = Number((ghEl && ghEl.value) || 0);
+      state.weeklyGoalHours = Math.max(0, Number((wghEl && wghEl.value) || 0));
+      const tg = $("defaultSessionTagInput");
+      if (tg) state.defaultSessionTag = tg.value.trim().slice(0, 24);
+      saveState();
+      invalidateChartCache();
+      renderRecordChrome(dateKey(new Date()));
+    }
+
+    function renderStatsKpiRow(today, nowDate) {
+      const row = $("statsKpiRow");
+      if (!row) return;
+      const todayMin = Math.round(sumSecondsByDate(today) / 60);
+      const weekMin = Math.round(sumSecondsWeekMonSun(nowDate) / 60);
+      const streak = computeStudyStreakDays();
+      const aff = Math.max(0, Number(state.affection || 0));
+      const chip = (k, v) => "<span class='kpi-chip'><span class='kpi-k'>" + escapeHtml(k) + "</span><span class='kpi-v'>" + escapeHtml(v) + "</span></span>";
+      row.innerHTML = chip("오늘", todayMin + "분") +
+        "<span class='kpi-sep' aria-hidden='true'>·</span>" +
+        chip("주간", weekMin + "분") +
+        "<span class='kpi-sep' aria-hidden='true'>·</span>" +
+        chip("연속", streak + "일") +
+        "<span class='kpi-sep' aria-hidden='true'>·</span>" +
+        chip("호감", String(aff));
+    }
+
+    function getFilteredHistoryRows() {
+      const f = readHistoryFiltersFromDom();
+      const wr = weekDateRangeKeys(new Date());
+      const weekSet = new Set(wr.keys);
+      let arr = state.records.map((r, idx) => ({ r: r, idx: idx }));
+      arr = arr.filter(({ r }) => {
+        if (!r || !r.date) return false;
+        if (f.from && r.date < f.from) return false;
+        if (f.to && r.date > f.to) return false;
+        if (f.weekOnly && !weekSet.has(r.date)) return false;
+        if (f.tag) {
+          const tt = (r.tag && String(r.tag).trim()) ? String(r.tag).trim().toLowerCase() : "";
+          if (!tt.includes(f.tag)) return false;
+        }
+        return true;
+      });
+      arr.sort((a, b) => {
+        if (a.r.date !== b.r.date) {
+          if (f.sort === "date-desc") {
+            return a.r.date < b.r.date ? -1 : a.r.date > b.r.date ? 1 : 0;
+          }
+          return a.r.date > b.r.date ? -1 : a.r.date < b.r.date ? 1 : 0;
+        }
+        return a.idx - b.idx;
+      });
+      const slice = f.sort === "date-desc" ? arr.slice(-50).reverse() : arr.slice(0, 50);
+      return slice;
+    }
+
+    let appSnackbarHideTimer = null;
+
+    function hideAppSnackbar() {
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
+      sessionRuntime.snackbarConfirmMode = false;
+      const sb = $("recordUndoSnackbar");
+      const btn = $("recordUndoSnackbarBtn");
+      const cancelBtn = $("recordUndoSnackbarCancelBtn");
+      if (btn) {
+        btn.hidden = true;
+        btn.onclick = null;
+      }
+      if (cancelBtn) {
+        cancelBtn.hidden = true;
+        cancelBtn.onclick = null;
+      }
+      if (sb && !sessionRuntime.undoDelete) sb.hidden = true;
+    }
+
+    function showAppSnackbar(message, opts) {
+      const sb = $("recordUndoSnackbar");
+      const msg = $("recordUndoSnackbarMsg");
+      const btn = $("recordUndoSnackbarBtn");
+      const cancelBtn = $("recordUndoSnackbarCancelBtn");
+      if (!sb || !msg) return;
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
+      sessionRuntime.snackbarConfirmMode = false;
+      msg.textContent = message;
+      if (cancelBtn) cancelBtn.hidden = true;
+      if (btn) {
+        if (opts && opts.actionLabel && typeof opts.onAction === "function") {
+          btn.hidden = false;
+          btn.textContent = opts.actionLabel;
+          btn.onclick = () => {
+            hideAppSnackbar();
+            opts.onAction();
+          };
+        } else if (!sessionRuntime.undoDelete) {
+          btn.hidden = true;
+          btn.onclick = null;
+        }
+      }
+      sb.hidden = false;
+      if (!sessionRuntime.undoDelete && !(opts && opts.persistent)) {
+        appSnackbarHideTimer = setTimeout(() => {
+          appSnackbarHideTimer = null;
+          hideAppSnackbar();
+        }, (opts && opts.durationMs) || 3200);
+      }
+    }
+
+    function showAppSnackbarConfirm(message, onConfirm) {
+      const sb = $("recordUndoSnackbar");
+      const msg = $("recordUndoSnackbarMsg");
+      const btn = $("recordUndoSnackbarBtn");
+      const cancelBtn = $("recordUndoSnackbarCancelBtn");
+      if (!sb || !msg || !btn) return;
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
+      sessionRuntime.snackbarConfirmMode = true;
+      msg.textContent = message;
+      btn.hidden = false;
+      btn.textContent = "확인";
+      btn.onclick = () => {
+        hideAppSnackbar();
+        if (typeof onConfirm === "function") onConfirm();
+      };
+      if (cancelBtn) {
+        cancelBtn.hidden = false;
+        cancelBtn.textContent = "취소";
+        cancelBtn.onclick = () => hideAppSnackbar();
+      }
+      sb.hidden = false;
+    }
+
+    function clearUndoDelete() {
+      if (sessionRuntime.undoTimerId != null) {
+        clearTimeout(sessionRuntime.undoTimerId);
+        sessionRuntime.undoTimerId = null;
+      }
+      sessionRuntime.undoDelete = null;
+      const btn = $("recordUndoSnackbarBtn");
+      if (btn) {
+        btn.hidden = true;
+        btn.onclick = null;
+      }
+      const cancelBtn = $("recordUndoSnackbarCancelBtn");
+      if (cancelBtn) {
+        cancelBtn.hidden = true;
+        cancelBtn.onclick = null;
+      }
+      hideAppSnackbar();
+    }
+
+    function scheduleUndoDelete(removedRecord, insertIndex) {
+      if (appSnackbarHideTimer != null) {
+        clearTimeout(appSnackbarHideTimer);
+        appSnackbarHideTimer = null;
+      }
+      try {
+        sessionRuntime.undoDelete = { record: JSON.parse(JSON.stringify(removedRecord)), index: insertIndex };
+      } catch (_) {
+        sessionRuntime.undoDelete = { record: Object.assign({}, removedRecord), index: insertIndex };
+      }
+      const sb = $("recordUndoSnackbar");
+      const msg = $("recordUndoSnackbarMsg");
+      const btn = $("recordUndoSnackbarBtn");
+      if (msg) msg.textContent = "기록 1건을 삭제했어요.";
+      if (btn) {
+        btn.hidden = false;
+        btn.textContent = "되돌리기";
+        btn.onclick = null;
+      }
+      const cancelBtn = $("recordUndoSnackbarCancelBtn");
+      if (cancelBtn) cancelBtn.hidden = true;
+      if (sb) sb.hidden = false;
+      sessionRuntime.undoTimerId = setTimeout(() => {
+        sessionRuntime.undoTimerId = null;
+        sessionRuntime.undoDelete = null;
+        if (btn) btn.hidden = true;
+        if (sb) sb.hidden = true;
+      }, 8000);
+    }
+
+    function updateTimerFavicon() {
+      const link = document.querySelector('link[rel="icon"]');
+      if (!link) return;
+      if (!sessionRuntime.defaultFaviconHref) {
+        sessionRuntime.defaultFaviconHref = link.getAttribute("href") || "./assets/icon.svg";
+      }
+      if (state.timerRunning) {
+        const svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><circle cx=\"16\" cy=\"16\" r=\"14\" fill=\"#eba8c4\"/><circle cx=\"16\" cy=\"16\" r=\"5\" fill=\"#2d2648\"/></svg>";
+        link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+      } else {
+        link.href = sessionRuntime.defaultFaviconHref;
+      }
+    }
+
+    function updateTimerChrome() {
+      document.body.classList.toggle("timer-active", state.timerRunning);
+      const primary = $("timerPrimaryBtn");
+      if (primary) {
+        primary.textContent = state.timerRunning ? "일시정지" : (state.timerSeconds > 0 ? "이어하기" : "시작");
+        primary.setAttribute("aria-label", state.timerRunning ? "타이머 일시정지" : "타이머 시작");
+      }
+      const snd = $("soundToggleBtn");
+      if (snd) snd.textContent = "알림음 " + (state.soundEnabled ? "켜짐" : "꺼짐");
+      const disp = $("timerDisplay");
+      if (disp) {
+        const rec = getTimerRecordDateKey();
+        const today = dateKey(new Date());
+        if (state.timerSeconds > 0 && rec !== today) {
+          disp.title = "길게 누르면 리셋 · 저장 시 " + dateLabel(rec) + " 기록";
+        } else {
+          disp.title = "길게 누르면 시간 리셋";
+        }
+      }
+      updateSessionDocumentTitle();
+      updateTimerFavicon();
+      updateMainTabTimerHints();
+      const dockSave = $("dockSaveSessionBtn");
+      if (dockSave) {
+        const showDockSave = state.uiMainTab === "record" && state.timerSeconds > 0;
+        dockSave.hidden = !showDockSave;
+        dockSave.disabled = state.timerSeconds <= 0;
+      }
+    }
+
+    function closeTimerMoreMenu() {
+      const menu = $("timerMoreMenu");
+      const more = $("timerMoreBtn");
+      if (menu) menu.hidden = true;
+      if (more) more.setAttribute("aria-expanded", "false");
+    }
+
+    function updateSessionDocumentTitle() {
+      const base = sessionRuntime.baseDocumentTitle || APP_DISPLAY_NAME;
+      if (state.timerRunning) {
+        document.title = "[" + fmtTime(state.timerSeconds) + "] · " + base;
+        return;
+      }
+      if (document.title !== base) document.title = base;
+    }
+
+    function normalizeMainTabId(tabId) {
+      if (tabId === "view") return "view";
+      if (tabId === "stats") return "stats";
+      return "record";
+    }
+
+    function focusFirstInMainPanel(tabId) {
+      const tab = normalizeMainTabId(tabId);
+      const root =
+        tab === "record" ? $("record") : tab === "stats" ? $("panelStats") : getPanelViewSection();
+      if (!root) return;
+      const el = root.querySelector(TAB_FOCUSABLE);
+      if (el instanceof HTMLElement) {
+        requestAnimationFrame(() => {
+          try {
+            el.focus({ preventScroll: false });
+          } catch (_) {
+            el.focus();
+          }
+        });
+      }
+    }
+
+    function removeRecordAtIndex(recordIndex) {
+      const record = state.records[recordIndex];
+      if (!record) return false;
+      state.records.splice(recordIndex, 1);
+      state.editingRecordIndex = -1;
+      recalcFromRecords();
+      invalidateChartCache();
+      saveState();
+      scheduleUndoDelete(record, recordIndex);
+      render();
+      return true;
+    }
+
+    function renderHistory() {
+      const list = $("historyList");
+      if (!list) return;
+      if (!state.records.length) {
+        list.innerHTML = "<p class='muted'>" + escapeHtml(UI_EMPTY_RECORDS) + "</p>";
+        return;
+      }
+      const latest = getFilteredHistoryRows();
+      if (!latest.length) {
+        list.innerHTML = "<p class='muted'>" + escapeHtml(UI_EMPTY_FILTER) + "</p>";
+        return;
+      }
+      list.innerHTML = latest.map((o) => {
+        const r = o.r;
+        const idx = o.idx;
+        const min = Math.round(r.seconds / 60);
+        const isEditing = state.editingRecordIndex === idx;
+        const tagLine = r.tag ? "<div class='muted'>태그: " + escapeHtml(r.tag) + "</div>" : "";
+        const noteLine = r.note ? "<div class='muted'>메모: " + escapeHtml(r.note) + "</div>" : "";
+        const intentLine = r.intent ? "<div class='muted'>집중 목표: " + escapeHtml(r.intent) + "</div>" : "";
+        const hourLine = typeof r.startHour === "number" && r.startHour >= 0 && r.startHour <= 23
+          ? "<div class='muted'>시작 시각대: " + r.startHour + "시</div>"
+          : "";
+        return "<div class='history-item'>" +
+          "<div class='history-row'>" +
+          "<div><strong>" + r.date + "</strong> · " + min + "분</div>" +
+          "<div style='display:flex;gap:6px;flex-shrink:0;'>" +
+          "<button type='button' class='mini-btn' data-action='edit' data-edit-index='" + idx + "'>수정</button>" +
+          "<button type='button' class='mini-btn delete' data-action='quick-delete' data-edit-index='" + idx + "'>삭제</button>" +
+          "</div></div>" +
+          tagLine +
+          noteLine +
+          intentLine +
+          hourLine +
+          (isEditing
+            ? "<div class='inline-edit'>" +
+              "<input type='date' data-field='date' data-edit-index='" + idx + "' value='" + r.date + "' />" +
+              "<div class='minutes-input-wrap'>" +
+              "<input type='number' min='1' step='1' data-field='minutes' data-edit-index='" + idx + "' value='" + min + "' />분" +
+              "</div>" +
+              "<input type='text' data-field='tag' data-edit-index='" + idx + "' value='" + escapeHtml(r.tag || "") + "' maxlength='24' placeholder='태그' style='max-width:140px;' />" +
+              "<button type='button' class='mini-btn save' data-action='save' data-edit-index='" + idx + "'>저장</button>" +
+              "<button type='button' class='mini-btn cancel' data-action='cancel' data-edit-index='" + idx + "'>취소</button>" +
+              "<button type='button' class='mini-btn delete' data-action='delete' data-edit-index='" + idx + "'>삭제</button>" +
+              "</div>"
+            : "") +
+          "</div>";
+      }).join("");
+    }
+
+    /* ===== JS §4 Main render — charts, VN ===== */
+    /** 타이머 실행 중 1초마다 — 전체 render() 대신 시계·독만 갱신 */
+    function renderTimerTickHud() {
+      maybeRefreshCalendarDay();
+      const tEl = $("timerDisplay");
+      if (tEl) tEl.textContent = fmtTime(state.timerSeconds);
+      const dT = $("dockTimerShort");
+      if (dT) dT.textContent = fmtTime(state.timerSeconds);
+      updateTimerChrome();
+    }
+
+    function updateInsightBanners(today) {
+      const wrap = $("insightBannerWrap");
+      const inner = $("insightBanner");
+      if (!wrap || !inner) return;
+      const parts = [];
+      const todayMin = Math.round(sumSecondsByDate(today) / 60);
+      const goalDayMin = Math.max(0, Number(state.goalHours || 0)) * 60;
+      if (goalDayMin && todayMin >= goalDayMin && state.bannerDismissedGoal !== today) {
+        parts.push("<div class='insight-banner insight-banner--ok' role='status'>"
+          + "<div class='insight-banner-main'>"
+          + "<span class='insight-banner-icon' aria-hidden='true'>◎</span>"
+          + "<div class='insight-banner-copy'>"
+          + "<strong class='insight-banner-title'>오늘 목표 달성</strong>"
+          + "<span class='insight-banner-desc'>목표 시간을 모두 채웠어요. 오늘도 한 박자 잘 맞췄어요.</span>"
+          + "</div></div>"
+          + "<button type='button' class='mini-btn' data-banner-dismiss='goal'>닫기</button></div>");
+      }
+      const streak = computeStudyStreakDays();
+      const h = new Date().getHours();
+      if (goalDayMin > 0 && streak >= 1 && todayMin < goalDayMin && h >= 17 && state.bannerDismissedStreak !== today) {
+        parts.push("<div class='insight-banner insight-banner--warn' role='status'>"
+          + "<div class='insight-banner-main'>"
+          + "<span class='insight-banner-icon' aria-hidden='true'>!</span>"
+          + "<div class='insight-banner-copy'>"
+          + "<strong class='insight-banner-title'>연속 목표 달성 이어가기</strong>"
+          + "<span class='insight-banner-desc'>오늘 목표 시간을 채우면 연속 목표 달성일이 이어져요.</span>"
+          + "</div></div>"
+          + "<button type='button' class='mini-btn' data-banner-dismiss='streak'>닫기</button></div>");
+      }
+      const wmk = mondayKeyOfWeekContaining(new Date());
+      const wh = Number(state.weeklyGoalHours || 0);
+      if (wh > 0 && state.bannerDismissedWeekly !== wmk) {
+        const weekSec = sumSecondsWeekMonSun(new Date());
+        const needMin = wh * 60;
+        const doneMin = Math.round(weekSec / 60);
+        const pct = needMin ? Math.min(100, Math.round((doneMin / needMin) * 100)) : 0;
+        if (pct < 100) {
+          parts.push("<div class='insight-banner insight-banner--info' role='status'>"
+            + "<div class='insight-banner-main'>"
+            + "<span class='insight-banner-icon' aria-hidden='true'>%</span>"
+            + "<div class='insight-banner-copy'>"
+            + "<strong class='insight-banner-title'>이번 주 목표까지 " + pct + "%</strong>"
+            + "<span class='insight-banner-desc'>누적 " + doneMin + "분 / 목표 " + needMin + "분 · 색 말고 숫자로만 살짝 알려 줘요.</span>"
+            + "</div></div>"
+            + "<button type='button' class='mini-btn' data-banner-dismiss='weekly'>닫기</button></div>");
+        }
+      }
+      if (!parts.length) {
+        wrap.hidden = true;
+        inner.innerHTML = "";
+        return;
+      }
+      wrap.hidden = false;
+      inner.innerHTML = parts.join("");
+    }
+
+    function render() {
+      try {
+      maybeRefreshCalendarDay();
+      applyA11yPresetToDocument();
+      const today = dateKey(new Date());
+      clearRomanceBackdropIfStale(today);
+      updateRomanceVisitSoftMood(today);
+      maybeNoteStreakSoftMood(today);
+      ensureRomanceDailyRollover();
+      tryRomanceDateCutscene(today);
+      tryDailyWhisperLog(today);
+      const userNameViewEdit = $("userNameViewEdit");
+      if (userNameViewEdit) userNameViewEdit.value = state.userName || "";
+      const goalHoursEl = $("goalHours");
+      if (goalHoursEl) goalHoursEl.value = state.goalHours || "";
+      updateGoalQuestStatusEl();
+      const wgh = $("weeklyGoalHours");
+      if (wgh) wgh.value = state.weeklyGoalHours || "";
+      const dft = $("defaultSessionTagInput");
+      if (dft && document.activeElement !== dft) dft.value = state.defaultSessionTag || "";
+
+      const goalRing = $("todayGoalRing");
+      const goalPctEl = $("todayGoalRingPct");
+      const goalRingText = $("todayGoalRingText");
+      if (goalRing && goalPctEl && goalRingText) {
+        const todaySecGoal = sumSecondsByDate(today);
+        const goalMinTotal = Math.max(0, Number(state.goalHours || 0)) * 60;
+        const doneMinRounded = Math.round(todaySecGoal / 60);
+        if (!goalMinTotal) {
+          goalRing.style.setProperty("--goal-p", "0");
+          goalPctEl.textContent = doneMinRounded + "분";
+          goalRingText.textContent = "하루 목표를 저장하면 달성률 링이 표시됩니다. 오늘 누적 " + doneMinRounded + "분.";
+        } else {
+          const pctRaw = (doneMinRounded / goalMinTotal) * 100;
+          const pct = Math.min(100, Math.max(0, Math.round(pctRaw)));
+          goalRing.style.setProperty("--goal-p", String(pct));
+          goalPctEl.textContent = pct + "%";
+          goalRingText.textContent = "오늘 " + doneMinRounded + "분 · 목표 " + goalMinTotal + "분 (" + state.goalHours + "시간 기준)";
+        }
+      }
+      const nowDate = new Date();
+      renderRecordChrome(today);
+      const statsHeroDate = $("statsHeroDate");
+      if (statsHeroDate) statsHeroDate.textContent = formatVnHudDate();
+      const tagLineEl = $("tagStatsLine");
+      if (tagLineEl) {
+        const m = aggregateSecondsByTag();
+        const rows = Object.keys(m).sort((a, b) => m[b] - m[a]).slice(0, 5);
+        tagLineEl.textContent = rows.length
+          ? "태그별 누적: " + rows.map((k) => k + " " + fmtHourMin(m[k])).join(" · ")
+          : UI_EMPTY_TAGS;
+      }
+      updateTimerChrome();
+      if (state.uiMainTab === "view") {
+        if (state.viewSubPanel === "story") {
+          renderStoryLogList();
+        } else {
+          renderVnPanelPartial(today);
+        }
+      }
+      if (state.uiMainTab === "stats") {
+        renderHistory();
+        renderStatsChartsIfNeeded(nowDate);
+      } else {
+        sessionRuntime.chartDrawSig = "";
+      }
+      updateDateCutsceneHintEl();
+      syncOnboardingOverlay();
+      const tgt = $("togetherLinesMaxDayInput");
+      if (tgt && document.activeElement !== tgt) {
+        tgt.value = String(Math.max(0, Math.min(24, Math.round(Number(state.togetherLinesMaxPerDay || 8)))));
+      }
+      } catch (err) {
+        console.error("[render]", err);
+      } finally {
+        try {
+          applyMainTabToDom();
+        } catch (e3) {
+          console.error("[render] applyMainTabToDom", e3);
+        }
+        try {
+          syncViewSubPanels();
+        } catch (e2) {
+          console.error("[render] syncViewSubPanels", e2);
+        }
+        try {
+          renderTimerTickHud();
+        } catch (_) {}
+        try {
+          updateSessionDocumentTitle();
+        } catch (_) {}
+        try {
+          updateMainTabTimerHints();
+        } catch (_) {}
+      }
+    }
+
+    function initFileProtocolNotice() {
+      if (location.protocol !== "file:") return;
+      document.documentElement.classList.add("protocol-file");
+      const el = $("fileProtocolBanner");
+      if (el) el.hidden = false;
+    }
+
+    function addSessionRecord(seconds, source, opts) {
+      opts = opts || {};
+      if (seconds <= 0) return;
+      const prevAffection = state.affection;
+      const today = (opts.date && /^\d{4}-\d{2}-\d{2}$/.test(String(opts.date)))
+        ? String(opts.date)
+        : dateKey(new Date());
+      const rec = {
+        date: today,
+        seconds,
+        quest: "",
+        source: source || "manual"
+      };
+      const tag = (opts.tag != null ? String(opts.tag) : (state.defaultSessionTag || "")).trim().slice(0, 24);
+      if (tag) rec.tag = tag;
+      const note = opts.note != null ? String(opts.note).trim().slice(0, 200) : "";
+      if (note) rec.note = note;
+      const intentOpt = opts.intent != null ? String(opts.intent).trim().slice(0, 120) : "";
+      if (intentOpt) rec.intent = intentOpt;
+      const shOpt = opts.startHour;
+      let sh = shOpt !== undefined && shOpt !== null ? Math.round(Number(shOpt)) : NaN;
+      if (!Number.isFinite(sh) || sh < 0 || sh > 23) {
+        sh = new Date().getHours();
+      }
+      if (Number.isFinite(sh) && sh >= 0 && sh <= 23) rec.startHour = sh;
+      state.records.push(rec);
+      state.totalSeconds += seconds;
+      if (seconds > 0 && state.storyFreshReset) {
+        state.storyFreshReset = false;
+      }
+      recalcAffectionTotal();
+      logRelationshipMilestones(prevAffection, state.affection);
+      {
+        const maxN = Math.max(0, Math.min(24, Math.round(Number(state.togetherLinesMaxPerDay || 8))));
+        if (maxN > 0) {
+          if (state.togetherStudyLineDay !== today) {
+            state.togetherStudyLineDay = today;
+            state.togetherStudyLineCount = 0;
+          }
+          if (state.togetherStudyLineCount < maxN) {
+            const line = buildTogetherStudyLineForRecord(rec);
+            if (line && line.trim()) {
+              appendStoryLog({
+                type: "studyTogether",
+                title: "함께한 시간",
+                body: "인안나: " + line.trim()
+              });
+              state.togetherStudyLineCount += 1;
+            }
+          }
+        }
+      }
+      invalidateChartCache();
+      if (tryUnlockEnding()) {
+        saveState();
+        return;
+      }
+      if (state.affection > prevAffection && !state.endingId) {
+        createAffectionInteraction();
+      }
+    }
+
+    function calcAffectionBySeconds(seconds) {
+      const hours = Math.max(0, seconds) / 3600;
+      return Math.floor((hours * 3) + (Math.sqrt(hours) * 2));
+    }
+
+    function recalcFromRecords() {
+      const prevAffection = state.affection;
+      state.totalSeconds = state.records.reduce((sum, r) => sum + Number(r.seconds || 0), 0);
+      recalcAffectionTotal();
+      logRelationshipMilestones(prevAffection, state.affection);
+      if (tryUnlockEnding()) {
+        saveState();
+        return;
+      }
+      if (state.affection > prevAffection && !state.endingId) {
+        createAffectionInteraction();
+      }
+      invalidateChartCache();
+    }
+
+    function readMainTabFromDomRadios() {
+      const viR = document.getElementById("studyMainTabView");
+      const stR = document.getElementById("studyMainTabStats");
+      if (viR && viR.checked) return "view";
+      if (stR && stR.checked) return "stats";
+      return "record";
+    }
+
+    function applyMainTabToDom() {
+      const recR = document.getElementById("studyMainTabRecord");
+      const stR = document.getElementById("studyMainTabStats");
+      const viR = document.getElementById("studyMainTabView");
+      let tabId;
+      if (sessionRuntime.applyingMainTabFromState) {
+        tabId = normalizeMainTabId(state.uiMainTab);
+      } else if (recR && stR && viR) {
+        const domTab = readMainTabFromDomRadios();
+        const stateTab = normalizeMainTabId(state.uiMainTab);
+        tabId = domTab !== stateTab ? domTab : stateTab;
+        state.uiMainTab = tabId;
+      } else {
+        tabId = normalizeMainTabId(state.uiMainTab);
+      }
+      state.uiMainTab = tabId;
+      if (recR && stR && viR) {
+        recR.checked = tabId === "record";
+        stR.checked = tabId === "stats";
+        viR.checked = tabId === "view";
+      }
+      document.querySelectorAll(".tabs > .tab-btn").forEach((b) => {
+        const active = b.dataset.tab === tabId;
+        b.classList.toggle("active", active);
+        b.setAttribute("aria-selected", active ? "true" : "false");
+        b.setAttribute("tabindex", active ? "0" : "-1");
+      });
+      document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
+      const rec = document.getElementById("record");
+      const st = document.getElementById("panelStats");
+      const vi = getPanelViewSection();
+      const panel = tabId === "record" ? rec : tabId === "stats" ? st : vi;
+      if (panel) panel.classList.add("active");
+      if (rec) rec.setAttribute("aria-hidden", tabId === "record" ? "false" : "true");
+      if (st) st.setAttribute("aria-hidden", tabId === "stats" ? "false" : "true");
+      if (vi) vi.setAttribute("aria-hidden", tabId === "view" ? "false" : "true");
+      const show = (el, on) => {
+        if (!el) return;
+        el.style.setProperty("display", on ? "block" : "none", "important");
+      };
+      show(rec, tabId === "record");
+      show(st, tabId === "stats");
+      show(vi, tabId === "view");
+      syncRecordRailActiveTab(tabId);
+    }
+
+    function syncRecordRailActiveTab(tabId) {
+      document.querySelectorAll(".record-rail-tab").forEach((b) => {
+        const rail = b.getAttribute("data-record-rail");
+        const go = b.getAttribute("data-go-tab");
+        let active = false;
+        if (tabId === "record") active = rail === "dashboard";
+        else if (tabId === "stats") active = go === "stats";
+        else if (tabId === "view") active = go === "view";
+        b.classList.toggle("active", active);
+      });
+    }
+
+    function pauseStudyTimerCore(opts) {
+      opts = opts || {};
+      if (!state.timerRunning) return false;
+      if (state.timerId) clearInterval(state.timerId);
+      state.timerId = null;
+      state.timerRunning = false;
+      sessionRuntime.timerWallStartMs = null;
+      if (!opts.skipRender) render();
+      return true;
+    }
+
+    function activateTab(tabId) {
+      const next = normalizeMainTabId(tabId);
+      const prev = normalizeMainTabId(state.uiMainTab);
+      if (prev === "record" && next !== "record" && state.timerRunning) {
+        pauseStudyTimerCore({ skipRender: true });
+        if (!sessionRuntime.timerPauseNotified) {
+          sessionRuntime.timerPauseNotified = true;
+          showAppSnackbar("다른 탭으로 이동해 타이머를 잠시 멈췄어요. 함께 쌓기에서 이어할 수 있어요.", { durationMs: 4200 });
+        }
+      }
+      state.uiMainTab = next;
+      sessionRuntime.applyingMainTabFromState = true;
+      try {
+        applyMainTabToDom();
+        updateMainTabTimerHints();
+      } finally {
+        sessionRuntime.applyingMainTabFromState = false;
+      }
+    }
+
+    function updateMainTabTimerHints() {
+      const recordTab = $("tabBtnRecord");
+      const away = state.uiMainTab !== "record" && (state.timerRunning || state.timerSeconds > 0);
+      if (recordTab) {
+        recordTab.classList.toggle("tab-btn--timer-away", away);
+        if (away) {
+          recordTab.setAttribute("title", "타이머 " + fmtTime(state.timerSeconds) + " · 함께 쌓기로 돌아가기");
+        } else {
+          recordTab.removeAttribute("title");
+        }
+      }
+    }
+
+    function isFormFieldTarget(el) {
+      if (!el || !(el instanceof HTMLElement)) return false;
+      const tag = el.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (el.isContentEditable) return true;
+      return false;
+    }
+
+    function updateDateCutsceneHintEl() {
+      const el = $("dateCutsceneHint");
+      if (!el) return;
+      const scenes = (romanceNarrative && romanceNarrative.dateCutscenes) || [];
+      if (!scenes.length) {
+        el.textContent = "목표 시간 이상 기록한 날, 데이트 장면이 한 번 남을 수 있어요.";
+        return;
+      }
+      const bits = scenes.map((sc) => {
+        const op = sc.op || ">=";
+        const v = sc.value;
+        if (sc.when === "todayMin") return "오늘 " + op + " " + v + "분";
+        return "";
+      }).filter(Boolean);
+      el.textContent = (bits.join(" · ") || "조건은 설정 파일에서 바꿀 수 있어요.") + " · 하루 한 번.";
+    }
+
+    function dismissOnboarding() {
+      state.onboardingCompleted = true;
+      const el = $("onboardingOverlay");
+      if (el) {
+        el.hidden = true;
+        el.setAttribute("aria-hidden", "true");
+      }
+      document.body.classList.remove("onboarding-open");
+      saveState();
+      render();
+    }
+
+    function syncOnboardingOverlay() {
+      const el = $("onboardingOverlay");
+      if (!el) return;
+      const show = !state.onboardingCompleted;
+      el.hidden = !show;
+      el.setAttribute("aria-hidden", show ? "false" : "true");
+      document.body.classList.toggle("onboarding-open", show);
+      if (show) {
+        const t = $("onboardingTitle");
+        if (t instanceof HTMLElement) {
+          requestAnimationFrame(() => {
+            try {
+              t.focus({ preventScroll: true });
+            } catch (_) {
+              t.focus();
+            }
+          });
+        }
+      }
+    }
+
+    let onboardingStepIndex = 0;
+
+    function paintOnboardingStep() {
+      const bodies = [
+        "함께 쌓기에서 타이머로 공부 시간을 쌓고, 이야기에서 인안나와의 스토리를, 흐름에서 그래프를 봐요. 상단 탭이 메인 화면이에요. (선택) Alt+1 함께 쌓기 · Alt+2 이야기 · Alt+3 흐름",
+        "기록은 이 브라우저에만 저장돼요. 목표를 저장하고 타이머를 시작해 보세요."
+      ];
+      const b = $("onboardingBody");
+      const ind = $("onboardingStepInd");
+      const next = $("onboardingNextBtn");
+      if (b) b.textContent = bodies[onboardingStepIndex] || "";
+      if (ind) ind.textContent = (onboardingStepIndex + 1) + " / " + bodies.length;
+      if (next) next.textContent = onboardingStepIndex >= bodies.length - 1 ? "시작하기" : "다음";
+    }
+
+    function bindOnboarding() {
+      const root = $("onboardingOverlay");
+      if (!root || root.dataset.bound === "1") return;
+      root.dataset.bound = "1";
+      onboardingStepIndex = 0;
+      paintOnboardingStep();
+      $("onboardingSkipBtn")?.addEventListener("click", () => dismissOnboarding());
+      $("onboardingNextBtn")?.addEventListener("click", () => {
+        if (onboardingStepIndex >= 1) {
+          dismissOnboarding();
+          return;
+        }
+        onboardingStepIndex += 1;
+        paintOnboardingStep();
+      });
+    }
+
+    function setupKeyboardShortcuts() {
+      document.addEventListener("keydown", (e) => {
+        const ob = $("onboardingOverlay");
+        if (ob && !ob.hidden && e.key === "Escape") {
+          e.preventDefault();
+          dismissOnboarding();
+          return;
+        }
+        if (isFormFieldTarget(e.target)) return;
+        if (ob && !ob.hidden) return;
+        const t = e.target;
+        const mainTabs = Array.from(document.querySelectorAll(".tabs > .tab-btn"));
+        if (t instanceof HTMLElement && mainTabs.includes(t) && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+          e.preventDefault();
+          const idx = mainTabs.indexOf(t);
+          const next = (idx + (e.key === "ArrowRight" ? 1 : -1) + mainTabs.length) % mainTabs.length;
+          mainTabs[next].focus();
+          return;
+        }
+        const subTabs = Array.from(document.querySelectorAll(".view-sub-tabs [data-view-sub]"));
+        if (t instanceof HTMLElement && subTabs.includes(t) && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+          e.preventDefault();
+          const idx = subTabs.indexOf(t);
+          const next = (idx + (e.key === "ArrowRight" ? 1 : -1) + subTabs.length) % subTabs.length;
+          subTabs[next].focus();
+          return;
+        }
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          if (e.code === "Home" || e.code === "End") {
+            e.preventDefault();
+            if (e.code === "Home") $("tabBtnRecord")?.click();
+            else $("tabBtnStats")?.click();
+            return;
+          }
+          if (e.code === "Digit1" || e.code === "Numpad1") {
+            e.preventDefault();
+            const btn = $("tabBtnRecord");
+            if (btn) btn.click();
+            return;
+          }
+          if (e.code === "Digit2" || e.code === "Numpad2") {
+            e.preventDefault();
+            $("tabBtnView")?.click();
+            return;
+          }
+          if (e.code === "Digit3" || e.code === "Numpad3") {
+            e.preventDefault();
+            $("tabBtnStats")?.click();
+            return;
+          }
+          if (e.code === "KeyT") {
+            e.preventDefault();
+            $("timerPrimaryBtn")?.click();
+            return;
+          }
+        }
+        if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && e.code === "KeyS") {
+          e.preventDefault();
+          $("saveSessionBtn")?.click();
+        }
+      });
+    }
+
+    /* ===== JS §5 Tabs, actions, keyboard ===== */
+    function setupViewSubTabsDelegation() {
+      if (document.documentElement.dataset.studyViewSubBound === "1") return;
+      document.documentElement.dataset.studyViewSubBound = "1";
+      const focusActiveSubTab = () => {
+        const activeSub = document.querySelector(".view-sub-tabs .tab-btn.active");
+        if (activeSub instanceof HTMLElement) {
+          requestAnimationFrame(() => {
+            try {
+              activeSub.focus({ preventScroll: false });
+            } catch (_) {
+              activeSub.focus();
+            }
+          });
+        }
+      };
+      document.addEventListener(
+        "click",
+        (event) => {
+          try {
+            let t = event.target;
+            if (t instanceof Node && t.nodeType === Node.TEXT_NODE) t = t.parentElement;
+            if (!(t instanceof Element)) return;
+            const btn = t.closest("button[data-view-sub]");
+            if (!(btn instanceof HTMLElement)) return;
+            if (!btn.matches(".view-sub-tabs button[data-view-sub]")) return;
+            const panel = document.getElementById("panelView");
+            if (!panel || !panel.contains(btn)) return;
+            const sub = btn.getAttribute("data-view-sub");
+            if (sub !== "character" && sub !== "story") return;
+            state.viewSubPanel = sub;
+            syncViewSubPanels();
+            saveState();
+            render();
+            focusActiveSubTab();
+          } catch (err) {
+            console.error("[viewSubTab]", err);
+          }
+        },
+        true
+      );
+    }
+
+    function commitMainTab(tabId) {
+      const tab = normalizeMainTabId(tabId);
+      activateTab(tab);
+      saveState();
+      render();
+      focusFirstInMainPanel(tab);
+    }
+
+    function syncMainTabFromUserInput() {
+      commitMainTab(readMainTabFromDomRadios());
+    }
+
+    function ensureOnboardingNotBlocking() {
+      if (state.onboardingCompleted) return;
+      const hasUse = state.records.length > 0
+        || state.totalSeconds > 120
+        || state.affection > 0
+        || state.storyLog.length > 0;
+      if (!hasUse) return;
+      state.onboardingCompleted = true;
+      const el = $("onboardingOverlay");
+      if (el) {
+        el.hidden = true;
+        el.setAttribute("aria-hidden", "true");
+      }
+      document.body.classList.remove("onboarding-open");
+    }
+
+    function setupTabs() {
+      if (document.documentElement.dataset.studyMainTabSync === "1") return;
+      document.documentElement.dataset.studyMainTabSync = "1";
+      const recR = document.getElementById("studyMainTabRecord");
+      const stR = document.getElementById("studyMainTabStats");
+      const viR = document.getElementById("studyMainTabView");
+      if (!recR || !stR || !viR) return;
+      const onRadioChange = () => syncMainTabFromUserInput();
+      [recR, stR, viR].forEach((radio) => {
+        radio.addEventListener("change", onRadioChange);
+      });
+      document.querySelectorAll(".tabs > .tab-btn[data-tab]").forEach((label) => {
+        label.addEventListener("click", (e) => {
+          const tab = label.getAttribute("data-tab");
+          if (!tab) return;
+          e.preventDefault();
+          commitMainTab(tab);
+        });
+      });
+    }
+
+    function setupActions() {
+      if (document.documentElement.dataset.studyActionsBound === "1") return;
+      document.documentElement.dataset.studyActionsBound = "1";
+      sessionRuntime.baseDocumentTitle = document.title || APP_DISPLAY_NAME;
+      bindOnboarding();
+
+      const bindGoalAutosave = (el) => {
+        if (!el || el.dataset.goalAutosaveBound === "1") return;
+        el.dataset.goalAutosaveBound = "1";
+        const run = () => persistGoalsFromDom();
+        el.addEventListener("change", run);
+        el.addEventListener("blur", run);
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            run();
+            el.blur();
+          }
+        });
+      };
+      bindGoalAutosave($("goalHours"));
+      bindGoalAutosave($("weeklyGoalHours"));
+
+      const storySummaryPanel = $("storySummaryPanel");
+      if (storySummaryPanel && storySummaryPanel.dataset.storyToggleBound !== "1") {
+        storySummaryPanel.dataset.storyToggleBound = "1";
+        storySummaryPanel.addEventListener("click", (e) => {
+          const btn = e.target instanceof HTMLElement ? e.target.closest("[data-story-full-toggle]") : null;
+          if (!btn) return;
+          state.storySummaryFullView = !state.storySummaryFullView;
+          saveState();
+          render();
+        });
+      }
+
+      const innerMonologueToggle = $("innerMonologueToggle");
+      if (innerMonologueToggle) {
+        innerMonologueToggle.addEventListener("change", () => {
+          state.showInnerMonologue = innerMonologueToggle.checked;
+          const innerBox = $("innerMonologueBox");
+          if (innerBox) {
+            innerBox.hidden = !innerMonologueToggle.checked;
+            innerBox.textContent = getInnerMonologueText();
+            innerBox.setAttribute("aria-hidden", innerMonologueToggle.checked ? "false" : "true");
+          }
+          saveState();
+        });
+      }
+
+      $("userNameViewEdit")?.addEventListener("input", () => {
+        const el = $("userNameViewEdit");
+        state.userName = el && el.value ? el.value.trim() : "";
+        saveState();
+        if (state.uiMainTab === "view" && state.viewSubPanel !== "story") {
+          renderVnPanelPartial(dateKey(new Date()));
+        }
+      });
+
+      const togetherMaxIn = $("togetherLinesMaxDayInput");
+      if (togetherMaxIn) {
+        togetherMaxIn.addEventListener("change", () => {
+          let n = Math.round(Number(togetherMaxIn.value));
+          if (!Number.isFinite(n)) n = 8;
+          state.togetherLinesMaxPerDay = Math.max(0, Math.min(24, n));
+          togetherMaxIn.value = String(state.togetherLinesMaxPerDay);
+          saveState();
+        });
+      }
+
+      document.querySelectorAll(".record-rail-tab[data-go-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.getAttribute("data-go-tab");
+          if (!tab) return;
+          activateTab(tab);
+          const statsHero = $("panelStats")?.querySelector(".stats-hero");
+          if (tab === "stats" && statsHero) {
+            statsHero.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          render();
+          focusFirstInMainPanel(tab);
+        });
+      });
+      document.querySelectorAll(".record-rail-tab[data-record-rail='dashboard']").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          activateTab("record");
+          const main = document.querySelector(".record-main");
+          if (main) main.scrollIntoView({ behavior: "smooth", block: "start" });
+          render();
+        });
+      });
+
+      const startStudyTimer = () => {
+        if (state.timerRunning) return;
+        closeTimerMoreMenu();
+        sessionRuntime.timerPauseNotified = false;
+        if (!sessionRuntime.timerSessionDateKey) {
+          sessionRuntime.timerSessionDateKey = dateKey(new Date());
+        }
+        state.timerRunning = true;
+        sessionRuntime.timerWallStartMs = Date.now();
+        sessionRuntime.timerWallBaseSec = state.timerSeconds;
+        state.timerId = setInterval(() => {
+          if (!state.timerRunning) return;
+          if (sessionRuntime.timerWallStartMs != null) {
+            state.timerSeconds = sessionRuntime.timerWallBaseSec + Math.floor((Date.now() - sessionRuntime.timerWallStartMs) / 1000);
+          } else {
+            state.timerSeconds += 1;
+          }
+          renderTimerTickHud();
+        }, 1000);
+        render();
+      };
+
+      const pauseStudyTimer = () => {
+        pauseStudyTimerCore();
+      };
+
+      $("timerPrimaryBtn")?.addEventListener("click", () => {
+        if (state.timerRunning) pauseStudyTimer();
+        else startStudyTimer();
+      });
+
+      $("timerMoreBtn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const menu = $("timerMoreMenu");
+        const btn = $("timerMoreBtn");
+        if (!menu || !btn) return;
+        const open = menu.hidden;
+        menu.hidden = !open;
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      if (!sessionRuntime.timerMoreMenuBound) {
+        sessionRuntime.timerMoreMenuBound = true;
+        document.addEventListener("click", () => closeTimerMoreMenu());
+      }
+
+      const resetTimerToZero = () => {
+        clearInterval(state.timerId);
+        state.timerRunning = false;
+        state.timerSeconds = 0;
+        sessionRuntime.timerWallStartMs = null;
+        sessionRuntime.timerSessionDateKey = "";
+        sessionRuntime.dayRolloverNotified = false;
+        closeTimerMoreMenu();
+        saveState();
+        render();
+        showAppSnackbar("타이머를 0으로 맞췄어요.");
+      };
+
+      const timerDisplayEl = $("timerDisplay");
+      if (timerDisplayEl && timerDisplayEl.dataset.resetLongPressBound !== "1") {
+        timerDisplayEl.dataset.resetLongPressBound = "1";
+        let resetPressId = null;
+        const cancelResetPress = () => {
+          if (resetPressId != null) {
+            clearTimeout(resetPressId);
+            resetPressId = null;
+          }
+        };
+        timerDisplayEl.addEventListener("pointerdown", () => {
+          cancelResetPress();
+          resetPressId = setTimeout(() => {
+            resetPressId = null;
+            showAppSnackbarConfirm("타이머를 0으로 맞출까요?", () => resetTimerToZero());
+          }, 720);
+        });
+        timerDisplayEl.addEventListener("pointerup", cancelResetPress);
+        timerDisplayEl.addEventListener("pointerleave", cancelResetPress);
+        timerDisplayEl.addEventListener("pointercancel", cancelResetPress);
+      }
+
+      $("dockSaveSessionBtn")?.addEventListener("click", () => {
+        $("saveSessionBtn")?.click();
+      });
+
+      $("saveSessionBtn")?.addEventListener("click", () => {
+        const savedSec = state.timerSeconds;
+        if (savedSec <= 0) {
+          showAppSnackbar("저장할 시간이 없어요.");
+          return;
+        }
+        if (state.timerRunning) pauseStudyTimer();
+        addSessionRecord(savedSec, "manual", {
+          tag: state.defaultSessionTag || undefined,
+          date: getTimerRecordDateKey()
+        });
+        state.timerSeconds = 0;
+        sessionRuntime.timerSessionDateKey = "";
+        sessionRuntime.dayRolloverNotified = false;
+        saveState();
+        invalidateChartCache();
+        render();
+        showAppSnackbar("공부 " + Math.round(savedSec / 60) + "분을 기록했어요.");
+      });
+
+      if (!sessionRuntime.visibilityHookInstalled) {
+        sessionRuntime.visibilityHookInstalled = true;
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            noteClockSkewIfNeeded();
+            const dayChanged = maybeRefreshCalendarDay();
+            touchDeviceClockAnchor();
+            if (state.timerRunning && sessionRuntime.timerWallStartMs != null) {
+              state.timerSeconds = sessionRuntime.timerWallBaseSec + Math.floor((Date.now() - sessionRuntime.timerWallStartMs) / 1000);
+            }
+            if (dayChanged) render();
+            else renderTimerTickHud();
+          }
+          updateSessionDocumentTitle();
+        });
+      }
+
+      $("soundToggleBtn")?.addEventListener("click", () => {
+        state.soundEnabled = !state.soundEnabled;
+        saveState();
+        render();
+      });
+
+      const insightWrap = $("insightBannerWrap");
+      if (insightWrap) {
+        insightWrap.addEventListener("click", (e) => {
+          const b = e.target instanceof HTMLElement ? e.target.closest("[data-banner-dismiss]") : null;
+          if (!b) return;
+          const k = b.getAttribute("data-banner-dismiss");
+          const day = dateKey(new Date());
+          if (k === "goal") state.bannerDismissedGoal = day;
+          if (k === "streak") state.bannerDismissedStreak = day;
+          if (k === "weekly") state.bannerDismissedWeekly = mondayKeyOfWeekContaining(new Date());
+          saveState();
+          updateInsightBanners(day);
+        });
+      }
+
+      const resetStoryAffBtn = $("resetStoryAffectionBtn");
+      if (resetStoryAffBtn) {
+        resetStoryAffBtn.addEventListener("click", () => {
+          showAppSnackbarConfirm("스토리·호감·루트만 초기화돼요. 공부 기록과 목표는 유지됩니다.", () => performStoryAndAffectionReset());
+        });
+      }
+
+      const storyContactPickWrap = $("storyContactPickWrap");
+      if (storyContactPickWrap) {
+        storyContactPickWrap.addEventListener("click", (e) => {
+          const btn = e.target instanceof HTMLElement ? e.target.closest("[data-contact-pick]") : null;
+          if (!btn) return;
+          const v = btn.getAttribute("data-contact-pick");
+          if (v !== "face" && v !== "text" && v !== "walk") return;
+          if (state.storyContactChannel) return;
+          state.storyContactChannel = v;
+          const labels = { face: "학교에서 얼굴 보며", text: "메시지로", walk: "함께 걸으며" };
+          const dn = getDisplayName();
+          const vo = getVocative(dn);
+          appendStoryLog({
+            type: "branch",
+            title: "짧은 분기 · 연락 방식",
+            body: "「" + (labels[v] || v) + "」쪽이 편하다고 골랐네. 인안나는 속으로 " + dn + vo + " 다정한 톤 그대로 연락 오겠지 하고 메모만 남겨 둘게—부담 없는 분기지만, 이후 장면을 그릴 때 색이 조금 달라져."
+          });
+          saveState();
+          render();
+        });
+      }
+
+      $("replyChoices")?.addEventListener("click", (event) => {
+        const t = event.target;
+        const btn = t instanceof HTMLElement ? t.closest("[data-reply-index]") : null;
+        if (!btn || !state.activeInteraction) return;
+        const replyIndexText = btn.getAttribute("data-reply-index");
+        if (replyIndexText === null) return;
+        const idx = Number(replyIndexText);
+        const selected = state.activeInteraction.choices[idx];
+        if (!selected) return;
+        const displayName = getDisplayName();
+        const voc = getVocative(displayName);
+        const npcQuestion = state.activeInteraction.npc;
+        const prevAff = state.affection;
+        const damp = dampConversationBonusNearEnd(selected.delta, selected.routePts || 3);
+        state.replyAffectionBonus += damp.delta;
+        const selectedForRoute = Object.assign({}, selected, { routePts: damp.routePts });
+        applyRoutePoints(selectedForRoute);
+        recalcAffectionTotal();
+        logRelationshipMilestones(prevAff, state.affection);
+        const sign = damp.delta > 0 ? "+" : "";
+        const routeLabel = selected.route === "marriage" ? "청혼" : selected.route === "yandere" ? "얀데레" : "유학";
+        const rp = damp.routePts;
+        state.lastReplyText = displayName + voc + ": " + selected.text
+          + "  |  호감도 " + sign + damp.delta + " · " + routeLabel + " 루트 +" + rp;
+        appendStoryLog({
+          type: "choice",
+          title: "대화 기록 · 선택지",
+          body: "인안나: " + npcQuestion + "\n\n" + displayName + voc + ": " + selected.text
+            + "\n\n인안나: " + selected.reaction
+            + "\n\n（호감도 " + sign + damp.delta + " · " + routeLabel + " 루트 +" + rp + "）"
+        });
+        maybeAppendRouteHintLog();
+        if (tryUnlockEnding()) {
+          saveState();
+          render();
+          return;
+        }
+        state.activeInteraction = {
+          npc: selected.reaction,
+          choices: []
+        };
+        saveState();
+        render();
+      });
+
+      const historyFilterBar = $("historyFilterBar");
+      if (historyFilterBar && historyFilterBar.dataset.filterBound !== "1") {
+        historyFilterBar.dataset.filterBound = "1";
+        const onFilterChange = () => renderHistory();
+        historyFilterBar.addEventListener("input", onFilterChange);
+        historyFilterBar.addEventListener("change", onFilterChange);
+        document.querySelectorAll(".filter-pill[data-filter-pill]").forEach((pill) => {
+          pill.addEventListener("click", () => {
+            const kind = pill.getAttribute("data-filter-pill");
+            const on = pill.getAttribute("aria-pressed") === "true";
+            if (kind === "week") {
+              pill.setAttribute("aria-pressed", on ? "false" : "true");
+              const wk = $("historyFilterWeekOnly");
+              if (wk instanceof HTMLInputElement) wk.checked = !on;
+            } else if (kind === "tag") {
+              const next = !on;
+              pill.setAttribute("aria-pressed", next ? "true" : "false");
+              pill.setAttribute("aria-expanded", next ? "true" : "false");
+              const panel = $("historyTagPanel");
+              if (panel) panel.hidden = !next;
+              if (next) {
+                const tg = $("historyFilterTagContains");
+                if (tg instanceof HTMLElement) tg.focus();
+              }
+            }
+            renderHistory();
+          });
+        });
+      }
+
+      const recordUndoSnackbarBtn = $("recordUndoSnackbarBtn");
+      if (recordUndoSnackbarBtn && recordUndoSnackbarBtn.dataset.bound !== "1") {
+        recordUndoSnackbarBtn.dataset.bound = "1";
+        recordUndoSnackbarBtn.addEventListener("click", () => {
+          const u = sessionRuntime.undoDelete;
+          if (!u || !u.record) return;
+          const idx = Math.min(Math.max(0, u.index), state.records.length);
+          state.records.splice(idx, 0, u.record);
+          clearUndoDelete();
+          recalcFromRecords();
+          saveState();
+          render();
+        });
+      }
+
+      $("historyList")?.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const action = target.getAttribute("data-action");
+        const indexText = target.getAttribute("data-edit-index");
+        if (indexText === null) return;
+
+        const recordIndex = Number(indexText);
+        const record = state.records[recordIndex];
+        if (!record) return;
+
+        if (action === "edit") {
+          state.editingRecordIndex = recordIndex;
+          render();
+          return;
+        }
+
+        if (action === "cancel") {
+          state.editingRecordIndex = -1;
+          render();
+          return;
+        }
+
+        if (action === "delete" || action === "quick-delete") {
+          removeRecordAtIndex(recordIndex);
+          return;
+        }
+
+        if (action !== "save") return;
+
+        const histRoot = $("historyList");
+        if (!histRoot) return;
+        const dateInputEl = histRoot.querySelector("input[data-field='date'][data-edit-index='" + recordIndex + "']");
+        const minutesInputEl = histRoot.querySelector("input[data-field='minutes'][data-edit-index='" + recordIndex + "']");
+        const tagInputEl = histRoot.querySelector("input[data-field='tag'][data-edit-index='" + recordIndex + "']");
+        if (!(dateInputEl instanceof HTMLInputElement) || !(minutesInputEl instanceof HTMLInputElement)) return;
+
+        const trimmedDate = dateInputEl.value.trim();
+        const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+        if (!datePattern.test(trimmedDate)) {
+          showAppSnackbar("날짜 형식은 YYYY-MM-DD로 입력해 주세요.", { durationMs: 4500 });
+          return;
+        }
+        const parsed = new Date(trimmedDate + "T00:00:00");
+        if (Number.isNaN(parsed.getTime()) || dateKey(parsed) !== trimmedDate) {
+          showAppSnackbar("유효한 날짜를 입력해 주세요.", { durationMs: 4500 });
+          return;
+        }
+
+        const newMinutes = Number(minutesInputEl.value);
+        if (!Number.isFinite(newMinutes) || newMinutes <= 0) {
+          showAppSnackbar("1분 이상 숫자로 입력해 주세요.", { durationMs: 4500 });
+          return;
+        }
+
+        record.date = trimmedDate;
+        record.seconds = Math.round(newMinutes * 60);
+        if (tagInputEl instanceof HTMLInputElement) {
+          const tg = tagInputEl.value.trim().slice(0, 24);
+          if (tg) record.tag = tg;
+          else delete record.tag;
+        }
+        state.editingRecordIndex = -1;
+        recalcFromRecords();
+        saveState();
+        render();
+      });
+    }
+
+    function showFatalBootError(err) {
+      console.error("[boot]", err);
+      const msg = err && err.message ? String(err.message) : String(err);
+      try {
+        const div = document.createElement("div");
+        div.setAttribute("role", "alert");
+        div.style.cssText =
+          "position:fixed;inset:8px;z-index:99999;background:#2d1f28;color:#f5eef2;padding:16px 18px;border-radius:12px;font:14px/1.5 system-ui,Segoe UI,sans-serif;overflow:auto;box-shadow:0 12px 48px rgba(0,0,0,.5);max-height:calc(100vh - 16px);";
+        div.innerHTML =
+          "<strong>앱 시작 중 오류</strong>" +
+          "<p style='margin:10px 0 0;white-space:pre-wrap;'>" + escapeHtml(msg) + "</p>" +
+          "<p style='margin:12px 0 0;font-size:12px;opacity:.88;'>예전 캐시·서비스 워커가 남았을 수 있어요. 아래 새로고침을 누르거나 Ctrl+Shift+R(강력 새로고침)을 시도해 주세요.</p>" +
+          "<p style='margin:14px 0 0;display:flex;flex-wrap:wrap;gap:8px;'>"
+          + "<button type='button' id='studyBootReloadBtn' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button>"
+          + "<button type='button' id='studyBootResetBtn' style='padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:inherit;font-weight:600;cursor:pointer;'>캐시 지우고 다시</button>"
+          + "</p>";
+        (document.body || document.documentElement).appendChild(div);
+        const rb = document.getElementById("studyBootReloadBtn");
+        if (rb) rb.addEventListener("click", () => location.reload());
+        const resetBtn = document.getElementById("studyBootResetBtn");
+        if (resetBtn) {
+          resetBtn.addEventListener("click", () => {
+            if (typeof window.__studyHardResetCaches === "function") {
+              window.__studyHardResetCaches();
+              return;
+            }
+            location.reload();
+          });
+        }
+      } catch (_) {}
+    }
+
+    function setupServiceWorker() {
+      if (!("serviceWorker" in navigator) || (location.protocol !== "http:" && location.protocol !== "https:")) return;
+      try {
+        if (sessionStorage.getItem("studySkipSwOnce") === "1") {
+          sessionStorage.removeItem("studySkipSwOnce");
+          return;
+        }
+      } catch (_) {}
+      const promptSwReload = () => {
+        showAppSnackbar("새 버전이 준비됐어요.", {
+          actionLabel: "새로고침",
+          onAction: () => {
+            sessionRuntime.swReloading = true;
+            location.reload();
+          },
+          durationMs: 12000
+        });
+      };
+      navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((reg) => {
+        if (reg.waiting && navigator.serviceWorker.controller) promptSwReload();
+        reg.addEventListener("updatefound", () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener("statechange", () => {
+            if (nw.state === "installed" && navigator.serviceWorker.controller) promptSwReload();
+          });
+        });
+      }).catch(() => {});
+    }
+
+    function bootApp() {
+      loadState();
+      ensureOnboardingNotBlocking();
+      initDeviceClockGuard();
+      initFileProtocolNotice();
+      clearUndoDelete();
+      recalcAffectionTotal();
+      if (tryUnlockEnding()) saveState();
+      applyA11yPresetToDocument();
+      setupTabs();
+      setupViewSubTabsDelegation();
+      setupActions();
+      setupKeyboardShortcuts();
+      bindPortraitImageFallback($("characterImage"));
+      bindPortraitImageFallback($("characterImageThumb"));
+      setupServiceWorker();
+      if (typeof window !== "undefined") {
+        window.__studyBootOk = true;
+        try {
+          window.dispatchEvent(new Event("study-app-ready"));
+        } catch (_) {}
+      }
+      try {
+        render();
+      } catch (renderErr) {
+        console.error("[render] initial", renderErr);
+      }
+      loadRomanceNarrativeRemote().then(() => {
+        try {
+          render();
+        } catch (renderErr) {
+          console.error("[render] narrative", renderErr);
+        }
+      }).catch(() => {});
+    }
+
+    try {
+      bootApp();
+    } catch (err) {
+      showFatalBootError(err);
+    }

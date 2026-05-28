@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>너의 옆자리</title>
+  <script>
+    (function () {
+      var path = location.pathname || "/";
+      var base = path.replace(/\/?404\.html$/i, "");
+      if (!base.endsWith("/")) base += "/";
+      location.replace(base + location.search + location.hash);
+    })();
+  </script>
+</head>
+<body>
+  <p>페이지를 찾는 중… <a id="go">여기</a></p>
+  <script>
+    var path = location.pathname || "/";
+    var base = path.replace(/\/?404\.html$/i, "");
+    if (!base.endsWith("/")) base += "/";
+    document.getElementById("go").href = base;
+  </script>
+</body>
+</html>
