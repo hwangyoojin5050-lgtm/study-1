@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko" data-theme="romance">
 <head>
   <meta charset="UTF-8" />
@@ -16,7 +16,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <meta name="theme-color" content="#EDE9F5" />
-  <!-- file:// 에서는 manifest GET 이 net::ERR_FAILED 로 떨어지는 경우가 많아, 로컬 서버일 때만 연결합니다. -->
+  <!-- file:// ?먯꽌??manifest GET ??net::ERR_FAILED 濡??⑥뼱吏??寃쎌슦媛 留롮븘, 濡쒖뺄 ?쒕쾭???뚮쭔 ?곌껐?⑸땲?? -->
   <script>
     (function () {
       if (location.protocol !== "http:" && location.protocol !== "https:") return;
@@ -28,7 +28,7 @@
   </script>
   <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./assets/icon.svg" />
-  <title>너의 옆자리</title>
+  <title>?덉쓽 ?놁옄由?/title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -38,7 +38,7 @@
 </head>
 <body>
   <div id="fileProtocolBanner" class="file-protocol-banner" role="status" hidden>
-  이 파일을 직접 열면(localStorage·오프라인·아이콘) 일부 기능이 제한돼요. GitHub Pages 주소나 <code>npm run dev</code> 같은 로컬 서버로 열어 주세요.
+  ???뚯씪??吏곸젒 ?대㈃(localStorage쨌?ㅽ봽?쇱씤쨌?꾩씠肄? ?쇰? 湲곕뒫???쒗븳?쇱슂. GitHub Pages 二쇱냼??<code>npm run dev</code> 媛숈? 濡쒖뺄 ?쒕쾭濡??댁뼱 二쇱꽭??
   </div>
   <div class="app">
     <input type="radio" name="studyMainTab" id="studyMainTabRecord" class="main-tab-input" checked />
@@ -46,28 +46,28 @@
     <input type="radio" name="studyMainTab" id="studyMainTabView" class="main-tab-input" />
     <div id="onboardingOverlay" class="onboarding-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="onboardingTitle" aria-hidden="true">
       <div class="onboarding-card">
-        <h2 id="onboardingTitle" class="onboarding-title" tabindex="-1">너의 옆자리</h2>
+        <h2 id="onboardingTitle" class="onboarding-title" tabindex="-1">?덉쓽 ?놁옄由?/h2>
         <p id="onboardingBody" class="onboarding-body muted"></p>
         <div class="btn-row onboarding-actions">
-          <button type="button" class="btn secondary" id="onboardingSkipBtn">나중에</button>
-          <button type="button" class="btn primary" id="onboardingNextBtn">다음</button>
+          <button type="button" class="btn secondary" id="onboardingSkipBtn">?섏쨷??/button>
+          <button type="button" class="btn primary" id="onboardingNextBtn">?ㅼ쓬</button>
         </div>
         <p class="muted mt-2" id="onboardingStepInd">1 / 2</p>
       </div>
     </div>
-    <div class="tabs" role="tablist" aria-label="메인 화면: 함께 쌓기, 이야기, 흐름">
-      <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">함께 쌓기</label>
-      <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">이야기</label>
-      <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">흐름</label>
+    <div class="tabs" role="tablist" aria-label="硫붿씤 ?붾㈃: ?④퍡 ?볤린, ?댁빞湲? ?먮쫫">
+      <label for="studyMainTabRecord" class="tab-btn active" role="tab" id="tabBtnRecord" data-tab="record" aria-controls="record" aria-selected="true" tabindex="0">?④퍡 ?볤린</label>
+      <label for="studyMainTabView" class="tab-btn" role="tab" id="tabBtnView" data-tab="view" aria-controls="panelView" aria-selected="false" tabindex="-1">?댁빞湲?/label>
+      <label for="studyMainTabStats" class="tab-btn" role="tab" id="tabBtnStats" data-tab="stats" aria-controls="panelStats" aria-selected="false" tabindex="-1">?먮쫫</label>
     </div>
     <div id="insightBannerWrap" class="insight-banner-wrap" hidden>
-      <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="알림"></div>
+      <div id="insightBanner" class="insight-banner-inner" role="region" aria-label="?뚮┝"></div>
     </div>
     <div id="todayInannaStrip" class="today-inanna-strip" hidden>
       <div class="today-inanna-inner">
         <img
           class="today-inanna-img"
-          src="./assets/today-inanna.png?v=24"
+          src="./assets/today-inanna.png?v=25"
           width="72"
           height="72"
           alt=""
@@ -75,34 +75,34 @@
           loading="lazy"
         />
         <div class="today-inanna-body">
-          <span class="today-inanna-k">오늘의 인안나</span>
+          <span class="today-inanna-k">?ㅻ뒛???몄븞??/span>
           <span id="todayInannaLine"></span>
         </div>
       </div>
     </div>
     <p class="muted text-caption mb-2 lede-tight" id="privacyLocalNote" style="max-width:720px;">
-      개인정보: 공부·스토리는 이 기기(localStorage)에만 저장되고, 계정·다른 기기 동기화·푸시 알림은 없어요. 브라우저 데이터·캐시를 지우면 이 기기의 기록이 함께 사라질 수 있어요. 외부 분석·광고 SDK는 붙어 있지 않습니다.
+      媛쒖씤?뺣낫: 怨듬?쨌?ㅽ넗由щ뒗 ??湲곌린(localStorage)?먮쭔 ??λ릺怨? 怨꾩젙쨌?ㅻⅨ 湲곌린 ?숆린?붋룻뫖???뚮┝? ?놁뼱?? 釉뚮씪?곗? ?곗씠?걔룹틦?쒕? 吏?곕㈃ ??湲곌린??湲곕줉???④퍡 ?щ씪吏????덉뼱?? ?몃? 遺꾩꽍쨌愿묎퀬 SDK??遺숈뼱 ?덉? ?딆뒿?덈떎.
     </p>
 
     <section id="record" class="view active" role="tabpanel" aria-labelledby="tabBtnRecord" aria-hidden="false">
       <div class="record-shell">
-        <aside class="card record-rail" aria-label="함께 쌓기 내비게이션">
-          <div class="record-rail-brand">너의 옆자리</div>
+        <aside class="card record-rail" aria-label="?④퍡 ?볤린 ?대퉬寃뚯씠??>
+          <div class="record-rail-brand">?덉쓽 ?놁옄由?/div>
           <nav class="record-rail-nav">
-            <button type="button" class="record-rail-tab active" data-record-rail="dashboard">대시보드</button>
-            <button type="button" class="record-rail-tab" data-go-tab="view">이야기</button>
-            <button type="button" class="record-rail-tab" data-go-tab="stats">흐름</button>
+            <button type="button" class="record-rail-tab active" data-record-rail="dashboard">??쒕낫??/button>
+            <button type="button" class="record-rail-tab" data-go-tab="view">?댁빞湲?/button>
+            <button type="button" class="record-rail-tab" data-go-tab="stats">?먮쫫</button>
           </nav>
-          <p class="record-rail-note muted">집중은 이 대시보드 · 이야기·흐름은 <strong>위쪽 메인 탭</strong>과 같아요</p>
+          <p class="record-rail-note muted">吏묒쨷? ????쒕낫??쨌 ?댁빞湲걔룻쓲由꾩? <strong>?꾩そ 硫붿씤 ??/strong>怨?媛숈븘??/p>
         </aside>
 
         <div class="record-main">
           <div class="card bento-card habit-dashboard">
             <div class="habit-dashboard-row">
               <div class="habit-block">
-                <div class="habit-block-title text-caption">연속 목표 달성</div>
+                <div class="habit-block-title text-caption">?곗냽 紐⑺몴 ?ъ꽦</div>
                 <div class="metric-line">
-                  <span class="habit-streak-num metric-val" id="studyStreakValue">0</span><span class="metric-unit">일</span>
+                  <span class="habit-streak-num metric-val" id="studyStreakValue">0</span><span class="metric-unit">??/span>
                 </div>
                 <p class="muted text-caption mt-1" id="studyStreakHint"></p>
               </div>
@@ -113,41 +113,41 @@
             <div class="record-bento-left">
               <div class="record-cluster record-cluster--focus">
                 <header class="record-cluster-head">
-                  <p class="record-cluster-eyebrow">목표 · 타이머</p>
-                  <h3 class="record-cluster-title">집중은 여기서</h3>
+                  <p class="record-cluster-eyebrow">紐⑺몴 쨌 ??대㉧</p>
+                  <h3 class="record-cluster-title">吏묒쨷? ?ш린??/h3>
                 </header>
                 <div class="record-cluster-body">
                   <div class="record-bento-top">
                     <div class="card bento-card bento-goal">
-                  <h3>공부 목표</h3>
-                  <label for="goalHours">하루 공부 목표 시간 (시간 단위)</label>
-                  <input id="goalHours" type="number" min="0.5" step="0.5" placeholder="예: 3" />
+                  <h3>怨듬? 紐⑺몴</h3>
+                  <label for="goalHours">?섎（ 怨듬? 紐⑺몴 ?쒓컙 (?쒓컙 ?⑥쐞)</label>
+                  <input id="goalHours" type="number" min="0.5" step="0.5" placeholder="?? 3" />
 
-                  <label for="weeklyGoalHours" class="mt-2">이번 주 목표 (시간, 비우면 생략)</label>
-                  <input id="weeklyGoalHours" type="number" min="0" step="0.5" placeholder="예: 15" />
+                  <label for="weeklyGoalHours" class="mt-2">?대쾲 二?紐⑺몴 (?쒓컙, 鍮꾩슦硫??앸왂)</label>
+                  <input id="weeklyGoalHours" type="number" min="0" step="0.5" placeholder="?? 15" />
 
-                  <p class="muted text-caption mt-2" id="goalQuestStatus">입력 후 자동 저장돼요.</p>
+                  <p class="muted text-caption mt-2" id="goalQuestStatus">?낅젰 ???먮룞 ??λ뤌??</p>
                 </div>
 
                 <div class="card bento-card bento-timer">
-                  <h3>공부 타이머</h3>
-                  <div class="big-time timer-display-hit" id="timerDisplay" title="길게 누르면 시간 리셋">00:00:00</div>
-                  <p class="muted text-caption mb-1">시간 숫자를 길게 누르면 리셋할 수 있어요.</p>
-                  <label for="defaultSessionTagInput" class="muted text-caption block-label">기본 태그 (비우면 생략)</label>
-                  <input id="defaultSessionTagInput" class="max-w-input mb-2" type="text" maxlength="24" placeholder="예: 수학, 영어, 밴드" autocomplete="off" />
+                  <h3>怨듬? ??대㉧</h3>
+                  <div class="big-time timer-display-hit" id="timerDisplay" title="湲멸쾶 ?꾨Ⅴ硫??쒓컙 由ъ뀑">00:00:00</div>
+                  <p class="muted text-caption mb-1">?쒓컙 ?レ옄瑜?湲멸쾶 ?꾨Ⅴ硫?由ъ뀑?????덉뼱??</p>
+                  <label for="defaultSessionTagInput" class="muted text-caption block-label">湲곕낯 ?쒓렇 (鍮꾩슦硫??앸왂)</label>
+                  <input id="defaultSessionTagInput" class="max-w-input mb-2" type="text" maxlength="24" placeholder="?? ?섑븰, ?곸뼱, 諛대뱶" autocomplete="off" />
                   <div class="timer-actions">
                     <div class="timer-actions-primary">
-                      <button type="button" class="btn primary btn-timer-primary" id="timerPrimaryBtn" aria-label="타이머 시작">시작</button>
-                      <button type="button" class="btn success" id="saveSessionBtn" aria-label="지금까지의 타이머 시간을 공부 기록으로 저장">저장</button>
+                      <button type="button" class="btn primary btn-timer-primary" id="timerPrimaryBtn" aria-label="??대㉧ ?쒖옉">?쒖옉</button>
+                      <button type="button" class="btn success" id="saveSessionBtn" aria-label="吏湲덇퉴吏????대㉧ ?쒓컙??怨듬? 湲곕줉?쇰줈 ???>???/button>
                     </div>
                     <div class="timer-actions-more">
-                      <button type="button" class="btn-icon" id="timerMoreBtn" aria-expanded="false" aria-haspopup="true" aria-controls="timerMoreMenu" aria-label="타이머 더보기">⋯</button>
+                      <button type="button" class="btn-icon" id="timerMoreBtn" aria-expanded="false" aria-haspopup="true" aria-controls="timerMoreMenu" aria-label="??대㉧ ?붾낫湲?>??/button>
                       <div id="timerMoreMenu" class="timer-more-menu" role="menu" hidden>
-                        <button type="button" class="timer-more-item" role="menuitem" id="soundToggleBtn">알림음 켜짐</button>
+                        <button type="button" class="timer-more-item" role="menuitem" id="soundToggleBtn">?뚮┝??耳쒖쭚</button>
                       </div>
                     </div>
                   </div>
-                  <p class="muted text-caption timer-hint mt-2">저장하면 오늘 공부·호감도에 반영돼요.</p>
+                  <p class="muted text-caption timer-hint mt-2">??ν븯硫??ㅻ뒛 怨듬?쨌?멸컧?꾩뿉 諛섏쁺?쇱슂.</p>
                 </div>
               </div>
 
@@ -162,68 +162,68 @@
     <section id="panelStats" class="view stats-panel" role="tabpanel" aria-labelledby="tabBtnStats" aria-hidden="true">
       <header class="card stats-hero">
         <p class="muted stats-hero-kicker" id="statsHeroDate"></p>
-        <h2 class="stats-hero-title">흐름</h2>
-        <p class="muted text-caption mt-1 lede-tight">기록·그래프·진행 상태를 한곳에서 봐요.</p>
+        <h2 class="stats-hero-title">?먮쫫</h2>
+        <p class="muted text-caption mt-1 lede-tight">湲곕줉쨌洹몃옒?꽷룹쭊???곹깭瑜??쒓납?먯꽌 遊먯슂.</p>
       </header>
 
       <div class="stats-layout">
-        <div class="card bento-card stats-progress-card" aria-label="진행 상태">
-          <h3>진행 상태</h3>
+        <div class="card bento-card stats-progress-card" aria-label="吏꾪뻾 ?곹깭">
+          <h3>吏꾪뻾 ?곹깭</h3>
           <div class="stats-kpi-row" id="statsKpiRow" aria-live="polite"></div>
           <p class="muted text-caption mt-2" id="tagStatsLine"></p>
         </div>
 
-        <div class="card bento-card stats-charts-card" aria-label="공부 시간 그래프">
+        <div class="card bento-card stats-charts-card" aria-label="怨듬? ?쒓컙 洹몃옒??>
           <div class="stats-charts-row">
             <div class="bento-chart-block">
-              <h3>주간 그래프</h3>
-              <canvas id="weeklyChart" width="320" height="130" role="img" aria-label="최근 7일 공부 시간 막대 그래프"></canvas>
-              <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--bar"></span>분 단위 · 막대 높이 = 공부 시간</p>
+              <h3>二쇨컙 洹몃옒??/h3>
+              <canvas id="weeklyChart" width="320" height="130" role="img" aria-label="理쒓렐 7??怨듬? ?쒓컙 留됰? 洹몃옒??></canvas>
+              <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--bar"></span>遺??⑥쐞 쨌 留됰? ?믪씠 = 怨듬? ?쒓컙</p>
             </div>
             <div class="bento-chart-block">
-              <h3>월간 그래프 (최근 6개월)</h3>
-              <canvas id="monthlyChart" width="320" height="130" role="img" aria-label="최근 6개월 월별 공부 시간 막대 그래프"></canvas>
-              <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--bar-alt"></span>분 단위 · 월별 합산</p>
+              <h3>?붽컙 洹몃옒??(理쒓렐 6媛쒖썡)</h3>
+              <canvas id="monthlyChart" width="320" height="130" role="img" aria-label="理쒓렐 6媛쒖썡 ?붾퀎 怨듬? ?쒓컙 留됰? 洹몃옒??></canvas>
+              <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--bar-alt"></span>遺??⑥쐞 쨌 ?붾퀎 ?⑹궛</p>
             </div>
           </div>
         </div>
 
         <div class="card bento-card weekly-insights-card">
-          <h3>집중 구간 히트맵</h3>
-          <p class="muted text-caption mb-2">최근 28일 · 시간대가 있는 기록만</p>
+          <h3>吏묒쨷 援ш컙 ?덊듃留?/h3>
+          <p class="muted text-caption mb-2">理쒓렐 28??쨌 ?쒓컙?媛 ?덈뒗 湲곕줉留?/p>
           <div class="rhythm-heatmap-wrap">
-            <canvas id="rhythmHeatmap" width="480" height="210" role="img" aria-label="요일과 시간대별 집중 히트맵"></canvas>
-            <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--lo"></span>낮음 <span class="chart-legend-swatch chart-legend-swatch--hi"></span>높음 · 가로 0–23시</p>
+            <canvas id="rhythmHeatmap" width="480" height="210" role="img" aria-label="?붿씪怨??쒓컙?蹂?吏묒쨷 ?덊듃留?></canvas>
+            <p class="chart-legend text-caption muted"><span class="chart-legend-swatch chart-legend-swatch--lo"></span>??쓬 <span class="chart-legend-swatch chart-legend-swatch--hi"></span>?믪쓬 쨌 媛濡?0??3??/p>
             <p class="muted text-caption mt-1" id="rhythmHeatmapHint"></p>
           </div>
         </div>
 
         <div class="card bento-card bento-history">
-          <h3>최근 기록</h3>
-          <div class="history-filter-bar" id="historyFilterBar" aria-label="기록 필터">
-            <div class="filter-pills" role="group" aria-label="빠른 필터">
-              <button type="button" class="filter-pill" data-filter-pill="week" aria-pressed="false">이번 주만</button>
-              <button type="button" class="filter-pill" data-filter-pill="tag" aria-pressed="false" aria-expanded="false" aria-controls="historyTagPanel">태그</button>
+          <h3>理쒓렐 湲곕줉</h3>
+          <div class="history-filter-bar" id="historyFilterBar" aria-label="湲곕줉 ?꾪꽣">
+            <div class="filter-pills" role="group" aria-label="鍮좊Ⅸ ?꾪꽣">
+              <button type="button" class="filter-pill" data-filter-pill="week" aria-pressed="false">?대쾲 二쇰쭔</button>
+              <button type="button" class="filter-pill" data-filter-pill="tag" aria-pressed="false" aria-expanded="false" aria-controls="historyTagPanel">?쒓렇</button>
             </div>
             <div class="filter-pill-panel" id="historyTagPanel" hidden>
-              <input type="text" id="historyFilterTagContains" maxlength="24" placeholder="태그 일부 입력" autocomplete="off" aria-label="태그 포함" />
+              <input type="text" id="historyFilterTagContains" maxlength="24" placeholder="?쒓렇 ?쇰? ?낅젰" autocomplete="off" aria-label="?쒓렇 ?ы븿" />
             </div>
             <details class="filter-more">
-              <summary class="text-caption">날짜 · 정렬</summary>
+              <summary class="text-caption">?좎쭨 쨌 ?뺣젹</summary>
               <div class="filter-more-grid">
                 <div class="hf-field">
-                  <label for="historyFilterDateFrom">시작일</label>
+                  <label for="historyFilterDateFrom">?쒖옉??/label>
                   <input type="date" id="historyFilterDateFrom" />
                 </div>
                 <div class="hf-field">
-                  <label for="historyFilterDateTo">종료일</label>
+                  <label for="historyFilterDateTo">醫낅즺??/label>
                   <input type="date" id="historyFilterDateTo" />
                 </div>
                 <div class="hf-field">
-                  <label for="historyFilterSort">정렬</label>
+                  <label for="historyFilterSort">?뺣젹</label>
                   <select id="historyFilterSort">
-                    <option value="date-desc">최신순</option>
-                    <option value="date-asc">오래된순</option>
+                    <option value="date-desc">理쒖떊??/option>
+                    <option value="date-asc">?ㅻ옒?쒖닚</option>
                   </select>
                 </div>
               </div>
@@ -235,27 +235,27 @@
       </div>
     </section>
 
-    <footer class="record-mobile-dock" id="recordMobileDock" aria-label="기록 요약·타이머">
+    <footer class="record-mobile-dock" id="recordMobileDock" aria-label="湲곕줉 ?붿빟쨌??대㉧">
       <div class="record-mobile-dock-col">
-        <span class="record-mobile-dock-k">오늘</span>
-        <span class="record-mobile-dock-v" id="dockTodayShort">0분</span>
+        <span class="record-mobile-dock-k">?ㅻ뒛</span>
+        <span class="record-mobile-dock-v" id="dockTodayShort">0遺?/span>
       </div>
       <div class="record-mobile-dock-col">
-        <span class="record-mobile-dock-k">타이머</span>
+        <span class="record-mobile-dock-k">??대㉧</span>
         <span class="record-mobile-dock-v" id="dockTimerShort">00:00:00</span>
       </div>
-      <button type="button" class="btn success record-mobile-dock-save" id="dockSaveSessionBtn" hidden aria-label="타이머 시간을 공부 기록으로 저장">저장</button>
+      <button type="button" class="btn success record-mobile-dock-save" id="dockSaveSessionBtn" hidden aria-label="??대㉧ ?쒓컙??怨듬? 湲곕줉?쇰줈 ???>???/button>
     </footer>
 
     <section id="panelView" class="view" role="tabpanel" aria-labelledby="tabBtnView" aria-hidden="true">
-      <div class="view-sub-tabs" role="tablist" aria-label="이야기 하위">
-        <button type="button" class="tab-btn active" role="tab" id="tabBtnViewChar" data-view-sub="character" aria-controls="viewPanelCharacter" aria-selected="true" aria-pressed="true" tabindex="0">캐릭터</button>
-        <button type="button" class="tab-btn" role="tab" id="tabBtnViewStory" data-view-sub="story" aria-controls="viewPanelStory" aria-selected="false" aria-pressed="false" tabindex="-1">스토리보드</button>
+      <div class="view-sub-tabs" role="tablist" aria-label="?댁빞湲??섏쐞">
+        <button type="button" class="tab-btn active" role="tab" id="tabBtnViewChar" data-view-sub="character" aria-controls="viewPanelCharacter" aria-selected="true" aria-pressed="true" tabindex="0">罹먮┃??/button>
+        <button type="button" class="tab-btn" role="tab" id="tabBtnViewStory" data-view-sub="story" aria-controls="viewPanelStory" aria-selected="false" aria-pressed="false" tabindex="-1">?ㅽ넗由щ낫??/button>
       </div>
 
       <div id="viewPanelCharacter" role="region" aria-labelledby="tabBtnViewChar" aria-hidden="false">
       <div class="card vn-card">
-        <div class="vn-stage" aria-label="캐릭터 장면">
+        <div class="vn-stage" aria-label="罹먮┃???λ㈃">
           <div class="vn-backdrop" aria-hidden="true"></div>
           <div class="vn-floating-hearts" aria-hidden="true"></div>
 
@@ -267,15 +267,15 @@
                 alt=""
                 width="56"
                 height="56"
-                src="./assets/character-scene.png?v=24"
+                src="./assets/character-scene.png?v=25"
               />
               <div class="vn-stat-box">
                 <div class="vn-stat-row vn-stat-labels">
-                  <span class="vn-stat-tag">호감도</span>
+                  <span class="vn-stat-tag">?멸컧??/span>
                   <span id="vnHudAffection">0</span>
                 </div>
-                <div class="vn-stat-row vn-hearts heart-meter" id="heartMeter">♡♡♡♡♡♡♡♡♡♡</div>
-                <div class="vn-stat-row vn-stage-pill" id="vnRomanceStage">친해지는 중</div>
+                <div class="vn-stat-row vn-hearts heart-meter" id="heartMeter">?△솪?△솪?△솪?△솪?△솪</div>
+                <div class="vn-stat-row vn-stage-pill" id="vnRomanceStage">移쒗빐吏??以?/div>
                 <p class="muted vn-relationship-meta" id="relationshipMetaLine" style="font-size:11px;margin:4px 0 0;line-height:1.35;max-width:220px;" aria-live="polite"></p>
                 <p class="muted vn-daily-whisper" id="dailyWhisperLine" style="font-size:11px;margin:6px 0 0;line-height:1.4;max-width:220px;font-style:italic;opacity:0.92;" aria-live="polite"></p>
               </div>
@@ -289,33 +289,33 @@
             <img
               id="characterImage"
               class="character-img vn-sprite"
-              alt="인안나 · 호감도 0~30"
-              src="./assets/character-scene.png?v=24"
+              alt="?몄븞??쨌 ?멸컧??0~30"
+              src="./assets/character-scene.png?v=25"
             />
           </div>
 
-          <aside class="talk-box vn-choice-panel" id="talkBox" style="display:none;" aria-label="대화 선택">
-            <div class="vn-choice-head">선택</div>
+          <aside class="talk-box vn-choice-panel" id="talkBox" style="display:none;" aria-label="????좏깮">
+            <div class="vn-choice-head">?좏깮</div>
             <div class="vn-npc-line" id="npcTalkLine"></div>
             <div class="vn-choice-list" id="replyChoices"></div>
             <div class="vn-reply-result muted" id="replyResult"></div>
           </aside>
 
           <div class="vn-dialogue-shell">
-            <span class="vn-nameplate">인안나</span>
+            <span class="vn-nameplate">?몄븞??/span>
             <div class="vn-dialogue-inner">
-              <p id="dialogueBox" class="vn-dialogue-text">오랜만이야. 나 실용음악과 다니면서 밴드도 하고 있거든—너랑 다시 공부 열심히 해보자.</p>
+              <p id="dialogueBox" class="vn-dialogue-text">?ㅻ옖留뚯씠?? ???ㅼ슜?뚯븙怨??ㅻ땲硫댁꽌 諛대뱶???섍퀬 ?덇굅?졻붾꼫???ㅼ떆 怨듬? ?댁떖???대낫??</p>
               <div class="vn-inner-panel" id="innerMonologuePanel">
                 <label class="vn-inner-toggle" for="innerMonologueToggle">
                   <input type="checkbox" id="innerMonologueToggle" />
-                  인안나의 속마음 보기
+                  ?몄븞?섏쓽 ?띾쭏??蹂닿린
                 </label>
-                <p class="vn-inner-tagline" id="innerMonologueHint">체크하면 속마음이 함께 보여요.</p>
+                <p class="vn-inner-tagline" id="innerMonologueHint">泥댄겕?섎㈃ ?띾쭏?뚯씠 ?④퍡 蹂댁뿬??</p>
                 <div
                   id="innerMonologueBox"
                   class="vn-inner-monologue"
                   role="region"
-                  aria-label="인안나의 속마음"
+                  aria-label="?몄븞?섏쓽 ?띾쭏??
                   hidden
                 ></div>
               </div>
@@ -324,23 +324,23 @@
         </div>
 
         <div class="vn-meta-block">
-          <h3>인안나와의 이야기</h3>
-          <p class="muted vn-lede">고등학교 동창이었던 인안나와 다시 이어진 인연. 인안나는 <strong>소심한 내향형</strong>이면서 <strong>음악을 사랑</strong>하고, 당신은 <strong>다정하고 활발하며 사교적</strong>인 성격으로 그려집니다. 공부를 쌓을수록 호감도와 대사가 변합니다.</p>
+          <h3>?몄븞?섏????댁빞湲?/h3>
+          <p class="muted vn-lede">怨좊벑?숆탳 ?숈갹?댁뿀???몄븞?섏? ?ㅼ떆 ?댁뼱吏??몄뿰. ?몄븞?섎뒗 <strong>?뚯떖???댄뼢??/strong>?대㈃??<strong>?뚯븙???щ옉</strong>?섍퀬, ?뱀떊? <strong>?ㅼ젙?섍퀬 ?쒕컻?섎ŉ ?ш탳??/strong>???깃꺽?쇰줈 洹몃젮吏묐땲?? 怨듬?瑜??볦쓣?섎줉 ?멸컧?꾩? ??ш? 蹂?⑸땲??</p>
           <div class="character-bio">
-            <strong>인안나</strong> · 여성 · 실용음악과 재학 · 작은 밴드의 보컬 · 메탈 애호 · 성격: 소심한 내향형, 음악에 몰입할 때 가장 편안함<br />
-            <strong>당신(유저)</strong> · 다정함 · 활발함 · 사교적임 — 인안나의 속마음에서 이 빛나는 성격과 자신을 비교하곤 합니다.
+            <strong>?몄븞??/strong> 쨌 ?ъ꽦 쨌 ?ㅼ슜?뚯븙怨??ы븰 쨌 ?묒? 諛대뱶??蹂댁뺄 쨌 硫뷀깉 ?좏샇 쨌 ?깃꺽: ?뚯떖???댄뼢?? ?뚯븙??紐곗엯????媛???몄븞??br />
+            <strong>?뱀떊(?좎?)</strong> 쨌 ?ㅼ젙??쨌 ?쒕컻??쨌 ?ш탳?곸엫 ???몄븞?섏쓽 ?띾쭏?뚯뿉????鍮쏅굹???깃꺽怨??먯떊??鍮꾧탳?섍낀 ?⑸땲??
           </div>
-          <label for="userNameViewEdit" class="mt-1">유저 이름 수정</label>
-          <input id="userNameViewEdit" type="text" maxlength="20" placeholder="이름을 입력하면 즉시 반영됩니다." />
-          <label for="togetherLinesMaxDayInput" class="block-label mt-2">하루 「함께한 시간」최대 줄 수 (0이면 끔)</label>
+          <label for="userNameViewEdit" class="mt-1">?좎? ?대쫫 ?섏젙</label>
+          <input id="userNameViewEdit" type="text" maxlength="20" placeholder="?대쫫???낅젰?섎㈃ 利됱떆 諛섏쁺?⑸땲??" />
+          <label for="togetherLinesMaxDayInput" class="block-label mt-2">?섎（ ?뚰븿猿섑븳 ?쒓컙?띿턀? 以???(0?대㈃ ??</label>
           <input id="togetherLinesMaxDayInput" class="max-w-input-sm mt-1" type="number" min="0" max="24" step="1" value="8" autocomplete="off" aria-describedby="togetherLinesMaxHint" />
-          <p class="muted text-caption mt-1" id="togetherLinesMaxHint">하루 최대 횟수를 넘기면 그날 자동 한 줄이 멈춰요.</p>
+          <p class="muted text-caption mt-1" id="togetherLinesMaxHint">?섎（ 理쒕? ?잛닔瑜??섍린硫?洹몃궇 ?먮룞 ??以꾩씠 硫덉떠??</p>
           <div class="story-contact-pick" id="storyContactPickWrap" hidden>
-            <p class="muted story-contact-pick-lede">인안나가 네 성격을 떠올리며 묻는 짧은 분기예요. 연락은 어떤 쪽이 편해? 한 번 고르면 로그에만 남고, 부담 없는 장면 묘사에 쓸게.</p>
+            <p class="muted story-contact-pick-lede">?몄븞?섍? ???깃꺽???좎삱由щŉ 臾삳뒗 吏㏃? 遺꾧린?덉슂. ?곕씫? ?대뼡 履쎌씠 ?명빐? ??踰?怨좊Ⅴ硫?濡쒓렇?먮쭔 ?④퀬, 遺???녿뒗 ?λ㈃ 臾섏궗???멸쾶.</p>
             <div class="btn-row story-contact-pick-row">
-              <button type="button" class="btn secondary" data-contact-pick="face">학교에서 얼굴 보고 말하기</button>
-              <button type="button" class="btn secondary" data-contact-pick="text">메시지로 짧게 연락</button>
-              <button type="button" class="btn secondary" data-contact-pick="walk">같이 걷다가 얘기하기</button>
+              <button type="button" class="btn secondary" data-contact-pick="face">?숆탳?먯꽌 ?쇨뎬 蹂닿퀬 留먰븯湲?/button>
+              <button type="button" class="btn secondary" data-contact-pick="text">硫붿떆吏濡?吏㏐쾶 ?곕씫</button>
+              <button type="button" class="btn secondary" data-contact-pick="walk">媛숈씠 嫄룸떎媛 ?섍린?섍린</button>
             </div>
           </div>
           <div class="route-meter" id="routeMeter"></div>
@@ -355,31 +355,31 @@
 
       <div id="viewPanelStory" style="display:none;" role="region" aria-labelledby="tabBtnViewStory" aria-hidden="true">
         <div class="card">
-          <h3>스토리 다시보기</h3>
-          <p class="muted">관계가 진전될 때의 짧은 이야기, 선택지 대화, 엔딩까지 시간 순으로 저장됩니다. 아래에는 지금까지 도달한 호감·엔딩 단계의 캐릭터 이미지만 나타납니다.</p>
-          <p class="muted text-caption mt-1 lede-tight" id="dateCutsceneHint">목표 시간 이상 기록한 날, 데이트 장면이 한 번 남을 수 있어요.</p>
+          <h3>?ㅽ넗由??ㅼ떆蹂닿린</h3>
+          <p class="muted">愿怨꾧? 吏꾩쟾???뚯쓽 吏㏃? ?댁빞湲? ?좏깮吏 ??? ?붾뵫源뚯? ?쒓컙 ?쒖쑝濡???λ맗?덈떎. ?꾨옒?먮뒗 吏湲덇퉴吏 ?꾨떖???멸컧쨌?붾뵫 ?④퀎??罹먮┃???대?吏留??섑??⑸땲??</p>
+          <p class="muted text-caption mt-1 lede-tight" id="dateCutsceneHint">紐⑺몴 ?쒓컙 ?댁긽 湲곕줉???? ?곗씠???λ㈃????踰??⑥쓣 ???덉뼱??</p>
           <div id="storyPortraitGallery" class="story-portrait-gallery" style="display:none;" aria-live="polite"></div>
           <div id="storySummaryPanel" class="story-summary-box" aria-live="polite"></div>
           <div id="milestoneBadgeSection" class="memory-diary-box mt-2">
-            <h4 class="story-subheading">마일스톤 배지</h4>
-            <p class="muted text-caption lede-tight">이 기기에서만 해금되는 작은 배지예요. 공부·목표 기준이며 호감도와는 별개예요.</p>
+            <h4 class="story-subheading">留덉씪?ㅽ넠 諛곗?</h4>
+            <p class="muted text-caption lede-tight">??湲곌린?먯꽌留??닿툑?섎뒗 ?묒? 諛곗??덉슂. 怨듬?쨌紐⑺몴 湲곗??대ŉ ?멸컧?꾩???蹂꾧컻?덉슂.</p>
             <p id="milestoneBadgeNote" class="muted text-caption lede-tight" hidden></p>
-            <div id="milestoneBadgeGrid" class="milestone-badge-grid" aria-label="마일스톤 배지"></div>
+            <div id="milestoneBadgeGrid" class="milestone-badge-grid" aria-label="留덉씪?ㅽ넠 諛곗?"></div>
           </div>
           <div class="story-log" id="storyLogList"></div>
           <div class="story-reset-row">
-            <button type="button" class="btn danger" id="resetStoryAffectionBtn">스토리 및 호감도 초기화</button>
-            <span class="muted text-caption lede-tight">공부·목표는 유지되고, 스토리·호감·루트만 초기화돼요.</span>
+            <button type="button" class="btn danger" id="resetStoryAffectionBtn">?ㅽ넗由?諛??멸컧??珥덇린??/button>
+            <span class="muted text-caption lede-tight">怨듬?쨌紐⑺몴???좎??섍퀬, ?ㅽ넗由?룻샇媛먃룸（?몃쭔 珥덇린?붾뤌??</span>
           </div>
         </div>
       </div>
     </section>
 
     <div id="recordUndoSnackbar" class="app-snackbar record-snackbar" hidden role="status" aria-live="polite">
-      <span id="recordUndoSnackbarMsg">기록을 삭제했습니다.</span>
+      <span id="recordUndoSnackbarMsg">湲곕줉????젣?덉뒿?덈떎.</span>
       <div class="app-snackbar-actions">
-        <button type="button" class="btn secondary" id="recordUndoSnackbarCancelBtn" hidden>취소</button>
-        <button type="button" class="btn secondary" id="recordUndoSnackbarBtn" hidden>되돌리기</button>
+        <button type="button" class="btn secondary" id="recordUndoSnackbarCancelBtn" hidden>痍⑥냼</button>
+        <button type="button" class="btn secondary" id="recordUndoSnackbarBtn" hidden>?섎룎由ш린</button>
       </div>
     </div>
   </div>
@@ -434,16 +434,16 @@
         box.setAttribute("role", "alert");
         box.style.cssText = "position:fixed;inset:12px;z-index:99998;background:#2d1f28;color:#f5eef2;padding:16px 18px;border-radius:12px;font:14px/1.5 system-ui,Segoe UI,sans-serif;max-width:440px;margin:auto;box-shadow:0 12px 48px rgba(0,0,0,.45);";
         var msg = reason === "module"
-          ? "스크립트를 불러오지 못했어요. 주소 끝에 /study-1/ 처럼 슬래시(/)가 있는지 확인하거나, 아래에서 캐시를 지워 보세요."
-          : "시작이 완료되지 않았어요. 네트워크가 느리거나 캐시 문제일 수 있어요.";
+          ? "?ㅽ겕由쏀듃瑜?遺덈윭?ㅼ? 紐삵뻽?댁슂. 二쇱냼 ?앹뿉 /study-1/ 泥섎읆 ?щ옒??/)媛 ?덈뒗吏 ?뺤씤?섍굅?? ?꾨옒?먯꽌 罹먯떆瑜?吏??蹂댁꽭??"
+          : "?쒖옉???꾨즺?섏? ?딆븯?댁슂. ?ㅽ듃?뚰겕媛 ?먮━嫄곕굹 罹먯떆 臾몄젣?????덉뼱??";
         if (detail && detail.message) {
           msg += " (" + String(detail.message).slice(0, 120) + ")";
         }
-        box.innerHTML = "<strong>앱을 시작하지 못했어요</strong>"
+        box.innerHTML = "<strong>?깆쓣 ?쒖옉?섏? 紐삵뻽?댁슂</strong>"
           + "<p style='margin:10px 0 0;opacity:.92;'>" + msg + "</p>"
           + "<p style='margin:14px 0 4px;display:flex;flex-wrap:wrap;gap:8px;'>"
-          + "<button type='button' data-act='reload' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>새로고침</button>"
-          + "<button type='button' data-act='reset' style='padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:inherit;font-weight:600;cursor:pointer;'>캐시 지우고 다시</button>"
+          + "<button type='button' data-act='reload' style='padding:8px 14px;border-radius:8px;border:0;background:#e8a6c8;color:#2d1f28;font-weight:600;cursor:pointer;'>?덈줈怨좎묠</button>"
+          + "<button type='button' data-act='reset' style='padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:transparent;color:inherit;font-weight:600;cursor:pointer;'>罹먯떆 吏?곌퀬 ?ㅼ떆</button>"
           + "</p>";
         box.addEventListener("click", function (e) {
           var btn = e.target.closest("[data-act]");
@@ -469,3 +469,4 @@
   <script type="module" src="./js/boot.mjs"></script>
 </body>
 </html>
+

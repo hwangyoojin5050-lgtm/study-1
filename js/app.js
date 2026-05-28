@@ -797,12 +797,6 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       return a < b ? -1 : 1;
     }
 
-    function daysBetweenDateKeys(fromKey, toKey) {
-      const a = new Date(fromKey + "T12:00:00");
-      const b = new Date(toKey + "T12:00:00");
-      return Math.round((b.getTime() - a.getTime()) / 86400000);
-    }
-
     function touchDeviceClockAnchor() {
       state.deviceLastSeenDateKey = dateKey(new Date());
       state.deviceLastSeenAtMs = Date.now();

@@ -1,9 +1,9 @@
-/**
- * 앱 진입점 — import.meta.url 기준으로 app.js를 불러 옵니다.
- * (GitHub Pages /study-1 처럼 경로 끝에 / 가 없을 때 HTML 상대경로가 깨지는 문제 회피)
+﻿/**
+ * App entrypoint that resolves app.js from import.meta.url.
+ * Prevents relative-path issues on GitHub Pages subpaths.
  */
 const APP_URL = new URL("./app.js", import.meta.url);
-APP_URL.searchParams.set("v", "24");
+APP_URL.searchParams.set("v", "25");
 
 if (typeof window !== "undefined") {
   window.__studyBootOk = "module";
@@ -23,3 +23,4 @@ try {
   }
   console.error("[boot.mjs]", err);
 }
+
