@@ -79,7 +79,8 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       clockSkewNotified: false,
       dayRolloverNotified: false,
       swReloading: false,
-      timerPauseNotified: false
+      timerPauseNotified: false,
+      applyingMainTabFromState: false
     };
 
     const TAB_FOCUSABLE =
@@ -2689,12 +2690,30 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       invalidateChartCache();
     }
 
+    function readMainTabFromDomRadios() {
+      const viR = document.getElementById("studyMainTabView");
+      const stR = document.getElementById("studyMainTabStats");
+      if (viR && viR.checked) return "view";
+      if (stR && stR.checked) return "stats";
+      return "record";
+    }
+
     function applyMainTabToDom() {
-      const tabId = normalizeMainTabId(state.uiMainTab);
-      state.uiMainTab = tabId;
       const recR = document.getElementById("studyMainTabRecord");
       const stR = document.getElementById("studyMainTabStats");
       const viR = document.getElementById("studyMainTabView");
+      let tabId;
+      if (sessionRuntime.applyingMainTabFromState) {
+        tabId = normalizeMainTabId(state.uiMainTab);
+      } else if (recR && stR && viR) {
+        const domTab = readMainTabFromDomRadios();
+        const stateTab = normalizeMainTabId(state.uiMainTab);
+        tabId = domTab !== stateTab ? domTab : stateTab;
+        state.uiMainTab = tabId;
+      } else {
+        tabId = normalizeMainTabId(state.uiMainTab);
+      }
+      state.uiMainTab = tabId;
       if (recR && stR && viR) {
         recR.checked = tabId === "record";
         stR.checked = tabId === "stats";
@@ -2715,6 +2734,13 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       if (rec) rec.setAttribute("aria-hidden", tabId === "record" ? "false" : "true");
       if (st) st.setAttribute("aria-hidden", tabId === "stats" ? "false" : "true");
       if (vi) vi.setAttribute("aria-hidden", tabId === "view" ? "false" : "true");
+      const show = (el, on) => {
+        if (!el) return;
+        el.style.setProperty("display", on ? "block" : "none", "important");
+      };
+      show(rec, tabId === "record");
+      show(st, tabId === "stats");
+      show(vi, tabId === "view");
       syncRecordRailActiveTab(tabId);
     }
 
@@ -2752,8 +2778,13 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
         }
       }
       state.uiMainTab = next;
-      applyMainTabToDom();
-      updateMainTabTimerHints();
+      sessionRuntime.applyingMainTabFromState = true;
+      try {
+        applyMainTabToDom();
+        updateMainTabTimerHints();
+      } finally {
+        sessionRuntime.applyingMainTabFromState = false;
+      }
     }
 
     function updateMainTabTimerHints() {
@@ -2965,6 +2996,34 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       );
     }
 
+    function commitMainTab(tabId) {
+      const tab = normalizeMainTabId(tabId);
+      activateTab(tab);
+      saveState();
+      render();
+      focusFirstInMainPanel(tab);
+    }
+
+    function syncMainTabFromUserInput() {
+      commitMainTab(readMainTabFromDomRadios());
+    }
+
+    function ensureOnboardingNotBlocking() {
+      if (state.onboardingCompleted) return;
+      const hasUse = state.records.length > 0
+        || state.totalSeconds > 120
+        || state.affection > 0
+        || state.storyLog.length > 0;
+      if (!hasUse) return;
+      state.onboardingCompleted = true;
+      const el = $("onboardingOverlay");
+      if (el) {
+        el.hidden = true;
+        el.setAttribute("aria-hidden", "true");
+      }
+      document.body.classList.remove("onboarding-open");
+    }
+
     function setupTabs() {
       if (document.documentElement.dataset.studyMainTabSync === "1") return;
       document.documentElement.dataset.studyMainTabSync = "1";
@@ -2972,19 +3031,23 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       const stR = document.getElementById("studyMainTabStats");
       const viR = document.getElementById("studyMainTabView");
       if (!recR || !stR || !viR) return;
-      const onRadioChange = () => {
-        const tab = viR.checked ? "view" : stR.checked ? "stats" : "record";
-        activateTab(tab);
-        saveState();
-        render();
-        focusFirstInMainPanel(tab);
-      };
-      recR.addEventListener("change", onRadioChange);
-      stR.addEventListener("change", onRadioChange);
-      viR.addEventListener("change", onRadioChange);
+      const onRadioChange = () => syncMainTabFromUserInput();
+      [recR, stR, viR].forEach((radio) => {
+        radio.addEventListener("change", onRadioChange);
+      });
+      document.querySelectorAll(".tabs > .tab-btn[data-tab]").forEach((label) => {
+        label.addEventListener("click", (e) => {
+          const tab = label.getAttribute("data-tab");
+          if (!tab) return;
+          e.preventDefault();
+          commitMainTab(tab);
+        });
+      });
     }
 
     function setupActions() {
+      if (document.documentElement.dataset.studyActionsBound === "1") return;
+      document.documentElement.dataset.studyActionsBound = "1";
       sessionRuntime.baseDocumentTitle = document.title || APP_DISPLAY_NAME;
       bindOnboarding();
 
@@ -3466,29 +3529,44 @@ import { milestoneBadgeIconHtml } from "./badge-icons.js";
       }).catch(() => {});
     }
 
-    try {
-    loadState();
-    initDeviceClockGuard();
-    initFileProtocolNotice();
-    clearUndoDelete();
-    recalcAffectionTotal();
-    if (tryUnlockEnding()) saveState();
-    applyA11yPresetToDocument();
-    setupTabs();
-    setupViewSubTabsDelegation();
-    setupActions();
-    setupKeyboardShortcuts();
-    bindPortraitImageFallback($("characterImage"));
-    bindPortraitImageFallback($("characterImageThumb"));
-    setupServiceWorker();
-    if (typeof window !== "undefined") {
-      window.__studyBootOk = true;
+    function bootApp() {
+      loadState();
+      ensureOnboardingNotBlocking();
+      initDeviceClockGuard();
+      initFileProtocolNotice();
+      clearUndoDelete();
+      recalcAffectionTotal();
+      if (tryUnlockEnding()) saveState();
+      applyA11yPresetToDocument();
+      setupTabs();
+      setupViewSubTabsDelegation();
+      setupActions();
+      setupKeyboardShortcuts();
+      bindPortraitImageFallback($("characterImage"));
+      bindPortraitImageFallback($("characterImageThumb"));
+      setupServiceWorker();
+      if (typeof window !== "undefined") {
+        window.__studyBootOk = true;
+        try {
+          window.dispatchEvent(new Event("study-app-ready"));
+        } catch (_) {}
+      }
       try {
-        window.dispatchEvent(new Event("study-app-ready"));
-      } catch (_) {}
+        render();
+      } catch (renderErr) {
+        console.error("[render] initial", renderErr);
+      }
+      loadRomanceNarrativeRemote().then(() => {
+        try {
+          render();
+        } catch (renderErr) {
+          console.error("[render] narrative", renderErr);
+        }
+      }).catch(() => {});
     }
-    render();
-    loadRomanceNarrativeRemote().then(() => render()).catch(() => {});
+
+    try {
+      bootApp();
     } catch (err) {
       showFatalBootError(err);
     }

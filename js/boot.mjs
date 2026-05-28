@@ -3,7 +3,7 @@
  * (GitHub Pages /study-1 처럼 경로 끝에 / 가 없을 때 HTML 상대경로가 깨지는 문제 회피)
  */
 const APP_URL = new URL("./app.js", import.meta.url);
-APP_URL.searchParams.set("v", "23");
+APP_URL.searchParams.set("v", "24");
 
 if (typeof window !== "undefined") {
   window.__studyBootOk = "module";
