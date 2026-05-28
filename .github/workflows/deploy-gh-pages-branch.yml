@@ -1,0 +1,36 @@
+# GitHub Pages 백업 배포: gh-pages 브랜치에 정적 파일을 올립니다.
+# Settings → Pages → Source: Deploy from a branch → gh-pages / (root) 로도 켤 수 있습니다.
+name: Deploy to gh-pages branch
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare static site
+        run: |
+          mkdir -p public
+          cp index.html manifest.webmanifest sw.js 404.html public/
+          cp -r js assets styles public/
+          touch public/.nojekyll
+          test -f public/js/boot.mjs
+          test -f public/js/app.js
+          test -f public/styles/tokens.css
+          test -f public/assets/today-inanna.png
+
+      - name: Deploy to gh-pages branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: public
+          branch: gh-pages
+          single-commit: true
